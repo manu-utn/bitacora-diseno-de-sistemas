@@ -1,0 +1,26 @@
+#+TITLE: Clase 04
+
+#+BEGIN_COMMENT
+Remera remera = new TipoPrenda(Categoria.PARTE_SUPERIOR)
+Prenda p = new Prenda(remera, new Color(0,0,0) )
+#+END_COMMENT
+
+* Construir Objetos
+  - Validaciones
+  - Asociar dependencias
+  - Creación por partes
+  - Valores predefinidos
+** Familias de objetos
+   - Los objetos suelen tener misma interfaz
+   - Aunque pueden tener disinto comportamiento a un mismo mensaje
+* Singleton
+  instancia global
+  puede ser mutable
+* enum
+  es inmutable 
+* Builder
+** interfaz fluida
+   es poder encadenar metodos
+   Ej. Prenda.especificarTipo1().especificarTipo2().construir()
+
+

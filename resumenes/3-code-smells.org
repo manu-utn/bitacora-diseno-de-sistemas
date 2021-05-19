@@ -1,0 +1,200 @@
+#+TITLE: Resumen - Code Smells
+
+#+BEGIN_COMMENT
+  1. [[DUDA 1]]
+  2. [[DUDA 2]]
+#+END_COMMENT
+* [TODO] Misplaced methods
+  + Aparecen los ~métodos secretarios~ al implementar el ~facade pattern~
+   
+  #+BEGIN_COMMENT
+  <<DUDA 1>>: No entendi el ejemplo
+  <<DUDA 2>>: De que trata el ~facade pattern~ ?
+  #+END_COMMENT
+* Duplicated Code
+  + Quizás se necesita *Delegar*
+  + Herramientas que lo evitan
+    1. *Herencia*
+    2. *Composición*
+
+  #+BEGIN_QUOTE
+  *Once and only once* hacer las cosas una sola vez
+
+  *Don't Repeat yourself* (DRY)
+  #+END_QUOTE
+* Long method
+** Solución
+  Podemos descomponer/dividir un método largo en varias partes
+  + Identificar el objetivo
+  + Implementar la abstracción
+    * darle un nombre representativo
+    * encontrar un objeto responsable del objetivo
+  + Delegar en varios submétodos
+* Large Class/God Class
+** Problema
+  + Cuando una clase tiene MUCHAS *responsabilidades*
+  + Depende de otros objetos, y ante cualquier cambio puede romperse
+** Solución
+  + *Delegar* las responsabilidades en otras clases ó crear nuevas
+* [TODO] Long Parameter List
+** Problema
+   + 
+** Solución 
+   + 
+* Type Tests
+** Problema
+   + NO usar *polimorfismo*
+   + Preguntarle al objeto quien es
+* Message Chains
+** [TODO] Problema
+   + *Acoplamiento* de clases
+   + Dependencias (??)
+** Solución
+   - Delegar
+   Un objeto debería de enviar mensajes sólo a 
+   + a si mismo
+   + a objetos que conoce
+   + a objetos que recibe como parámetro
+   + a objetos que instancia
+** Ejemplo
+   Si tenemos un objeto que envia este mensaje ~a.b().c().d();~
+* Data Clumps
+  *Clumps* significa amontonamiento/cumulo/agrupar
+** Problema
+** Solución
+   + Identificar *conjuntos de datos que estén relacionados*
+     y darle un nombre a la abstracción que los represente
+** Refactor asociados
+   + Extract class
+** Ejemplos
+   Tenemos una abstracción Persona, que tiene como datos:
+   dni, nombre, edad, ...
+
+   Tenemos otra abstracción Dirección que tiene como datos:
+   calle, altura, piso, departamento, ...
+* Temporary Field
+** Problema
+   - Tener atributos que son usados solo para ciertos casos
+   - Cuando se utilizan *campos calculados*
+** Ejemplos
+   Tener una variable totalConIva, totalSinIva
+   y otra Total que es la suma de ambas
+* Data Classes
+** Problema
+   + Separar un objeto en *atributos* y *comportamiento* 
+      sólo para separar la estructura de los procesos
+      (rompe con el principio del paradigma de ojetos)
+   + Los objetos quedan con poca *cohesión* y mucho *acoplamiento*
+   + Aparece la repetición de código
+* Primitive Obsession
+** Problema
+   + Representar con ~int~, ~boolean~ ~Strings~ ó ~enumeraciones~
+     cosas que podrían ser *objetos* con *comportamiento*
+** Ejemplos
+   Utilizar *enumeraciones* nos lleva a utilizar condicionales
+   en vez de trabajar con objetos *polimorficos*
+
+   Usar ~Array[]~ en vez de objetos que modelen una colección
+* Refused Bequest
+  *Bequest* significa herencia/legado
+** Problema
+   + Utilizar *herencia* cuando se podía *delegar*
+** Desventajas
+   + Obliga a definir métodos innecesarios, que no necesita el objeto
+* Inappropiate Intimacy (Subclass Form)
+** Problema
+   + Cuando una subclase accede directamente a las variables
+     de su superclase en vez de utilizar los ~getters~ (acceso indirecto)
+
+   #+BEGIN_QUOTE
+   La herencia VIOLA el *encapsulamiento*
+   #+END_QUOTE
+* Lazy Class
+** Problema  
+   + *Sobrediseñar* jerarquías para uso futuro
+** Solución
+   + Diseñar algo simple, y luego generar nuevas abstracciones
+     a medida que necesitamos
+   + Seguir la frase *no programar para el cambio* de Extreme Programming
+     (uno de los enfoques ágiles)
+
+   #+BEGIN_QUOTE
+   Se asocia la frase "You aren't gonna need it" (YAGNI)
+
+   sobre NO agregar funcionalidad hasta que sea necesario
+   #+END_QUOTE
+* Feature Envy
+  *Envy* significa envidia/codicia
+** Problema
+   + Cuando un objeto le manda demasiados mensajes a otro
+   + Cuando un objeto necesita mucha información de otro
+     (y esa información es responsabilidad del otro objeto proveerla)
+** Solución
+   + Asignar bien las *responsabilidades*
+** Ejemplos
+* Middle Man
+** Problema
+   + Cuando una clase sólo actúa de intermediario entre otras clases
+     y no juega ningun papel
+   + Cuando un Objeto delega demasiado en otro en demasiados métodos
+** Bad Smells Asociados
+   + Al tratar de evitar *Message Chains*
+* Divergent Change
+** Problema
+   + Cuando una clase tiene más de un objetivo
+     y ese objetivo tiene varios atributos y métodos
+     no tienen nada en común
+   + La clase tiene poca *cohesión*
+** Solución
+   - El *refactor Extract Class*
+   - Separar la clase, aumentar la *cohesión* (asignar responsabilidades, delegar)
+* Shotgun Surgery
+** Problema
+   + Cuando pequeños cambios afectan a muchos objetos
+   + Cualquier cambio *cross-aplication* tiene GRAN impacto en el sistema
+   + Cuando tenemos que hacer cambios en muchos lugares
+** Solución
+   + Concentrar en un único lugar los cambios,
+     para que NO impacten en tantos objetos
+** Refactores asociados
+   Los *refactor* que dan solución son el ~Extract class~ + ~Move Method~
+* Refactor comunes
+** Comentarios
+   - No comentar código
+** Falta de polimorfismo
+*** Conceptos
+    + Por ejemplo utilizar muchos condicionales,
+       en vez de delegar en objetos que compartan la misma *interfaz*
+*** Patrones que lo solucionan
+      #+BEGIN_QUOTE
+      Tell, don't ask
+      #+END_QUOTE
+**** State Pattern
+     Estados que derivan en distintos *comportamientos*
+     se vuelven *polimorficos*
+**** Strategy Pattern
+     Los algoritmos se intercambian
+**** Null Object
+     Ej.
+     if(this.seleccionado != null){ .. }else { ... }
+
+     por
+
+     this.seleccionado.mensaje()
+** Codigo duplicado
+   + ~Extract method~ dentro de la misma clase
+   + Entre clases hermanas se puede extraer *comportamiento*
+     y agregarlo en una superclase comun a ambas
+   + 
+* Glosario
+** Comportamiento
+** Cross Application
+** Responsabilidades
+** Polimorfismo
+** Cohesión
+** Permeabilidad
+** Encapsulamiento
+** Accesors
+   son los getters (???)
+** Principio del Paradiga De Objetos
+   Un objeto agrupa atributos y comportamiento

@@ -1,0 +1,46 @@
+#+BEGIN_COMMENT
+Buenas, luego de leer el material de patrones me quedaron algunas dudas,
+entiendo que seguramente lo expliquen el jueves, pero quería aprovechar si podía resolver algunas acá.
+Pido disculpas si el post es algo largo, pero traté de ser lo más breve posible.
+
+En una parte menciona  lo siguiente **"Es común que un factory method sea un hook-method de algún template-method"**
+
+Mis dudas serían si entendi bien los conceptos  a rasgos generales.
+
+Algunos de Conceptos que consideré importantes
+
+1. **Patrón Factory method:** 
+ - Una Interfaz ó Superclase abstracta dispone un metodo que delega en las subclases (deben implementarlo)
+ - Las subclases deciden si instanciar distintas clases ó la misma instancia de clase pero con configuraciones diferentes
+ _Nota: no menciono lo de Creador, CreadorConcreto, ProductoConcreto,Producto para no extenderme tanto y relacionarlo con lo anterior_
+
+2. **Hook Methods:**
+ - Representan una secuencia de pasos (mezclar, amasar, hornear, ...)
+ - Los implementan varias abstracciones en común (Pizzería, Panadería, ...) aunque cada una tiene su propia implementación
+
+3. **Patrón Template Method:**
+- Una superclase que dispone de un metodo (crearPanificacion) que captura los **hook methods** (mezclar, amasar, ..) y los reutiliza
+- No necesita conocer la implementación de los pasos, solo que existen
+- La posee una superclase abstracta, y obliga a las subclases implementar los **hook methods** 
+
+**Mi conclusión relacionandolo con el texto citado al principio:**
+El factory-method (Ej. crearPanificacion) puede ser un hook-method porque la instancia a la clase que devuelve tiene una secuencia de pasos (mezclar,amasar,..)
+y cuando dice de algún template-method porque este otro tiende a reutilizar los pasos
+
+- - -
+
+Y por último también la diferencia entre los patrones *Strategy* y *Method Template*
+
+Algunos de Conceptos que consideré importantes de ambos
+
+1. **Patrón Strategy:** 
+- Encapsula distintos algoritmos para resolver un mismo problema (calcularGanancias, precioVenta, ...)
+- Una Abstracción (interfaz ó clase abstracta) delega en subclases la implementación (pudiendo darle uno predeterminado suponiendo que sea una clase abstracta que no declaró un metodo abstracto)
+
+2. **Patrón Method template:**
+- Cuando varias abstracciones comparten una secuencia de pasos (hook methods) que reutiliza el metodoTemplate que forma parte de la superClase abstracta
+- Una superclase abstracta obliga a las subclases implementar esos pasos (hook methods) y ellos los redefinen
+
+Por tanto el primero tendería a ser un solo problema, con distintas soluciones (algoritmos)
+y el segundo tiene varios problemas (pasos) que son redefinidos por subclases (distintas implementaciones de cada paso)
+#+END_COMMENT

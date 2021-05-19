@@ -1,0 +1,96 @@
+#+TITLE: Clase 05
+* abtract factory
+* dominio
+* Tests
+** tests unitarios
+** cobertura (coverage)
+** analisis de código
+* deuda técnica
+** esfuerzo extra
+   + deficiencias de nuestro modelo
+     que no habiamos arreglado
+   + puede pasar por falta de conocimiento
+     * del problema
+     * de la tecnología
+   + calendario ajustado
+   + costos (en tiempo)
+   + cambio de prioridades
+   + pagar de a poco
+     * ir resolviendo de a poco
+* refactoring
+** testing 
+   - nos valida que el sistema no rompe con 
+     los nuevos cambios
+** data clump
+   #+BEGIN_eXAMPLE
+   Posicion tiene atributos: latitud, longitud
+   distanciaA(otraPosicion){ .. }
+
+   distanciaA(posicion)
+   cuantoTardasA(posicion)
+   #+END_eXAMPLE
+
+   #+BEGIN_eXAMPLE
+   Suponiendo que NO queremos usar herencia, podriamos guardar 
+   una instancia a los datosPersonal
+
+   Duenio
+     DatoPersonal datoPersonal
+
+   Rescatista
+     DatoPersonal datoPersonal
+     
+   DatoPersonal
+     telefono
+     fechaNacimiento
+     dni
+   #+END_eXAMPLE
+
+* code smell
+** misplaced methods
+   cuando esta mal delegado, cuando le preguntamos a un objeto
+   algo que deberia de saber otro
+  1* long parameter list
+   ej. tener un constructor muy grande
+** type test
+   usar condicionales, en vez de usar objetos polimorficos
+** temporary field
+   cuando tenemos atributos/campos
+   que podrian estar en un metodo
+** lazy class
+   YAGNI
+** null pattern
+   podemos hacer composicion
+
+   #+BEGIN_EXAMPLE
+   en vez de usar un if preguntando por null
+
+   usamos composicion
+   #+END_EXAMPLE
+
+
+* [TODO] Bibliotecas
+  #+BEGIN_EXAMPLE
+  solucion objetosa, queda mas entendible, 
+  se pueden ver los distintos mensajes que entiende
+
+  Ej.
+  new Posicion(latitud, longitud).distancia(otraPosicion)
+ 
+   image(unaImagen).resize().colorear().masMensajes().
+
+ ---------------------------------------------------
+  solución procedural (NO SE RECOMIENDA, al menos en dds)
+
+  Ej.
+  Posicion.distancia(latitidu, longitud, otraLatitud, otraLongitud)
+  #+END_eXAMPLE
+
+* [TODO] Framework
+  #+BEGIN_EXAMPLE
+  por ejemplo el framework de testing junit
+  tenemos que usar @Test 
+  #+END_EXAMPLE
+
+** inversion de control
+   el control lo toma el framework

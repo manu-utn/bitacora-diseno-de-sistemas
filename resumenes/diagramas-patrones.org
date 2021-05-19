@@ -1,0 +1,146 @@
+* Factory method
+** Breve resumen
+   + Creator
+     - Es una superclase que delega en subclases la responsabilidad de que ellas instancien un Product
+       (esa responsabilidad es el factory-method, las subclases deben implementarlo)
+     - Reutiliza el método que tiene la instancia (el factory-method), en otro método que tiene mensajes 
+       que entienden todas las subclases
+   + ConcreteCreator
+     - Son las subclases que heredan de Creator e implementan el factory-method
+       y devuelven una instancia a cualquier clase que tenga la interfaz de *Product*
+     #+BEGIN_EXAMPLE
+     Ej. Pueden devolver una instancia a PizzaVegana, PizzaVegetariana, PizzaTradicional
+     #+END_EXAMPLE
+   + Product
+     - Es la interfaz de los ConcreteProduct
+     Ej. Pizza, Pedido, ..
+   + ConcreteProduct
+** Ejemplo
+      #+BEGIN_EXAMPLE
+      Si el Creator se llama FabricadorDePizas y quiere "fabricar pizzas de distintos gustos"
+      puede tener como factory-method crearPizza()
+     
+      él delega en los ConcreteCreator, que pueden ser FabricadorDePizzasVeganas FabricadorDePizzasVegetarianas
+      quienes deben hacer la implementación del factory-method crearPizza()
+      y en ese metodo instancien al gusto de pizza que quieran
+      y darle nuevas configuraciones (agregarle productos extra que quizás no tiene el ConcreteProduct)
+     
+      esos gustos son ConcreteProduct que tienen como interfaz a Product
+      y pueden tener distintas configuraciones
+      como agregarle distintos ingredientes a la pizza (que es el Product)
+    
+      en definitiva todos devuelven una instancia al Product, 
+      y lo van especializando
+      #+END_EXAMPLE
+** Ejemplos
+*** Pizzeria
+**** Implementación en Java
+    #+BEGIN_SRC java
+      // esta será nuestra factory-class
+      abstract class FabricadorDePizza{
+          // este será el factory-method
+          protected abstract Pizza crearPizza();
+
+          public Pizza prepararPizza(){
+              Pizza pizza = this.crearPizza();
+              pizza.mezclarIngredientes();
+              pizza.amasar();
+              pizza.cocinar();
+
+              return pizza;
+          }
+      }
+
+      // esta será nuestra concrete-factory-classA
+      class FabricadoDePizzaVegana extends FabricadorDePizza{
+          public Pizza crearPizza(){
+              return new PizzaDeZanahoria();
+          }
+      }
+
+      // esta será nuestra concrete-factory-classB
+      class FabricadoDePizzaTradicional extends FabricadorDePizza{
+          public Pizza crearPizza(){
+              return new PizzaDeMuzza();
+          }
+      }
+
+      interface Pizza{
+          private List<String> ingredientes;
+          private int cantidadIngredientes;
+   
+          public Pizza(){
+             ingredientes = new ArrayList<String>;
+             cantidadIngredientes = 0;
+          }
+      }
+
+      class PizzaDeZanahoria implements Pizza{
+          // ingredientes: zanahoria, manzana, pera
+      }
+
+      class PizzaDeMuzza implements Pizza{
+          // ingredientes: queso
+      }
+    #+END_SRC
+**** Diagrama de clases
+    #+BEGIN_SRC plantuml :file img/class-diagram/fabrica-de-pizza.png
+      @startuml
+
+      note right of FabricadorDePizza : Creator\nPizza pizza = crearPizza()
+      note right of FabricadorDePizzaTradicional : ConcreteCreator\nreturn new PizzaDeMuzza()
+      note right of PizzaDeMuzza : ConcreteProduct
+      note right of Pizza : Product
+
+      FabricadorDePizza <|-down- FabricadorDePizzaTradicional
+      FabricadorDePizza <|-down- FabricadorDePizzaVegana
+      PizzaDeMuzza <-up- FabricadorDePizzaTradicional
+      PizzaDeZanahoria <-up- FabricadorDePizzaVegana
+      Pizza <|.up. PizzaDeZanahoria
+      Pizza <|.up. PizzaDeMuzza
+
+      abstract class FabricadorDePizza{
+              +algunaOperacion()
+              +abstract crearPizza() : Pizza
+      }
+      class FabricadorDePizzaTradicional{
+              +crearPizza() : Pizza
+      }
+      class FabricadorDePizzaVegana{
+              +crearPizza() : Pizza
+      }
+      class PizzaDeMuzza{
+              +mezclarIngredientes()
+              +amasar()
+              +cocinar()
+       }
+      class PizzaDeZanahoria{
+              +mezclarIngredientes()
+              +amasar()
+              +cocinar()
+      }
+      interface Pizza{
+              -ingredientes
+              -cantidadIngredientes
+              +mezclarIngredientes()
+              +amasar()
+              +cocinar()
+      }
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:img/class-diagram/fabrica-de-pizza.png]]
+**** [TODO] Diagrama de secuencia (???)
+     #+BEGIN_SRC plantuml :file img/secuence-diagrams/fabrica-de-pizza.png
+       @startuml
+       FabricadorDePizzaVegana -> PizzaDeMuzza : crearPizza()
+       FabricadorDePizzaVegana <-- PizzaDeMuzza : PizzaCreada
+       @enduml
+     #+END_SRC
+
+     #+RESULTS:
+     [[file:img/secuence-diagrams/fabrica-de-pizza.png]]
+
+* Abstract Factory
+  

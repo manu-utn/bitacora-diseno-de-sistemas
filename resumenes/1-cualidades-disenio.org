@@ -1,0 +1,179 @@
+#+TITLE: Resumen - Cualidades de Diseño
+
+#+BEGIN_COMMENT
+Referencias
+https://docs.google.com/document/d/14HdvHvS33WqYb6Ak0BGa0IeCTbzeCRSDKs-1Ot-qLDw/edit#
+
+DUDAS:
+  - [[DUDA 1][DUDA 1]]
+  - [[DUDA 2][DUDA 2]]
+  - [[DUDA 3][DUDA 3]]
+#+END_COMMENT
+
+* Que son?
+  - *Criterios* que nos permiten diferenciar
+    entre un BUEN diseño y un MAL diseño
+  - *Variarán* según la tecnología aplicada, es decir
+    según el paradigma (objetos,funcional,...)
+* Para que sirven?
+  - Para *comparar diseños* y sabe cual es mejor
+  - Tener siempre un *diseño alternativo*
+    - Un componente no es simple porque si,
+      es más simple respecto que otro resolviendo 
+      el mismo problema.
+  - Tener en cuenta el *contexto*
+    - Un componente NO es más flexible que otro,
+      es más flexible en ciertos escenarios.
+* Tensiones entre cualidades
+** Favorecer una cualidad puede favorecer otra
+   - Mejorar [[Cohesión][cohesión]] favorece la [[abstracción][abstracción]]
+   - Aumentar [[acoplamiento][desacoplamiento]] facilita la [[Testeabilidad][testeabilidad]]
+
+   #+BEGIN_EXAMPLE
+   Con la cualidad de Abstracción,
+   Si construimos un sistema para un cliente que sabemos
+   que podemos reutiliza a futuro con más clientes,
+   lo mejor sería generar buenas Abstracciones para que se
+   amolde a a esos futuros clientes.
+   (para reutilizar los componentes creados)
+   #+END_EXAMPLE
+** Favorecer una cualidad puede perjudicar otra
+   En estos escenarios implica decidir con cual quedarnos,
+   ya que una perjudicará la otra.
+
+   - Aumentar [[Flexibilidad][flexibilidad]] reduce la [[Robustez][robustez]]
+   - Aumentar [[Simplicidad][simplicidad]] reduce la [[Extensibilidad][extensibilidad]]
+
+   #+BEGIN_EXAMPLE
+   Con la cualidad de Simplicidad,
+   Si armamos un prototipo para presentar, lo mejor sería
+   que sea simple, mantener la simplicidad
+
+   Con la cualidad de Robustez,
+   Si armamos un sistema que sabemos que NO va a cambiar,
+   NO será relevante la flexibilidad, si no su robustez
+   #+END_EXAMPLE
+
+* Simplicidad
+  #+NAME: frases-enfatizan-simplicidad
+  #+BEGIN_QUOTE
+  KISS: Keep it simple, stupid
+
+  YAGNI: You aren't gonna need it
+  #+END_QUOTE
+** KISS
+   - Evitar *complejidad* innecesaria
+   - Evitar *abstracciones* que no suman
+** YAGNI
+   - Evitar funcionalidades que no solucionen 
+     la *problemática actual*
+   - Enfocarnos en necesidades ya conocidas
+   - Evitar agregar complejidad en algo que NO lo necesitaba.
+   - Evitar invertir tiempo en funcionalidades
+     que pueden no ser requeridas ó que luego sean incorrectas 
+     porque quizás la idea del proyecto cambió
+     (y perdimos tiempo útil que podriamos haber
+      utilizado en otras que si necesitaban)
+
+* Complejidad
+  Va de la mano de la [[Simplicidad][simplicidad]]
+** Complejidad Accidental    
+   - SE DEBE EVITAR
+   - Es una complejidad que agregamos nosotros,
+     deriva de nuestra solución (cuando diseñamos)
+** Complejidad Esencial
+   - Deriva del problema que debemos solucionar
+   - Se debe mantener la simplicidad
+
+* [TODO] Robustez
+  #+BEGIN_COMMENT
+  <<DUDA 1>>: Que diferencia habría con otro sistema que
+  también intenta reportar los errores? 
+  #+END_COMMENT
+
+  #+NAME: frases-enfatizan-robustez
+  #+BEGIN_QUOTE
+  Fail Fast: Fallar rápido
+  #+END_QUOTE
+** Conceptos
+   - Se enfoca a como manejar situaciones excepcionales.
+** Fail Fast
+   - Si el sistema presenta un comportamiento incorrecto,
+     debe reportar el error
+   - Minimiza probabilidades de inconsistencias
+
+* [TODO] Flexibilidad
+** Extensibilidad
+   Poder agregar características con poco impacto
+** Mantenibilidad
+   Modificar características existentes con el
+   menor esfuerzo posible
+* Acoplamiento
+  - Es el grado de dependencia entre dos módulos/componentes
+  - Mayor es el acoplamiento más probable es que 
+    al fallar un módulo, también falle el otro
+* Desacoplamiento
+  - Consiste en reducir el grado de [[Acoplamiento][acoplamiento]]
+  - Evitar que la falla de un componente 
+    se extienda a otros componentes
+  - Evitar tener que tocar multiples componentes ante una,
+    modificación cuando sólo deberiamos uno solo
+* Cohesión
+  - Se define en la cantidad de responsabilidades que
+    tiene un componente
+  - A mayor responsabilidades, menor es la cohesión
+  - En objetos hablando de los [[Métodos][métodos]],
+    podría ser cuantas tareas diferentes resuelve
+* Abstracción
+  Mejor son nuestras abstracciones,
+  más aumentamos dos cualidades de diseño importantes
+** Reusabilidad
+   - Reutilizar el componente/módulo en uno nuevo
+** Genericidad
+   - Utilizar el componente/módulo para aplicar en
+     otros problemas
+* [TODO] Consistencia
+  - Un diseño es consistente, cuando a problemas
+    similares se aplicaron decisiones de diseño similares.
+* [TODO] Redundancia Minima
+  #+BEGIN_COMMENT
+  <<DUDA 3>>: Como sería un ejemplo de repetición de información?
+  #+END_COMMENT
+  
+  #+BEGIN_QUOTE
+  DRY: Don't repeat yourself
+  Once and only once
+  #+END_QUOTE
+
+  - Evitar la repetición de lógica entre componentes
+  - Evitar la repetición de información,
+    el conocimiento debe estar en un solo lugar
+    asi impedimos el solapamiento entre las abstracciones 
+* Mutaciones controladas
+** Conceptos
+  - Se enfoca en controlar los *efectos colaterales*
+  - En lo posible generar componentes inmutables,
+    para que a cambios en el sistema, estos no se vean afectados.
+  - Si los componentes son mutables, solo exponer en la interfaz
+    las operaciones mutables que pidan los requerimientos
+** Favorecer la inmutabilidad
+   - Apoya la idea de diseñar componentes inmutables
+   - Si hay cambios en el sistema estos no se vean afectados
+** Minimizar la mutabilidad
+   - NO exponer en las [[Interfaces][interfaces]] de los componentes
+     [[Operaciones mutables][operaciones mutables]] que no deberiamos exponer,
+     osea que no lo piden los requerimientos
+   - Realizar mutaciones unicamente cuando se requiera 
+* Testeabilidad
+  - Asegurar que el código funciona bien
+  - Se recomienda aplicar en pequeños componentes
+* Escabilidad
+  - Facilidad que tiene un sistema en soportar
+    una mayor carga (Ej. un aumento de usuarios
+    de miles a millones)
+  - Si el sistema no tiene esta facilidad, 
+    tendrá fallará, y los usuarios no podrán usarla
+* Eficiencia/Perfomance
+  - Que tan bien el sistema administra los recursos disponibles
+  - La eficiencia se mide en realizar una determinada tarea
+    con la menor cantidad de recursos

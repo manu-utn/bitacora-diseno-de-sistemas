@@ -1,0 +1,61 @@
+#+TITLE: Resumen - Patrones de Diseño
+
+* Que es un Patrón de Diseño
+  - Es una regla que expresa la relación entre
+    - un contexto
+    - un problema
+    - una solución
+  - Una *solución* (probada) a un *problema* en un *contexto* determinado
+  
+  #+BEGIN_QUOTE
+  Los patrones de diseño de libro *no son implementables*
+  se necesitan aplicar sobre un *dominio* para ser algo concreto
+
+  Porque son una abstracción
+  #+END_QUOTE
+* Que contiene
+** Un nombre que describa el problema
+   - Facilita y simplifica la comunicación (porque ya sabe de que se trata)
+   - Aumenta el nivel de *abstracción*
+** El problema
+   - define cuando aplicar el patrón de diseño
+** [TODO] La Solución
+   Contiene una plantilla genérica de los elementos que componen
+   - el diseño
+   - sus responsabilidades
+   - sus relaciones
+   - sus colaboraciones
+** Las consecuencias
+   - Se analiza el *impacto* que tiene utilizar el patrón
+     (las ventajas/desventajas)
+
+* Tips
+  - Usarlos de manera incorrecta puede agregar un nivel de complejidad
+    innecesaria al diseño (Recordar YAGNI y ..)
+  #+BEGIN_QUOTE
+  #+END_QUOTE
+* Clasificación
+  #+BEGIN_QUOTE
+  Se recomienda concentrarse en *encapsular* la parte más *variante*
+  del sistema
+  #+END_QUOTE
+  
+** [TODO] Creacionales
+   Abstraen el proceso de instaciación y configuración de los objetos
+** Estructurales
+   - Para definir estructuras de objetos
+   - Se analizan con diagramas de clases y su implementación (código)
+** De Comportamiento
+   - Para asignación de *responsabilidades* entre objetos
+     y cómo se *comunican* entre si
+   - Se analizan con
+     - Diagramas de secuencia
+     - Diagramas de colaboración
+     - Su implementación (código)
+
+
+* Glosario
+** Observer
+   Es el objeto que es notificado ante cualquier cambio
+   que sufra un objeto
+

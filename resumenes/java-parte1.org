@@ -1,0 +1,402 @@
+#+TITLE: Practicando Java - Parte 1
+* DUDAS 
+  - [[DUDA 1]]
+  - [[DUDA 2][DUDA 2]]
+  - [[DUDA 3][DUDA 3]]
+* Clase Object
+  - Todas las clases heredan por defecto de la clase Object
+  - La clase object tiene métodos por defecto que podemos
+    sobreescribir o reutilizar
+** Métodos Básicos
+  |----------+------------------------------------------------------|
+  | Método   | Descripción                                          |
+  |----------+------------------------------------------------------|
+  | toString | Para cambiar el retorno de una instancia a una clase |
+  |          |                                                      |
+  |----------+------------------------------------------------------|
+** toString
+   Si queremos imprimir por pantalla una instancia a una clase (objeto)
+   y queremos que devuelva la concatenación de algunos atributos
+** Equals
+ 
+* Conceptos Tipado
+** Comparativa lenguajes
+*** Ejemplos
+   Java es
+   - tipado estático (cuando se realizan casteos, se vuelve dinámico)
+   - estructural
+   - explícito
+ 
+   Haskell es
+   - estático
+   - explícito ó implícito (por inferencia de tipos)
+   - estructural (a veces)
+ 
+   C es
+*** Concepto
+**** Tipado
+     - Fuertemente tipado
+     - Debilmente tipado
+     - NO tipado
+**** Estático
+**** Dinámico
+** Polimorfismo
+   - Para que dos objetos sean *polimórficos* se deben indicar explícitamente (herencia ó interfaces)
+** Interfaces
+   - Permiten un [[Polimorfismo][polimorfismo]] chequeado *[[Chequeo Estático][estáticamente]]* y NO restringido por *herencia simple* <<DUDA 1>>
+   - Permiten *documentar*, al ponerle un nombre a un concepto que NO queremos representar con una clase
+** Tipado Implícito y Explícito
+   Cuando específicamos o no el tipo los clasificamos en implícito ó explícitio
+*** Tipado Explícito
+    Java es un ejemplo de tipado explícito porque
+    - Las expresiones (variable, parámetro, método) tienen un tipo definido
+    - Se debe indicar *explicitamente* cuando dos objetos son [[Polimorfismo][polimórficos]] (herencia ó interfaces)
+*** Tipado Implícito
+    - Entra el concepto de [[Inferencia de Tipos][inferencia de tipos]] porque no específicamos el tipo,
+      es decir las expresiones no tienen un tipo definido
+*** Lenguaje tipado
+    - El que asocia las expresiones con un tipo
+    - Cuando existe un *sistema de tipos* 
+      (por más que la sintáxis del lenguaje incluya o no, informacińo de tipos)
+*** Sistema de tipos
+    - Administra la información de tipos de un programa
+
+** Inferencia de Tipos
+   Haskell es un ejemplo que aplica el concepto de *inferencia de tipos* porque
+   - tiene [[Tipado Implícito][tipos implícitos]] (las expresiones no tienen un tipo definido)
+   - tiene [[Chequeo Estático][chequeo estático]] (se chequean los tipos en tiempo de compilación)
+
+   Es decir el *compilador* tiene que inferir tipo de la expresión,
+   porque en haskell no se lo estabamos pasando el tipo
+   (recordemos que podiamos alterar esa inferencia)
+** Tipos Nominales y Estructurales
+*** Tipos Nominales
+    - A los tipos que tienen un nombre
+    - Java es un ejemplo porque los tipos nominales están dados por
+      - las clases (concretas ó abstractas)
+      - y por las [[Interfaces][interfaces]]
+
+    #+BEGIN_EXAMPLE
+    si hacemos dos interfaces con los mismos mensajes,
+    los objetos que implementen la primera, NO son polimórficos a los que
+    implementen la segunda
+    #+END_EXAMPLE
+*** Tipos estructurales
+    #+BEGIN_EXAMPLE
+    En smalltalk, todos los objetos que entienden #value son un tipo
+
+    En cambio en Java si hacemos dos interfaces con los mismos mensajes,
+    los objetos que implementen la primera, NO son polimórficos a los que
+    implementen la segunda
+    #+END_EXAMPLE
+** Chequeos Estáticos y Dinámicos
+   La clasificación de chequeo (de tipos) es según en el momento que sucede,
+*** Chequeo Estático
+    - Se evalúan los problemas en *tiempo de compilación* 
+*** Chequeo Dinámico
+    - Se evalúan los problemas en *tiempo de ejecución* (runtime), osea luego de haber compilado <<DUDA 2>>
+    - Nos informa del problema
+    - Nos permite corregir el error
+*** Sin Chequeo
+   - Dificulta la detección de los problemas
+   - Dificulta corrección de errores
+** Detección de errores
+*** Conceptos
+    En el momento de ejecución de un programa, se pueden clasificar los errores en
+    - Trapped (atrapados)
+    - Untrapped (no atrapados)
+*** Clasificación
+**** Trapped Error
+     - Errores que se detectan de forma inmediata
+   
+     #+BEGIN_EXAMPLE
+     Un error (trapped) podría ser División por cero,
+     el programa lo detecta en el momento
+     #+END_EXAMPLE
+**** Untrapped Error
+     - Errores que NO pueden ser detectados
+     - El programa se puede estar ejecutando, y luego en un tiempo dado detectar el error
+
+     #+BEGIN_EXAMPLE
+     Un error (untrapped) podría ser acceder a posiciones que superen la longitud de un arreglo
+
+     otro podría ser saltar a una posicion inválida de memoria
+     #+END_EXAMPLE
+
+**** Errores Prohibidos
+     - Incluyen a los errores untrapped, y algunos errores trapped
+*** Lenguaje seguro y Programa seguro
+    - Un programa es seguro (safe), si no causa ningún [[Untrapped Error][untrapped error]]
+    - Un lenguaje es seguro (safe), si ninguno de sus programas causa un untrapped error
+*** Lenguaje con buen comportamiento
+    - Tienen buen comportamiento (good behavior) aquellos que no produce [[Errores Prohibidos][errores prohibidos]]
+    - En un lenguaje *fuertemente chequeado* todos los programas tienen *buen comportamiento*
+
+** Referencias
+   1. https://blog.makeitreal.camp/lenguajes-compilados-e-interpretados/
+* Modificadores public/privated
+** Conceptos
+  Se utilizan para indicar quien puede tener acceso a
+  - clases
+  - atributos
+  - métodos
+** Tipos 
+*** public
+    Todas las clases/subclases pueden acceder
+*** protected
+    Sólo la misma clase/subclases pueden acceder
+*** privated
+    Solo la propia clase puede acceder
+* Constructor
+  - Para redefinir la manera en que se crea un objeto
+  - Cada vez que lo instanciemos debemos definir los valores,
+    de los parámetros que tenga el *constructor*
+ 
+  #+NAME: constructor-ejemplo2
+  #+BEGIN_SRC java
+    class Persona{
+        // aunque no parezca
+        // está definido el constructor vacío de Persona
+        // que no nos pide ningún parámetro para crear
+        // la instancia a la clase
+    }
+  #+END_SRC
+
+  #+NAME: constructor-ejemplo2
+  #+BEGIN_SRC java
+    class Persona{
+        // definimos el constuctor de Persona
+        // cuando hagamos una instancia a la clase (objeto)
+        // nos obligará a que le pongamos el nombre
+        public Persona(String nombre){
+            this.nombre = nombre;
+        }
+    }
+  #+END_SRC
+
+  #+NAME: constructor-ejemplo3
+  #+BEGIN_SRC java
+    class Persona{
+        // definimos el constructor de Persona
+        // al usar super() actúa como el constructor vacío
+        //
+        // y permite que las instancias a la clase (objetos)
+        // no les obligue a poner el nombre
+        public Persona(){
+            super();
+        }
+
+        public Persona(String nombre){
+            this.nombre = nombre;
+        }
+    }
+  #+END_SRC
+* Herencia Simple
+  Es importante que usemos *extends* seguido de la superclase
+
+  #+BEGIN_SRC java
+    public class Hulk extends Heroe{
+        public void gritar(){
+            // implementamos algo
+        }
+    }
+  #+END_SRC
+
+* Método Abstracto
+  - El sería como la firma, y las clases que hereden(subclases) deberán definirlo "si o si"
+* Clases Abstractas
+  - Tienen al menos un [[Método Abstracto][método abstracto]]
+  - Similar a una *interfaz* pero también tiene *comportamiento* (atributos/características)
+  - NUNCA se instancian, solo las subclases
+
+  #+NAME: Heroe.java
+  #+BEGIN_SRC java
+    public abstract class Heroe{
+        private int energia;
+
+        // Solo declaramos la firma del método
+        // (como los prototipos en C)
+        public abstract void gritar();
+
+        public void correr(){
+            this.energia = this.energia - 10;
+        }
+    }
+  #+END_SRC
+
+  #+NAME: Hulk.java
+  #+BEGIN_SRC java
+    public class Hulk extends Heroe{
+
+        // OJO..! Importante el anottation de @Override
+        @Override
+        public void gritar(){
+            // implementación
+        }
+    }
+  #+END_SRC
+* Interfaz
+  - Es un conjunto de mensajes que entienden las clases que la *implementen*
+  - Una *clase* puede implementar una o varias *interfaces*
+
+  *Observaciones:*
+  1. La diferencia con una [[Clases Abstractas][clase abstracta]],
+     es que una interfaz NO tiene comportamiento (atributos)
+  2. La interfaces y las clases son archivos diferentes
+  3. Para implementar la interfaz de otro package
+     debemos usar ~import~ seguido del nombre de package
+  
+  #+NAME: Heroe.java
+  #+BEGIN_SRC java
+    package ar.edu.utn.frba.dds.heroes
+
+    public interface Heroe{
+        public void serAdmirado();
+    }
+  #+END_SRC
+
+  #+NAME: Hulk.java
+  #+BEGIN_SRC java
+    package ar.edu.utn.frba.dds.heroes
+
+    public class Hulk implements Heroe{
+        public void serAdmirado(){
+            // implementación
+        }
+    }
+  #+END_SRC
+
+  #+NAME: Hulk.java
+  #+BEGIN_SRC java
+    package ar.edu.utn.frba.dds.dioses
+
+    // OJO! Acá importamos el packages heroes
+    // para poder implementar la interfaz Heroe
+    //
+    // porque si está en otro package significa que está en
+    // otra ruta
+    import ar.edu.utn.frba.dds.heroes
+
+    public class Zeus implements Heroe{
+        public void serAdmirado(){
+            // implementación
+        }
+    }
+  #+END_SRC
+* Colecciones
+** Conceptos
+  Algunas *interfaces* que implementan mensajes típicos de las colecciones son
+  - Collection
+  - List
+** Collection
+   - Es la interfaz mas general para las colecciones
+     (Sin importar si tiene orden, repetidos, ...)
+   - Entiende los mensajes comunes de colecciones
+     - add()
+     - remove()
+     - size()
+** List
+   - Es una Interfaz que *extiende* de [[Collection][collection]]
+   - Se le agrega el mensaje para conocer el indice *get(int index)*
+   - Las implementaciones más utilizados son
+     - LinkedList
+     - ArrayList
+** Set
+   - Las implementaciones NO van a tener *repetidos*
+   - Es una Interfaz
+** Instanciar una Lista y obtener un elemento
+   - Para instanciar la lista podemos usar *ArrayList*
+   - Al declarar *List* debemos indicar entre los paréntesis angulares <> 
+     el tipo de objeto que usará la lista (importante cuando llamemos 
+     al mensaje *get*)
+
+  #+BEGIN_SRC java
+    List<Persona> personas = new ArrayList<>();
+    personas.add(new Persona());
+
+    Persona primerPersona = personas.get(0);
+  #+END_SRC
+** Filter y Map
+   - Para utilizarlas en las colecciones debemos primero utilizar el mensaje [[Stream][stream]]
+   - En java8 se deprecó que podamos usarlo deforma directa en las colecciones
+** Stream
+  - Se utiliza en las *colecciones* para luego aplicar [[Filter y Map][filter y map]]
+  - Devuelve un objeto de tipo *Stream*
+  - Usamos el mensaje *collect()* para que nos devuelva una lista,
+    en vez de un objeto tipo *Stream*
+
+  #+BEGIN_SRC java
+    personas
+        .stream()
+        .filter(persona -> persona.estaAutorizado())
+        .map(persona -> persona.getNombre())
+        .collect(Collector.toList())
+  #+END_SRC
+** Lambda
+   https://wiki.uqbar.org/wiki/articles/lambdas-en-java-8.html
+* Map
+  - Es una interfaz que modela una estructura que guarda claves asociadas a valores
+  - Las estructuras que modela se conocen como Dictionary/Map/Array-asociativo
+* Anottations
+  - Sirven para agregar metadata a los elementos de una clase
+  - Se suele utilizar al sobreescribir un método (utilizando @Override)
+
+  #+BEGIN_SRC java
+    public class Hulk extends Hereoe{
+        @Override
+        public void cantar(){
+            // nueva implementación
+        }
+    }
+  #+END_SRC
+* Excepciones
+** Conceptos
+  Se clasificar como
+  - Chequeadas
+  - NO Chequeadas (Las que se utilizarán en la materia DDS)
+** Excepciones Chequeadas 
+   - Heredan de *Exception*
+   - Es *OBLIGATORIO* indicar el tipo de excepción,
+     en las *firmas* de los métodos que van a propagar la excepción
+
+   #+BEGIN_SRC java
+     public void ingresar() throws EdadInsuficienteExcepcion
+   #+END_SRC
+** Excepciones NO Chequeadas
+   - Heredan de *RuntimeException*
+   - NO es obligatorio indicarlas en la firma del método que la propaga
+
+   <<DUDA 3>> Porque se repite uno con y otro sin parámetro?
+   #+BEGIN_SRC java
+     public class SaldoInsuficienteException extends RuntimeException {
+         public SaldoInsuficienteException() {
+             super();
+         }
+         public SaldoInsuficienteException(String message) {
+             super(message);
+         }
+     }
+   #+END_SRC
+** Lanzar Excepciones
+   #+BEGIN_SRC java
+     // sólo si es una excepción "NO chequeada"
+     throw new EdadInsuficienteException()
+   #+END_SRC
+** Atrapar excepciones
+   - Utilizamos *try* y *catch*
+   - Se puede usar al final también *finally* que se ejecuta siempre
+* con ale
+** clase abstracta
+   - tiene mensajes
+   - tiene comportamiento (atributos)
+   - no se puede instanciar
+   - se utiliza *extends*
+** interfaz
+   - tiene mensajes
+   - no tiene comportamiento (atributos)
+   - se utiliza *implements*
+** java package que usó
+   package ar.edu.utn.frba.dds.macowins.estados
+
+
+

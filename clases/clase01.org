@@ -1,0 +1,243 @@
+#+TITLE: Diseño de sistemas - CLase 01
+
+* Diseñar
+** Prioridades
+  1. que funcione
+  2. que esté bien pensado
+  3. que sea eficiente
+** Responsabilidades
+   Decidir 
+** Tipo de diseño
+*** De Sistemas
+    - Es más general, śegun el contexto abarca más
+*** De Software
+    - está englobado por el diseño de sistemas
+    - Es en cual nos enfocaremos
+    - aparecen restricciones técnicas/tecnológicas
+* Arquitectura de un Sistema Software
+** Conceptos
+  - Conjunto de componentes (fisicos/lógicos)
+  - Cosas generales, al momento de implementar el sistema
+  - Que lenguaje se implementará?
+  - Evaluamos temas que afectan al sistema
+  - Como se va a componer el sistema
+** Aspectos
+*** Componentes físicos
+    - Red? En la nube? programas/Scripts?
+*** Componentes lógicos
+    - Donde implemento las *reglas de negocio*?
+    - Como integrar el Modelo Objeto en el sistema?
+    - Como implementamos los requerimientos ?
+      (funcionales/no funcionales)
+** Componentes de la Arquictectura
+*** Presentación
+    - Se comienza por *diseñar las pantallas*
+    - que el usuario ya pueda interactuar con el sistema
+*** Dominio
+    - Es el *diseño guiado  por el dominio*
+    - Se comienza a *modelar el problema* 
+    - son las *reglas de negocio* (cosas que queremos
+      que resuelvan los requerimientos)
+*** Persistencia
+    - almacenamiento de datos
+
+* Diseñar según el paradigma
+  En la materia diseñamos el *dominio* (reglas de negocio)
+** Tabla comparativa entre paradigmas
+   |-------------------+----------------------------------+--------------------------+------------------------------+-----------------------|
+   | Diseñamos (?)     | P.Objetos                        | P. Funcional             | P. Estructurado              | P. Lógico             |
+   |-------------------+----------------------------------+--------------------------+------------------------------+-----------------------|
+   | componentes       | objetos                          | datos/funciones          | datos/funciones              | predicados/individuos |
+   | responsabilidades | interfaz (mensajes)              | interfaz                 | funciones                    | predicado/claúsulas   |
+   | relaciones        | mensajes                         | orden sup. y composición | orden superior y composición | orden superior        |
+   |                   | implementación (métodos)         |                          |                              |                       |
+   |                   | referencia (variable, parámetro) |                          |                              |                       |
+   |-------------------+----------------------------------+--------------------------+------------------------------+-----------------------|
+*** componentes - objetos
+*** que mensajes - responsabilidades
+*** como se conocen? - mensajes
+** Estructurado
+*** que estructuras?
+    struct
+*** que funciones?
+*** como se invocan?
+** Funcional
+***  estructuras
+    data/tuplas
+*** que funciones? 
+** Objetos
+* [TODO] [#A] Cualidades del Software
+  - determinar que diseños son correctos
+* Preguntas Verdadero/Falso
+** opinion 1
+   #+BEGIN_EXAMPLE
+   Se puede diseñar la funcionalidad sin conocer
+   la tecnologia?
+   #+END_EXAMPLE
+
+   *FALSO*
+   Es importante conocer los *requerimientos*
+   (tiempos, 
+   las *restricciones* de las tecnologías.
+   Ej. si usaremos wollok
+** opinion 2
+   #+BEGIN_EXAMPLE
+   Diseñar implica saber UML
+   #+END_EXAMPLE
+
+   *VERDADERO*
+   uml es 
+** opinion 3
+   #+BEGIN_EXAMPLE
+   Se puede programar sin necesidad de diseñar
+   #+END_EXAMPLE
+
+   FALSO
+   por lo general siempre estamos diseñando
+   cuando programamos, porque pensamos como
+   hacerlo
+** opinion 4
+   #+BEGIN_EXAMPLE
+   si estoy diseñando y tiro una linea de código,
+   dejé de diseñar
+   #+END_EXAMPLE
+
+   FALSO
+   replanteamos el anterior,
+   cuando programamos también pensamos en el diseño
+
+
+
+
+
+** temas abordados
+   - Se puede diseñar sin diseñar el todo
+     cada componente por separado
+   - se puede diseñar por topdown ó bottomup
+* Metodología de Desarrollo
+** Enfoque iterativo e incremental
+   - se agregan nuevas capas, nuevas entregas, que agregan complejidad
+   - mejor adapatibilidad (a nuevos requerimientos cambiantes)
+   - NO se utiliza el *ciclo de vida cascada*
+     (si no existe retroalimentación, ...)
+* Entradas del diseño
+** Requerimientos
+*** Conceptos
+    - Surjen del proceso de análisis
+    - es una *especificacion*
+    - representa lo que el sistema debe ser (características)
+*** Tipos
+    - Requerimiento funcional
+    - requerimiento NO funcional
+*** Requerimientos funcionales
+    - identificar cuales representan la forma en que
+      el usuario puede interactuar con el sistema
+      (conocidos como *casos de uso*)
+*** Técnicas para trabajarlos
+    Técnicas/Herramientas para trabajar los requerimientos
+    de los usuarios
+    - Casos de uso
+    - User Stories
+    
+    Ambos capturan los *requisitos funcionales* enfocandose
+    en el valor añadido por el usuario
+
+    Se pueden usar de manera individual, ó combinar
+** Componentes
+   - los provee la tecnología que utilicemos
+   - permiten construir el sistema
+** Restricciones
+   - Tecnologicas (lo que nos limite esa tecnoogia)
+   - De arquitectura (restricción de integridad, robustez, ..)
+   - De negocio 
+** Entorno
+*** Entorno de desarrollo
+    Donde desarrolaremos el software
+*** Entorno de uso
+    En donde se utiliza el sistema
+** Atributos de Calidad (Cualidades del Software)
+*** Conceptos
+    Representan las características *NO funcionales*
+    (simplicidad, consistencia, robustez, flexibilidad
+    escabilidad, perfomance, seguridad, ..)
+*** Diferencia con Requerimientos
+    Pueden incorporarse a las *entradas de diseño*, por un camino 
+    distinto del *análisis*, como podría ser
+    - restricciones de arquitectura
+    - influencias del entorno
+** Casos de uso
+*** Conceptos
+    - Se recomienda complementar un *modelo de dominio*
+      (sería una *especificación de requerimientos* adicionales)
+*** Casos de uso de Sistema
+**** Conceptos
+     - Dan soporte a los casos de uso de negocio
+     - Automatizan operaciones que el negocio necesita
+     - No se puede establecer su duración exacta
+**** Diagrama de Casos de uso
+     - Los muestra a los Casos de uso como una *caja negra*
+       (porque no detalla que sucede)
+     - Se suele necesitar otra herramienta para saber
+       que sucede internamente
+**** Actores
+     - Son los usuarios que usarán el software
+       (NO los que estén interesados en el negocio)
+*** Diferencia con una User Story
+    - Un caso de uso es mas grande que una *user story*
+*** Relación con las User Stories
+    - Un caso de uso puede englobar varias *user stories*
+*** Desventajas
+    - No se recomienda para la descripción de requerimientos
+      que afectan multiples *casos de uso*
+      ni para la totalidad del sistema
+** User stories
+*** Conceptos
+    - Viene de las métodología ágiles
+    - Definen características del sistema
+    - Agregan valor para el cliente
+    - Lo escribe el cliente
+      - No detalla tanto la funcionalidad
+      - CUAL ES el objetivo
+      - PARA QUE sirve
+*** Diferencia con un Caso de uso
+    - Una *user story* es mas breve que un *caso de uso*
+*** Formato
+**** Descripción de la funcionalidad
+     - El actor
+     - EL objetivo
+     - Explicar PARA QUE se quiere
+**** Conversaciones
+    - Para aclarar dudas
+    - Para aportar detalles (algo breve)
+**** Pruebas de aceptación
+* Modelo de Dominio
+*** Concepto
+    - Representa una *especificación de requerimientos* adicionales
+      para complementar la Vista (con *Casos de Usos* y esto otro)
+    - Es el nexo entre el *diseño* y los *requerimientos*
+*** Reglas de Negocio
+    - Representan a los *requirimientos adicionales* 
+      que son del tipo *funcional*
+* (DDD) Domain Driven Design
+  - Metología que propone la definición de un *modelo de dominio*
+    - que se define entre el usuario y los desarrolladores
+  - permite un único modelo (que describe el comportamiento del sistema)
+  - se evita tener que usar varios modelos con información similar 
+* Diseño Top-Down
+  - Se parte de lo general a lo especifico
+  - Se divide el sistema en partes/componentes
+  - cada componente permanece como una *caja negra*
+    hasta que se descompone en subprocesos
+* Diseño Bottom-Up
+  - Se parte por diseñar todos los componentes antes de programar
+  - Se parte de lo específico (con gran nivel de detalle)
+  - Se integran los componentes para formar subsistemas
+  - Se integran los subsistemas hasta llegar al sistema final
+* glosario
+  - covertura (coverage)
+* Tareas
+  - ejercicio macowin
+    (ellos van a subir algun formulario para subir)
+  - cualidades de diseño (de la clase)
+  - apunte comunicar diseño (el de pdep sobre uml)
+  - pendiente que te den lo de mumuki java

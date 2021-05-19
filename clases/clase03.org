@@ -1,0 +1,147 @@
+#+TITLE: Clase 03
+
+* Cualidades de diseño
+  - Son *heurísticas* para decidir, porque NO nos garantiza que
+    el sistema funcione de forma eficiente. Depende de como las usemos.
+  - Facilitan la comunicación
+    porque solo comunicamos que patrón utilizamos para resolver un problema
+    en vez de explica todo
+** ALgunas
+   - simplicidad
+   - robustez
+   - testeabilidad
+** extensibilidad Vs escabilidad
+   - la extensibilidad, consiste en poder agregar más características
+   - la escabilidad 
+
+* Patrones de Diseño
+* patron de comportamiento
+** Strategy
+   #+BEGIN_QUOTE
+   Desde fuera del objeto que tiene la estrategia se decide cuando cambiarla
+   #+END_QUOTE
+
+   - Una *interfaz* ó *clase abstracta*, que delega un algoritmo 
+     concreto en distintas subclases, cada una lo resuelve de manera diferente
+   - Consiste en separar un problema y resolverlo de distinas maneras (estrategias)
+     (Calcular un precio, estimar tiempo de llegada, ...)
+
+*** Diagramas de clase
+**** Usando interface
+     #+BEGIN_SRC plantuml :file img/strategy1.png
+       @startuml
+       note bottom of Promocion : descuento() = precio * 0.2
+       note bottom of Liquidacion : descuento() = precio * 0.3
+       note bottom of Nueva : descuento() = 0
+
+       PrendaEstado <|.down. Nueva
+       PrendaEstado <|.down. Promocion
+       PrendaEstado <|.down. Liquidacion
+       PrendaEstado <-left- Contexto
+
+       class Contexto{
+               estado
+               +cambiaEstado(unEstado)
+       }
+
+       interface PrendaEstado{
+         +descuento()
+       }
+
+       class Nueva{
+         +descuento()
+       }
+
+       class Promocion{
+         +descuento()
+       }
+
+       class Liquidacion{
+         +descuento()
+       }
+       @enduml
+     #+END_SRC
+
+     #+RESULTS:
+     [[file:img/strategy1.png]]
+**** Usando clase abstracta
+     Al usar ua clase abstracta podemos darle un comportamiento extra, al algoritmo que usarán las subclases
+     ó usarlo declararlo como método abstracto y lo implementen las subclases
+
+     #+BEGIN_SRC plantuml :file img/strategy2.png
+       @startuml
+       note right of PrendaEstado : precioTotal() = precio - descuento()
+       note bottom of Promocion : descuento() = precio * 0.2
+       note bottom of Liquidacion : descuento() = precio * 0.3
+       note bottom of Nueva : descuento() = 0
+
+       PrendaEstado <|-down- Nueva
+       PrendaEstado <|-down- Promocion
+       PrendaEstado <|-down- Liquidacion
+
+       abstract class PrendaEstado{
+         +precioTotal()
+         +descuento()
+       }
+
+       class Nueva{
+         +descuento()
+       }
+
+       class Promocion{
+         +descuento()
+       }
+
+       class Liquidacion{
+         +descuento()
+       }
+       @enduml
+     #+END_SRC
+** template method
+   - Una *clase abstracta padre* tiene un metodo que reutiliza el comportamiento 
+     de sus clases hijas, para completarse.
+   - Una superclase delega en sus
+   - utiliza *herencia* y aprovecha el *method lookup*
+
+   #+BEGIN_EXAMPLE
+   en este ejemplo el metodo precioVenta() es una plantilla,
+   que reutilizan las clases HijaA HIjaB al heredar
+
+   hook-method: es recargo()
+   template-method: es precioVenta()
+
+   ClaseAbstracta Padre
+     precioVenta()
+        precio() + recargo()
+
+   Clase HijaA heredaDe Padre
+      recargo()
+        2* precio
+
+   Clase HijaB heredaDe Padre
+      recargo()
+        4* precio / 10
+   #+END_EXAMPLE
+*** hook method
+*** template method
+*** herencia y method lookup
+     se aprovecha la herencia, con el method lookup 
+     osea busca una funcion por jerarquia si no la encuentra en donde está parado
+     
+* conceptos anteriores pdep
+** Method lookup
+** Overload (sobrecarga)
+   - para hacer que una función soporte 2, 3 o mas parametros
+     y se comporte igual o diferente según la cantidad de parámetros
+   - se puede usar en los constructores de las clases
+ 
+   #+BEGIN_EXAMPLE
+   f1(int a, int b){
+    hace algo
+   }
+
+   f1(int a, int b, int c){
+    hace otra cosa
+    ó hace lo mismo, pero con el parámetro c
+   }
+   #+END_EXAMPLE

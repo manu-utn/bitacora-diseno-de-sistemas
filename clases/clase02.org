@@ -1,0 +1,185 @@
+#+TITLE: Clase 02
+
+* Auto Evaluación
+** Pregunta 1
+ Existe un unico diseño de sistema que sea mejor q todos?
+
+ Respuesta: 
+ NO
+** Pregunta 2
+ No es necesario que un sistema tenga polimorfismo
+** Pregunta 3
+ Puedo esta diseñando sin hacer ningun diagrama?
+
+ Rta:
+ Si, con el diagrama solo lo comunicamos
+** Pregunta 4
+ Diseñar sin conocer la tecnologia trae algun inconveniente?
+
+ Rta:
+ Si, no es lo mismo un diseño que se va a implementar en
+ wollok, que otro en java
+
+
+
+
+
+** Pregunta 5
+** Pregunta 6
+** Pregunta 7 
+** Pregunta 8 
+el diseño implica detallar cada una de las decisiones?
+   
+Rta:
+Falso
+** Pregunta 9 
+Dentro de la arquitectura logica vamos a analizar
+las siguientes aspectos principales
+
+Rta:
+Persistencia, Dominio, Presentación
+- Presentación: Es como voy a exponer el proyecto
+- Dominio:
+- Persistencia:
+
+ 
+* Cosificar
+  - Es darle un nombre a una abstracción entidad/clase/operación/metodo
+  - Dale nombre a algo que estaba de manera explícita
+  - Es similar a *reificar*
+* Cualidades de diseño
+** COnceptos
+  - Nos sive para decidir porque preferimos un diseño
+    en vez de otro
+  - Son *heurísticas* (como guias/ ...)
+** Tensión entre cualidades
+   Decidimos a que cualidad darle prioridad, 
+   ya que una 
+   Ej. Simplicidad Vs. flexibilidad
+   al hacer algo simple, quizás luego es dificil de mantener
+** [TODO] Acoplamiento
+   - Nivel de conocimiento que hay entre los componentes
+     que hay entre si. CUanto se conocen internamente
+     (Estado interno)
+   - Mayor acoplamiento es mayor dependencia entre ellos
+   - Debe haber un nivel necesario de acoplamiento,
+     pero tampoco acoplamiento innecesario
+   - Mal acoplamiento, seria...
+** Cohesión
+   - Es cohesivo, cuando tiene un objetivo bien claro
+** Simplicidad
+   - Es cuanta complejidad tiene
+*** Complejidad inherente al problema
+    - Es la que hay
+*** COmplejidad inherente al diseño que hagamos
+    - Ataca al problema 
+
+
+
+
+
+
+
+
+
+
+
+*** Kiss (keep it simple, stupid)
+    - No complejizar algo que no era necesario
+*** YAGNI (you aren't gonna need it)
+    - no agregar requerimientos que no vas a necesitar
+    - EL trabajo *incremental* nos ayuda con esto
+      
+    #+BEGIN_EXAMPLE
+    Ej. adelantar features a un programa, 
+    las cuales nuestro cliente quizás no quería
+    #+END_EXAMPLE
+
+
+
+
+** [DONE] Robustez
+   CLOSED: [2021-04-15 jue 10:26]
+   - Se enfoca más en el manejo de errores
+     (para que el usuario no se vea afectado,
+      y en la)
+   
+   Ej. que ante cualquier error, el usuario no se vea afectado
+** Testeabilidad
+   - que tan facil es de testear
+   en la materia solo veremos pruebas unitarias
+** Flexibilidad
+   - que tan facil es arreglar problemas
+   - ayuda a la *mantenibilidad*
+*** extensibilidad
+    - mayor extensibilidad, mas features
+*** Mantenibilidad
+    - tiene que ver con correccion de problemas
+    - que tan facil es agregar nuevas funcionalidades
+** Redundancia minima
+   - evitar la repetición de lógica ó de información
+** [TODO] Consistencia
+   - ante problemas similares, tratar de resolverlo de la misma
+     forma
+
+   Ej. Si antes planteabamos composición, porque ahora
+   cambiariamos a herencia
+** Mutaciones Controladas
+   - Evitar variables globales
+   - No exponer cosas de más (Ej. setters)
+   - Mientras más deteminístico, es mas facil entender
+     el problema
+   - Reducir los efectos colaterales
+   - Favorecer la inmutabilidad
+** Escabilidad
+   - soportar más operaciones sin degradar la eficiencia
+     del sistema
+
+   No confundir con flexibilidad,
+
+
+
+
+
+
+
+
+
+
+
+
+* Manejo de errores
+** [TODO] Propagarlo 
+** Tratarlo
+   Con ~try~ y ~catch~
+   si sucede, realizar otra acción
+** Fail fast
+   - fallar lo antes posibles
+  hacer que falle 
+  #+BEGIN_SRC java
+    class Prenda{
+        // sabemos que seguramente pueda fallar
+        constructor(tipo){
+            if(tipo == null) throw new sintipoprendaException()
+            this.tipo = tipo;
+        }
+    }
+  #+END_SRC
+** call & return 
+   es tipico de C
+   se retorna, y
+** Excepciones
+   - tiene stacktrace (despliega las rutas de la propagación
+     de errores)
+** Confiar en Externo Vs. Interno
+   Confiar en el sentido de que validar y que no,
+   decidimos confiar en lo interno,
+   y desconfiar de lo externo y validar lo que viene de afuera
+* Ejercicio macowins
+  Estado, no es herencia porque no hay un comportamiento
+  que tengan en comun.
+* method lookup
+  busca en la case actual,
+  si no lo encuentra bucsa en la superclase,
+  sino lo encuentra busca en la clase object
+ 
