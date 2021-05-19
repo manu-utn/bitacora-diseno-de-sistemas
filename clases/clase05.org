@@ -1,96 +1,120 @@
 #+TITLE: Clase 05
-* abtract factory
-* dominio
+* Abtract factory
+* Dominio
 * Tests
-** tests unitarios
-** cobertura (coverage)
-** analisis de código
-* deuda técnica
-** esfuerzo extra
-   + deficiencias de nuestro modelo
-     que no habiamos arreglado
-   + puede pasar por falta de conocimiento
-     * del problema
-     * de la tecnología
-   + calendario ajustado
-   + costos (en tiempo)
-   + cambio de prioridades
-   + pagar de a poco
-     * ir resolviendo de a poco
-* refactoring
-** testing 
-   - nos valida que el sistema no rompe con 
-     los nuevos cambios
-** data clump
-   #+BEGIN_eXAMPLE
-   Posicion tiene atributos: latitud, longitud
-   distanciaA(otraPosicion){ .. }
+** Tests unitarios
+** Cobertura (coverage)
+** Análisis de código
+* Deuda técnica
+  + Implica un *esfuerzo extra*
+  + *Deficiencias de nuestro modelo* que no habíamos resuelto
+  + Puede pasar por *falta de conocimiento*
+    * del problema
+    * de la tecnología
+  + Calendario ajustado
+  + Costos (en tiempo)
+  + Cambio de prioridades
+  + Pagar de a poco
+    * ir resolviendo de a poco
+* Refactoring
+** Testing
+   Valida que el sistema no rompe con los nuevos cambios/features
+** Extract class
+   Da solución al code smell conocido como [[Data clump]] 
+* Code smell
+** Conceptos
+   Algunos de los más importantes que pueden aparecer al modelar soluciones son
+   + Misplaced Methods
+   + Type Test
+   + Temporary Field
+   + Lazy Class
+   + Null Pattern
+   + Long Parameter List
+** Data clump
+*** Conceptos 
+    Grupos de datos/atributos que se utilizan con frecuencia, y
+    podrían estar agrupados en una clase y ser usados como un objeto
+    (instancia a la clase que los contiene)
+*** Ejemplo 1 - Aplicación de geoposicionamiento
+    La idea es *identificar* _que datos están relacionados_, y se utilizan en conjunto
+    _en varias partes del código_. Si se repite varias veces ese comportamiento,
+    podemos crear una *Clase* que los agrupe, y al momento de usarlos usar una 
+    *instancia* a esa clase.
 
-   distanciaA(posicion)
-   cuantoTardasA(posicion)
-   #+END_eXAMPLE
+    En este caso identificamos que los atributos latitud y longitud, se usan en conjunto
+    en varias partes, entonces creamos la clase ~Posicion~ y los usamos a partir de un
+    objeto (instancia a esa clase)
 
-   #+BEGIN_eXAMPLE
-   Suponiendo que NO queremos usar herencia, podriamos guardar 
-   una instancia a los datosPersonal
+    #+BEGIN_EXAMPLE
+    Posicion
+       latitud
+       longitud
 
-   Duenio
-     DatoPersonal datoPersonal
+    distanciaA(otraPosicion){ .. }
 
-   Rescatista
-     DatoPersonal datoPersonal
+    distanciaA(posicion)
+    cuantoTardasA(posicion)
+    #+END_EXAMPLE
+*** Ejemplo 2 - Aplicación de dueño-mascota
+    Suponiendo que NO queremos usar *herencia simple*, podriamos usar como alternativa
+    el guardar una *instancia* a la clase DatosPersonal y persistir la información como atributo.
+    
+    Similar al primer ejemplo, los datos se repiten y están fuertemente relacionados,
+    por eso creamos una clase ~DatoPersonal~
+
+    #+BEGIN_EXAMPLE
+    Duenio
+      DatoPersonal datoPersonal
+
+    Rescatista
+      DatoPersonal datoPersonal
      
-   DatoPersonal
-     telefono
-     fechaNacimiento
-     dni
-   #+END_eXAMPLE
-
-* code smell
-** misplaced methods
-   cuando esta mal delegado, cuando le preguntamos a un objeto
-   algo que deberia de saber otro
-  1* long parameter list
-   ej. tener un constructor muy grande
-** type test
-   usar condicionales, en vez de usar objetos polimorficos
-** temporary field
-   cuando tenemos atributos/campos
-   que podrian estar en un metodo
-** lazy class
-   YAGNI
-** null pattern
-   podemos hacer composicion
+    DatoPersonal
+      telefono
+      fechaNacimiento
+      dni
+    #+END_EXAMPLE
+** Misplaced methods
+   Cuando está *mal delegado*, cuando le preguntamos a un *objeto*
+   algo que debería de saber otro
+** Long parameter list
+   Un caso común es implementar un *constructor* muy extenso,
+   con una gran cantidad de parámetros. Y cada vez que
+   queramos instanciar la clase, nos vemos obligados a pasarle cada uno.
+** Type test
+   Usar condicionales, en vez de usar *objetos polimórficos*
+** Temporary field
+   Cuando tenemos atributos/campos que podrían estar en un método
+** Lazy class
+   Recordar el concepto de *YAGNI* (you aren't gonna need it)
+** Null pattern
+   Podemos usar *Composición*
 
    #+BEGIN_EXAMPLE
-   en vez de usar un if preguntando por null
+   En vez de usar un if preguntando por null
 
-   usamos composicion
+   podríamos usar composición
    #+END_EXAMPLE
-
-
 * [TODO] Bibliotecas
-  #+BEGIN_EXAMPLE
-  solucion objetosa, queda mas entendible, 
-  se pueden ver los distintos mensajes que entiende
+  Si tenemos una solución objetosa, queda más entendible, 
+  se pueden ver los distintos mensajes que entiende.
 
-  Ej.
+  #+BEGIN_EXAMPLE
   new Posicion(latitud, longitud).distancia(otraPosicion)
  
-   image(unaImagen).resize().colorear().masMensajes().
+  image(unaImagen).resize().colorear().masMensajes().
 
- ---------------------------------------------------
-  solución procedural (NO SE RECOMIENDA, al menos en dds)
+  #+END_EXAMPLE
 
-  Ej.
+  En cambio una *solución procedural* (NO SE RECOMIENDA, al menos en dds)
+  
+  #+BEGIN_EXAMPLE
   Posicion.distancia(latitidu, longitud, otraLatitud, otraLongitud)
-  #+END_eXAMPLE
-
+  #+END_EXAMPLE
 * [TODO] Framework
   #+BEGIN_EXAMPLE
   por ejemplo el framework de testing junit
   tenemos que usar @Test 
   #+END_EXAMPLE
-
-** inversion de control
+** Inversión de control
    el control lo toma el framework
