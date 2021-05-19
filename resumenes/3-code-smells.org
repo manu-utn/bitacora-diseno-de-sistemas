@@ -38,9 +38,7 @@
   + *Delegar* las responsabilidades en otras clases ó crear nuevas
 * [TODO] Long Parameter List
 ** Problema
-   + 
 ** Solución 
-   + 
 * Type Tests
 ** Problema
    + NO usar *polimorfismo*
@@ -195,6 +193,5 @@
 ** Permeabilidad
 ** Encapsulamiento
 ** Accesors
-   son los getters (???)
 ** Principio del Paradiga De Objetos
    Un objeto agrupa atributos y comportamiento
