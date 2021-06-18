@@ -1,0 +1,63 @@
+#+TITLE: Resumen - Patrones Estructurales
+* [DOING] Patrón Decorator
+** Intención
+   - Para agregar funcionalidades dinamicamente a un objeto sin alterar su *interfaz*
+     (se agregan en los decoradores concretos)
+   - Es un solución compleja a un problema complejo
+** Cuando aplicar
+   - Cuando se quiere agregar y/o quitar funcionalidades/responsabilidades 
+     a un objeto
+** Cualidades de Diseño que mejora
+*** Cohesión
+    Mayor *cohesión* en el componente concreto, y en los decoradores concretos
+    (porque las responsabilidades se van repartiendo entre los decoradores)
+*** Extensibilidad      
+    - Mas *extensibilidad* 
+     (permite agregar nuevas funcionalidades/responsabilidades a componentes ya creados)
+** Ejemplo
+   #+BEGIN_SRC java
+     public class DecoradorConcretoA extends Decorador{
+         public void operacion(){
+             super.componente.operacion();
+             this.funcionalidadExtra();
+         }
+
+         private void funcionalidadExtra(){
+             // hacer cosillas
+         }
+     }
+   #+END_SRC
+
+   #+BEGIN_SRC plantuml :file img/decorator1.png
+       @startuml
+       abstract class Componente{
+               +operacion()
+       }
+
+       class ComponenteConcreto{
+               +operacion()
+       }
+
+       abstract class Decorador{
+               #componente: Componente
+               +operacion()
+       }
+
+       class DecoradorConcretoA{
+               +operacion()
+       }
+
+       class DecoradorConcretoB{
+               +operacion()
+       }
+
+       Componente <|-down- ComponenteConcreto
+       Componente <|-down- Decorador
+       Decorador <|-down- DecoradorConcretoA
+       Decorador <|-down- DecoradorConcretoB
+       @enduml
+     #+END_SRC
+
+     #+RESULTS:
+     [[file:img/decorator1.png]]
+* Patrón Adapter

@@ -1,0 +1,329 @@
+#+TITLE: Resumen - Patrones de Comportamiento
+* Patrón Strategy
+** Intención
+   - Encapsular distintos *algoritmos* que resuelven el mismo problema
+     (en distintas subclases)
+   - Las estrategias concretas *NO se conocen*
+** Cuando utiliza
+   - Cuando un objeto necesita realizar una misma acción
+     pero con *algoritmos* distintos
+** Maneras de implementar
+   Podemos implementa la *estrategia* como
+   1. Una *clase abstracta*, para que las subclases hereden estado interno y comportamiento
+      1. Si usamos un método abstracto, las subclases están obligadas a implementarlas
+      2. Si no usamos método asbtracto, podemos hacer un comportamiento por defecto
+   2. Una *interfaz* y las subclases deben implementar el comportamiento
+** Cualidades de Diseño que mejora
+*** Cohesión
+    Mayor *cohesión* de la clase Contexto,  porque esta tiene menos *responsabilidades*
+    se lo delegó a la estrategia, y esta a las subclases.
+
+    *Observación:*
+    Las responsabilidades son los métodos/tareas que debe resolver
+*** Mantenibilidad
+     Mayor *mantenibilidad* porque sabemos donde está cada algoritmo (y son independientes entre si)
+*** Extensibilidad
+    Mejora la *extensibilidad* (para agregar nuevos algoritmos/formas)
+** Ejemplo 1
+    Implementamos la *estrategia* como una *clase abstracta*
+
+    #+BEGIN_SRC plantuml :file img/strategy1.png
+      @startuml
+      class Contexto{
+              -estrategia
+              +actuar()
+              +cambiarEstrategia(estrategia)
+      }
+
+      abstract class Estrategia{
+              +ejecutar()
+      }
+
+      Estrategia <-up- Contexto
+      Estrategia <|-down- EstrategiaA
+      Estrategia <|-down- EstrategiaB
+      Estrategia <|-down- EstrategiaC
+
+      class EstrategiaA{
+              +ejecutar()
+      }
+      class EstrategiaB{
+              +ejecutar()
+      }
+      class EstrategiaC{
+              +ejecutar()
+      }
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:img/strategy1.png]]
+
+    #+BEGIN_SRC java
+      public class Contexto{
+          // restringimos el acceso, sólo a la clase
+          private Estrategia estrategia;
+
+          public void ejecutar(){
+              this.estrategia.ejecutar();
+          }
+
+          // creamos un setter (manera correcta para modificar atributos por otros)
+          public void cambiarEstrategia(Estrategia otraEstrategia){
+              this.estrategia = otraEstrategia;
+          }
+      }
+
+      public abstract class Estrategia{
+
+          // ALTERNATIVA (1)
+          //
+          // si queremos que sea un método abstracto
+          // y obligar a las subclases implementarla
+          // public void ejecutar();
+
+          // ALTERNATIVA (2)
+          //
+          // podemos darle un comportamiento por defecto
+          public void ejecutar(){
+              // por defecto
+          }
+      }
+      public class EstrategiaConcretaA extends Estrategia{
+          @Override
+          public void ejecutar(){
+              // hacemos algo
+          }
+      }
+    #+END_SRC
+** Ejemplo 2
+    Implementamos la *estrategia* como una *interfaz*
+
+    #+BEGIN_SRC plantuml :file img/strategy2.png
+      @startuml
+      class Contexto{
+              -estrategia
+              +actuar()
+              +cambiarEstrategia(estrategia)
+      }
+
+      interface Estrategia{
+              +ejecutar()
+      }
+
+      Estrategia <-up- Contexto
+      Estrategia <|-down- EstrategiaA
+      Estrategia <|-down- EstrategiaB
+      Estrategia <|-down- EstrategiaC
+
+      class EstrategiaA{
+              +ejecutar()
+      }
+      class EstrategiaB{
+              +ejecutar()
+      }
+      class EstrategiaC{
+              +ejecutar()
+      }
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:img/strategy2.png]]
+
+    #+BEGIN_SRC java
+      public class Contexto{
+          // restringimos el acceso, sólo a la clase
+          private Estrategia estrategia;
+
+          public void ejecutar(){
+              this.estrategia.ejecutar();
+          }
+
+          // creamos un setter (manera correcta para modificar atributos por otros)
+          public void cambiarEstrategia(Estrategia otraEstrategia){
+              this.estrategia = otraEstrategia;
+          }
+      }
+
+      public interface Estrategia{
+          // las subclases deben implementarlo
+           public void ejecutar();
+      }
+      public class EstrategiaConcretaA implements Estrategia{
+          @Override
+          public void ejecutar(){
+              // hacemos algo
+          }
+      }
+    #+END_SRC
+
+* Patrón Template Method
+  #+BEGIN_COMMENT
+  <<DUDA 2>>: Que diferencia hay con el [[Patrón Strategy][Strategy]]?
+  #+END_COMMENT
+** Intención
+   - Que una superclase tiene un método (conocido como template-method) que reutiliza 
+   un conjunto de *pasos* (hook methods) que entienden (tienen en común) todas las subclases
+
+   *Observación:*
+   - Podriamos decir es un template-method el que tiene la superclase, porque es una plantilla que usarán las subclases
+   - y que los hook-methods son pasos que tienen las subclases que enganchan/hook el comportamiento de la superclase en la subclase
+** [DOING] Cuando utilizar
+   - Cuando varias abstracciones tienen los mismos *pasos*, para realizar una acción
+     en el mismo orden.. "PERO" cada una los *implementa* de manera diferente
+
+   #+BEGIN_QUOTE
+   Es común que un *factory-method* sea un *hook-method* de algún template-method
+
+   Recordemos que..
+   1. Un *factory method*, se utiliza cuando varias abstracciones (Pizzeria, Panaderia, ...)
+   repiten una  secuencia de pasos en común (mezclar, amasar, hornear, ...)
+   y los reutiliza 
+
+   2. Los *hook methods* representan los pasos (mezclar, amasar, hornear, ..)
+      que tienen en común varias abstracciones (Pizzeria, Panaderia, ..)
+
+   3. El *template method* es quien hookea/captura los *hook methods* y los reutiliza
+      para si mismo
+   #+END_QUOTE
+
+    *Observación:*
+    Es importante destacar que se aplica el tema de los mismos *PASOS*
+    para diferenciar del *Strategy*
+** Hook Methods
+   Representan los *pasos* definidos en el *template-method*
+
+   #+BEGIN_EXAMPLE
+   En este ejemplo los métodos paso1(), paso2() representan los "Hook Methods"
+   del metodoTemplate(), porque ese método los hookea osea los captura y utiliza
+
+   clase  ClaseAbstracta 
+      metodoTemplate()
+      paso1()
+      paso2()
+
+   clase ClaseA hereda ClaseAbstracta
+      paso1()
+      paso2()
+
+   clase ClaseB hereda ClaseAbstracta
+      paso1()
+      paso2()
+   #+END_EXAMPLE
+** [TODO] Relación con otros patrones
+   - Es común que un [[Patrón Factory Method][factory method]] sea un [[Hook Methods][hook method]] de algún template method
+** Cualidades de Diseño que mejora
+*** Mantenibilidad
+    Mayor *mantenibilidad* al tener los pasos facilmente localizables
+*** Cohesión
+    Mayor *cohesión* en todas las clases intervenientes
+    porque queda bien repartida las responsabilidades/comportamiento/mensajes
+    entre ellas
+*** Extensibilidad
+** Ejemplo General
+*** Implementación en Java
+   #+BEGIN_SRC java
+     public abstract ClasePadre{
+         // el metodoTemplate() puede haber sido distinto de void
+         public void metodoTemplate(){
+             this.paso1();
+             this.paso2();
+         }
+
+         // la superclase delega en las subclases
+         // que implementen SI O SI los pasos
+         protected abstract void paso1();
+         protected abstract void paso2();
+     }
+
+     public class ClaseConcretaA extends ClasePadre{
+         protected void paso1(){
+             // hace algo
+         }
+         protected void paso2(){
+             // hace algo
+         }
+     }
+
+     public class ClaseConcretaB extends ClasePadre{
+         protected void paso1(){
+             // hace algo
+         }
+         protected void paso2(){
+             // hace algo
+         }
+     }
+   #+END_SRC
+*** Diagrama de Clases
+   #+BEGIN_SRC plantuml :file img/templateMethod1.png
+     @startuml
+     abstract class ClaseAbstracta{
+             +metodoTemplate()
+             paso1()
+             paso2()
+     }
+
+     class ClaseConcretaA{
+             #paso1()
+             #paso2()
+     }
+
+     class ClaseConcretaB{
+             #paso1()
+             #paso2()
+     }
+
+     class ClaseConcretaN{
+             #paso1()
+             #paso2()
+     }
+
+     ClaseAbstracta <|-down- ClaseConcretaA
+     ClaseAbstracta <|-down- ClaseConcretaB
+     ClaseAbstracta <|-down- ClaseConcretaN
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/templateMethod1.png]]
+
+** Ejemplo 1
+*** Implementación en Java
+    #+BEGIN_SRC java
+      class Cuerpo{
+          private double masa;
+
+          // el template-method es este método densidad()
+          //
+          // que delega en las sub clases
+          // la responsabilidad de calcular el volumen
+          public double densidad(){
+              return this.getMasa() / this.getVolumen();
+          }
+      }
+
+      class Cubo extends Cuerpo{
+          private double lado;
+
+          // implementación propia del cubo
+          @Override
+          public double getVolumen(){
+              return Math.pow(lado, 3);
+          }
+      }
+
+      class Cilindro extends Cuerpo{
+          private double altura;
+          private double radio;
+
+          // implementación propia del cilindro
+          @Override
+          public double getVolumen(){
+              return Math.pow(radio, 2) * 3.14 * altura;
+          }
+      }
+    #+END_SRC
+* Patrón Observer
+* Patrón Command
+* Patrón State

@@ -1,1169 +1,664 @@
 #+TITLE: Resumen - Patrones Creacionales
+* Diferencias Creation Method Vs. Factory Method
+** Creation Method
+   - NO es un patrón de diseño
+   - sólo es un método cuya intencion es *instanciar* una clase
+** Factory Method
+   Es un *patrón de diseño* relacionado con la herencia
+* [DONE] Patrón Factory Method
+  CLOSED: [2021-04-27 mar 23:52]
+** Intención
+   - Definir una superclase ó *interfaz* para crear un objeto
+   - Esa superclase ó *intefaz* delega en las subclases
+     - que ellas decidan que *instanciar* (de distintas clases, o la mismas)
+     - ó parte de la creación (si cada una tiene *distintos pasos* para construir)
+** Ejemplos en pseudocodigo
+    Algunos ejemplos de una clase Creador podrían ser
+*** Ejemplo con 
+*** Ejemplo con Pizzas
+     Una superclase abstracta FabricadorDePizzas que delega en FabricadorDePizzasSinTAC y FabricadorDePizzasVeganas
+     que ellas implementen crearPizza() y elijan como instanciar a la clase Pizza
 
-#+BEGIN_COMMENT
-DUDAS:
- 1. [[DUDA 1]]
-#+END_COMMENT
+     la superclase FabricadorDePizzas reutiliza el crearPizza() en fabricarPizza()
+     porque las instancias a las clases que devuelve entienden los mismos mensajes
+     aunque quizás tengan distintas implementaciones
 
-* Conceptos
-  - Son estrategias en el paradigma de objetos
-  - Para abstraer el *proceso de construcción*
-    (cuando el *proceso de configuración* es complejo)
-  - Permite que el sistema de independice de como sus objetos
-    - son creados
-    - y son  representados
-* Configuración Vs Instanciación
-** Posibles escenarios
-*** Solo hay Instanciación, no hay configuración
-   Cuando tenemos una clase donde inicializamos con el constructor
-
-   1. solo estamos instanciando
-   2. no hay configuración porque no damos la posibilidad de 
-     pasarle valores
-
-   #+BEGIN_EXAMPLE
-   clase Persona
-     constructor
-        this.enegia = 100
-  
-   pepe = new Persona()
-   #+END_EXAMPLE
-*** Aumentamos la flexibilidad, hay configuración, nuevas responsabilidade
-   Si permitimos inicializar sus valores, definiendo un constructor
-   
-   1. la flexibilidad se da porque estamos agregando una característica
-   2. la configuración aparece porque ahora podemos asignar un valor inicial
-   3. las nuevas responsabilidades sería validar cuales serían
-     los valores correctos que debe recibir
-
-   #+BEGIN_EXAMPLE
-   pepe = new Persona(200)
-   pepe.caminar()
-   #+END_EXAMPLE
-*** Aumentamos más la flexibilidad, perdemos robustez
-   Si le agregamos setters para inicializar valores cuando queramos
-
-   1. la flexibilidad aumenta, porque es una característica adicional
-   2. se pierde robustez, porque ahora nos podría lanzar excepciones
-     si no le pasamos energia
-    
-   #+BEGIN_EXAMPLE
-   pepe = new Persona()
-   pepe.enegia(15)
-   pepe.caminar()
-   #+END_EXAMPLE
- 
-** Instaciación
-   A partir de una clase, traer al *ambiente* un nuevo objeto
-** Inicialización
-   Darle un valor inicial al *estado* del objeto, mediante
-   - mensajes del tipo *setters*
-   - pasandole parámetros al *constructor*
-   - la combinación de las dos primeras
-** Configuración/Construcción/Creación
-   Es una combinacion de *instanciación* e *inicialización* 
-   - Traemos un objeto al ambiente
-   - Le damos un estado inicial
-     - que sea consistente y conocido (<<DUDA 1>>)
-     - que tenga sentido en el dominio
-     - lo deje listo para usar
-* Patrones de Comportamiento
-** [DONE] Patrón Strategy
-   CLOSED: [2021-04-27 mar 23:18]
-*** Intención
-    - Encapsular distintos *algoritmos* que resuelven el mismo problema
-      (en distintas subclases)
-    - Las estrategias concretas *NO se conocen*
-*** Cuando utiliza
-    - Cuando un objeto necesita realizar una misma acción
-      pero con *algoritmos* distintos
-*** Maneras de implementar
-    Podemos implementa la *estrategia* como
-    1. Una *clase abstracta*, para que las subclases hereden estado interno y comportamiento
-       1. Si usamos un método abstracto, las subclases están obligadas a implementarlas
-       2. Si no usamos método asbtracto, podemos hacer un comportamiento por defecto
-    2. Una *interfaz* y las subclases deben implementar el comportamiento
-*** Cualidades de Diseño que mejora
-**** Cohesión
-     Mayor *cohesión* de la clase Contexto,  porque esta tiene menos *responsabilidades*
-     se lo delegó a la estrategia, y esta a las subclases.
-
-     *Observación:*
-     Las responsabilidades son los métodos/tareas que debe resolver
-**** Mantenibilidad
-      Mayor *mantenibilidad* porque sabemos donde está cada algoritmo (y son independientes entre si)
-**** Extensibilidad
-     Mejora la *extensibilidad* (para agregar nuevos algoritmos/formas)
-*** Ejemplo 1
-     Implementamos la *estrategia* como una *clase abstracta*
-
-     #+BEGIN_SRC plantuml :file img/strategy1.png
-       @startuml
-       class Contexto{
-               -estrategia
-               +actuar()
-               +cambiarEstrategia(estrategia)
-       }
-
-       abstract class Estrategia{
-               +ejecutar()
-       }
-
-       Estrategia <-up- Contexto
-       Estrategia <|-down- EstrategiaA
-       Estrategia <|-down- EstrategiaB
-       Estrategia <|-down- EstrategiaC
-
-       class EstrategiaA{
-               +ejecutar()
-       }
-       class EstrategiaB{
-               +ejecutar()
-       }
-       class EstrategiaC{
-               +ejecutar()
-       }
-       @enduml
-     #+END_SRC
-
-     #+RESULTS:
-     [[file:img/strategy1.png]]
-
-     #+BEGIN_SRC java
-       public class Contexto{
-           // restringimos el acceso, sólo a la clase
-           private Estrategia estrategia;
-
-           public void ejecutar(){
-               this.estrategia.ejecutar();
-           }
-
-           // creamos un setter (manera correcta para modificar atributos por otros)
-           public void cambiarEstrategia(Estrategia otraEstrategia){
-               this.estrategia = otraEstrategia;
-           }
-       }
-
-       public abstract class Estrategia{
-
-           // ALTERNATIVA (1)
-           //
-           // si queremos que sea un método abstracto
-           // y obligar a las subclases implementarla
-           // public void ejecutar();
-
-           // ALTERNATIVA (2)
-           //
-           // podemos darle un comportamiento por defecto
-           public void ejecutar(){
-               // por defecto
-           }
-       }
-       public class EstrategiaConcretaA extends Estrategia{
-           @Override
-           public void ejecutar(){
-               // hacemos algo
-           }
-       }
-     #+END_SRC
-*** Ejemplo 2
-     Implementamos la *estrategia* como una *interfaz*
-
-     #+BEGIN_SRC plantuml :file img/strategy2.png
-       @startuml
-       class Contexto{
-               -estrategia
-               +actuar()
-               +cambiarEstrategia(estrategia)
-       }
-
-       interface Estrategia{
-               +ejecutar()
-       }
-
-       Estrategia <-up- Contexto
-       Estrategia <|-down- EstrategiaA
-       Estrategia <|-down- EstrategiaB
-       Estrategia <|-down- EstrategiaC
-
-       class EstrategiaA{
-               +ejecutar()
-       }
-       class EstrategiaB{
-               +ejecutar()
-       }
-       class EstrategiaC{
-               +ejecutar()
-       }
-       @enduml
-     #+END_SRC
-
-     #+RESULTS:
-     [[file:img/strategy2.png]]
-
-     #+BEGIN_SRC java
-       public class Contexto{
-           // restringimos el acceso, sólo a la clase
-           private Estrategia estrategia;
-
-           public void ejecutar(){
-               this.estrategia.ejecutar();
-           }
-
-           // creamos un setter (manera correcta para modificar atributos por otros)
-           public void cambiarEstrategia(Estrategia otraEstrategia){
-               this.estrategia = otraEstrategia;
-           }
-       }
-
-       public interface Estrategia{
-           // las subclases deben implementarlo
-            public void ejecutar();
-       }
-       public class EstrategiaConcretaA implements Estrategia{
-           @Override
-           public void ejecutar(){
-               // hacemos algo
-           }
-       }
-     #+END_SRC
-
-** [DONE] Patrón Template Method
-   CLOSED: [2021-04-27 mar 23:18]
-   <<DUDA 2>>: Que diferencia hay con el [[Patrón Strategy][Strategy]]?
-*** Intención
-    - Que una superclase tiene un método (conocido como template-method) que reutiliza 
-    un conjunto de *pasos* (hook methods) que entienden (tienen en común) todas las subclases
+     #+BEGIN_EXAMPLE
+     ClaseAbstracta FabricadorDePizzas 
+        Pizza crearPizza()
+        Pizza fabricarPizza(){
+           pizza = this.crearPizza()
+           pizza.amasar()
+           pizza.cocinar()
+           devolver pizza
+        }
+       
+     Clase FabricadorDePizzasVeganas hereda FabricadorDePizzas
+        Pizza crearPizza()
+          devolver instacia de PizzaVegana
+       
+     Clase FabricadorDePizzasSinTAC hereda FabricadorDePizzas
+        Pizza crearPizza()
+          devolver instancia de PizzaSinTac
+     #+END_EXAMPLE
+** Clases que participan
+*** Creador
+    - Declara el *método de fábrica* que devuelve un *objeto del tipo de producto*
+      (decimos declara, porque no lo define, la definición se lo deja a las subclases)
+    - Tiende a ser una *superclase abstracta* ó también puede ser una *interfaz*
+    - Es el que delega en las subclases, que ellas instancien el producto
+*** Creador Concreto
+    - Anula el *método de fábrica* para devolver un *producto concreto*
+      (se podría decir que lo especializa más)
+    Ej. FabricadorDePizzasVegetarianas, FabricadoDePizzasClasicas, ..
+     
+    *Observación:*
+    Pueden haber creadores concretos que instancien al mismo *producto concreto*,
+    pero tengan una *configuración* distinta
+    (Ej. Que usen a PizzaDeMuzzarela, y uno permite agregarle ingredientes extra)
+*** Producto Concreto
+    - Implementa la *interfaz* del producto
+    Ej. PizzaDeMuzzarela, PizzaVegetariana
+*** Producto
+    - Define la *interfaz* de los objetos creados por el *método de fábrica*
+    Ej. Pizza
 
     *Observación:*
-    - Podriamos decir es un template-method el que tiene la superclase, porque es una plantilla que usarán las subclases
-    - y que los hook-methods son pasos que tienen las subclases que enganchan/hook el comportamiento de la superclase en la subclase
-*** [DOING] Cuando utilizar
-    - Cuando varias abstracciones tienen los mismos *pasos*, para realizar una acción
-      en el mismo orden.. "PERO" cada una los *implementa* de manera diferente
+    Recordemos que la *interfaz* es el *comportamiento*, osea el conjunto de mensajes
+    que entiende el objeto (la instancia a la clase)
+** Ventajas y Desventajas
+   Las ventajas podrian ser
+   - Elimina tener que indicar las clases concretas
 
-    #+BEGIN_QUOTE
-    Es común que un *factory-method* sea un *hook-method* de algún template-method
+   Las desventajas podrian ser
+   - Los clientes (objetos) tienenq ue subclasear a la *clase Factory*
+     por cada tipo de producto que quieran crear
+** Ejemplo General 1
+   #+BEGIN_SRC plantuml :file factoryMethod.png
+     @startuml
+     abstract class Creador{
+             factoryMethod()
+             unaOperacion()
+     }
 
-    Recordemos que..
-    1. Un *factory method*, se utiliza cuando varias abstracciones (Pizzeria, Panaderia, ...)
-    repiten una  secuencia de pasos en común (mezclar, amasar, hornear, ...)
-    y los reutiliza 
+     class CreadorConcreto{
+             factoryMethod()
+     }
 
-    2. Los *hook methods* representan los pasos (mezclar, amasar, hornear, ..)
-       que tienen en común varias abstracciones (Pizzeria, Panaderia, ..)
+     class Cliente
+     class ProductoConcreto
+     class Producto
 
-    3. El *template method* es quien hookea/captura los *hook methods* y los reutiliza
-       para si mismo
-    #+END_QUOTE
+     Creador <-right- Cliente
+     Creador <|-down- CreadorConcreto
+     ProductoConcreto <.right. CreadorConcreto
+     Producto <|-down- ProductoConcreto
 
-     *Observación:*
-     Es importante destacar que se aplica el tema de los mismos *PASOS*
-     para diferenciar del *Strategy*
-*** Hook Methods
-    Representan los *pasos* definidos en el *template-method*
+     note right of Creador : producto=factoryMethod()
+     note right of CreadorConcreto : return new ProductoConcreto
+     @enduml
+   #+END_SRC
 
-    #+BEGIN_EXAMPLE
-    En este ejemplo los métodos paso1(), paso2() representan los "Hook Methods"
-    del metodoTemplate(), porque ese método los hookea osea los captura y utiliza
+   #+RESULTS:
+   [[file:factoryMethod.png]]
+** Ejemplo General 2
 
-    clase  ClaseAbstracta 
-       metodoTemplate()
-       paso1()
-       paso2()
+   #+BEGIN_SRC plantuml :file factoryMethod2.png
+     @startuml
+     interface Creador{
+             +factoryMethod()
+             +unaOperacion()
+     }
 
-    clase ClaseA hereda ClaseAbstracta
-       paso1()
-       paso2()
+     class CreadorConcreto1{
+             factoryMethod()
+     }
 
-    clase ClaseB hereda ClaseAbstracta
-       paso1()
-       paso2()
-    #+END_EXAMPLE
-*** [TODO] Relación con otros patrones
-    - Es común que un [[Patrón Factory Method][factory method]] sea un [[Hook Methods][hook method]] de algún template method
-*** Cualidades de Diseño que mejora
-**** Mantenibilidad
-     Mayor *mantenibilidad* al tener los pasos facilmente localizables
-**** Cohesión
-     Mayor *cohesión* en todas las clases intervenientes
-     porque queda bien repartida las responsabilidades/comportamiento/mensajes
-     entre ellas
-**** Extensibilidad
-*** Ejemplo General
-**** Implementación en Java
-    #+BEGIN_SRC java
-      public abstract ClasePadre{
-          // el metodoTemplate() puede haber sido distinto de void
-          public void metodoTemplate(){
-              this.paso1();
-              this.paso2();
-          }
+     class CreadorConcreto2{
+             factoryMethod()
+     }
 
-          // la superclase delega en las subclases
-          // que implementen SI O SI los pasos
-          protected abstract void paso1();
-          protected abstract void paso2();
-      }
+     class Cliente
+     class ProductoConcreto1
+     class ProductoConcreto2
+     class ProductoConcreto3
+     class Producto
 
-      public class ClaseConcretaA extends ClasePadre{
-          protected void paso1(){
-              // hace algo
-          }
-          protected void paso2(){
-              // hace algo
-          }
-      }
+     Creador <-left- Cliente
+     ProductoConcreto1 <-up- CreadorConcreto1
+     ProductoConcreto2 <-up- CreadorConcreto2
+     ProductoConcreto3 <-up- CreadorConcreto2
 
-      public class ClaseConcretaB extends ClasePadre{
-          protected void paso1(){
-              // hace algo
-          }
-          protected void paso2(){
-              // hace algo
-          }
-      }
-    #+END_SRC
-**** Diagrama de Clases
-    #+BEGIN_SRC plantuml :file img/templateMethod1.png
-      @startuml
-      abstract class ClaseAbstracta{
-              +metodoTemplate()
-              paso1()
-              paso2()
-      }
+     Creador <|-down- CreadorConcreto1
+     Creador <|-down- CreadorConcreto2
 
-      class ClaseConcretaA{
-              #paso1()
-              #paso2()
-      }
+     Producto <|-up- ProductoConcreto1
+     Producto <|-up- ProductoConcreto2
+     Producto <|-up- ProductoConcreto3
 
-      class ClaseConcretaB{
-              #paso1()
-              #paso2()
-      }
+     note right of CreadorConcreto1 : return new ProductoConcreto1
+     @enduml
+   #+END_SRC
 
-      class ClaseConcretaN{
-              #paso1()
-              #paso2()
-      }
+   #+RESULTS:
+   [[file:factoryMethod2.png]]
 
-      ClaseAbstracta <|-down- ClaseConcretaA
-      ClaseAbstracta <|-down- ClaseConcretaB
-      ClaseAbstracta <|-down- ClaseConcretaN
-      @enduml
-    #+END_SRC
-
-    #+RESULTS:
-    [[file:img/templateMethod1.png]]
-
-*** Ejemplo 1
-**** Implementación en Java
-     #+BEGIN_SRC java
-       class Cuerpo{
-           private double masa;
-
-           // el template-method es este método densidad()
-           //
-           // que delega en las sub clases
-           // la responsabilidad de calcular el volumen
-           public double densidad(){
-               return this.getMasa() / this.getVolumen();
-           }
-       }
-
-       class Cubo extends Cuerpo{
-           private double lado;
-
-           // implementación propia del cubo
-           @Override
-           public double getVolumen(){
-               return Math.pow(lado, 3);
-           }
-       }
-
-       class Cilindro extends Cuerpo{
-           private double altura;
-           private double radio;
-
-           // implementación propia del cilindro
-           @Override
-           public double getVolumen(){
-               return Math.pow(radio, 2) * 3.14 * altura;
-           }
-       }
-     #+END_SRC
-* Patrones Estructurales
-** [DOING] Patrón Decorator
-*** Intención
-    - Para agregar funcionalidades dinamicamente a un objeto sin alterar su *interfaz*
-      (se agregan en los decoradores concretos)
-    - Es un solución compleja a un problema complejo
-*** Cuando aplicar
-    - Cuando se quiere agregar y/o quitar funcionalidades/responsabilidades 
-      a un objeto
-*** Cualidades de Diseño que mejora
-**** Cohesión
-     Mayor *cohesión* en el componente concreto, y en los decoradores concretos
-     (porque las responsabilidades se van repartiendo entre los decoradores)
-**** Extensibilidad      
-     - Mas *extensibilidad* 
-      (permite agregar nuevas funcionalidades/responsabilidades a componentes ya creados)
-*** Ejemplo
-    #+BEGIN_SRC java
-      public class DecoradorConcretoA extends Decorador{
-          public void operacion(){
-              super.componente.operacion();
-              this.funcionalidadExtra();
-          }
-
-          private void funcionalidadExtra(){
-              // hacer cosillas
-          }
-      }
-    #+END_SRC
-
-    #+BEGIN_SRC plantuml :file img/decorator1.png
-        @startuml
-        abstract class Componente{
-                +operacion()
-        }
-
-        class ComponenteConcreto{
-                +operacion()
-        }
-
-        abstract class Decorador{
-                #componente: Componente
-                +operacion()
-        }
-
-        class DecoradorConcretoA{
-                +operacion()
-        }
-
-        class DecoradorConcretoB{
-                +operacion()
-        }
-
-        Componente <|-down- ComponenteConcreto
-        Componente <|-down- Decorador
-        Decorador <|-down- DecoradorConcretoA
-        Decorador <|-down- DecoradorConcretoB
-        @enduml
-      #+END_SRC
-
-      #+RESULTS:
-      [[file:img/decorator1.png]]
-
-* Patrones
-** [DOING] Singleton
-*** Intención
-    1. Que una clase tenga una *única instancia*
-       (que no se repita, osea que no se pueda hacer otro *new*)
-    2. Proveer un *único punto de acceso global* bien conocido a ella
-       (acceder a ella de una sola manera en todo el sistema)
-    3. Mantener un solo *estado interno*
-       (estructura/atributos)
-
-   *Observación:*
-   - Utilizar como última opción, su uso trae muchos problemas
-   - Se recomienda NO utilizar cuando el el objeto tiene *estado mutable*
-*** Ejemplo 1
-    #+BEGIN_SRC java
-      class DragonQueCumpleDeseos{
-          // con el atributo final  hacemos que sea "no modificable"
-          // y el modificador private para que solo se acceda desde la clase
-          private static final DragonQueCumpleDeseos INSTANCE = new DragonQueCumpleDeseos();
-
-          public static instance(){
-              return INSTANCE;
-          }
-
-          // constructor
-          private DragonQueCumpleDeseos(){
-              // inicializamos al dragon
-          }
-
-          public cumplirDeseo(List<Esfera> esferas, Deseo deseo){
-              //
-          }
-      }
-
-      class GuerreroZ{
-          void pedirDeseo(){
-              List<Esfera> esferas = recolectarEsferas();
-              Deseo deseo = pensarDeseo();
-              DragoQueCumpleDeseos.instance().cumplirDeseo(esferas, deseo);
-          }
-      }
-
-      // no compila (porque se decidió que sea unica instancia)
-      otroDragon = new DragonQueCumpleDeseos();
-    #+END_SRC
-
-* Patrones creacionales
-** Diferencias Creation Method Vs. Factory Method
-*** Creation Method
-    - NO es un patrón de diseño
-    - sólo es un método cuya intencion es *instanciar* una clase
-*** Factory Method
-    Es un *patrón de diseño* relacionado con la herencia
-** [DONE] Patrón Factory Method
-   CLOSED: [2021-04-27 mar 23:52]
-*** Intención
-    - Definir una superclase ó *interfaz* para crear un objeto
-    - Esa superclase ó *intefaz* delega en las subclases
-      - que ellas decidan que *instanciar* (de distintas clases, o la mismas)
-      - ó parte de la creación (si cada una tiene *distintos pasos* para construir)
-*** Ejemplos en pseudocodigo
-     Algunos ejemplos de una clase Creador podrían ser
-**** Ejemplo con 
-**** Ejemplo con Pizzas
-      Una superclase abstracta FabricadorDePizzas que delega en FabricadorDePizzasSinTAC y FabricadorDePizzasVeganas
-      que ellas implementen crearPizza() y elijan como instanciar a la clase Pizza
-
-      la superclase FabricadorDePizzas reutiliza el crearPizza() en fabricarPizza()
-      porque las instancias a las clases que devuelve entienden los mismos mensajes
-      aunque quizás tengan distintas implementaciones
-
-      #+BEGIN_EXAMPLE
-      ClaseAbstracta FabricadorDePizzas 
-         Pizza crearPizza()
-         Pizza fabricarPizza(){
-            pizza = this.crearPizza()
-            pizza.amasar()
-            pizza.cocinar()
-            devolver pizza
-         }
-       
-      Clase FabricadorDePizzasVeganas hereda FabricadorDePizzas
-         Pizza crearPizza()
-           devolver instacia de PizzaVegana
-       
-      Clase FabricadorDePizzasSinTAC hereda FabricadorDePizzas
-         Pizza crearPizza()
-           devolver instancia de PizzaSinTac
-      #+END_EXAMPLE
-*** Clases que participan
-**** Creador
-     - Declara el *método de fábrica* que devuelve un *objeto del tipo de producto*
-       (decimos declara, porque no lo define, la definición se lo deja a las subclases)
-     - Tiende a ser una *superclase abstracta* ó también puede ser una *interfaz*
-     - Es el que delega en las subclases, que ellas instancien el producto
-**** Creador Concreto
-     - Anula el *método de fábrica* para devolver un *producto concreto*
-       (se podría decir que lo especializa más)
-     Ej. FabricadorDePizzasVegetarianas, FabricadoDePizzasClasicas, ..
-     
-     *Observación:*
-     Pueden haber creadores concretos que instancien al mismo *producto concreto*,
-     pero tengan una *configuración* distinta
-     (Ej. Que usen a PizzaDeMuzzarela, y uno permite agregarle ingredientes extra)
-**** Producto Concreto
-     - Implementa la *interfaz* del producto
-     Ej. PizzaDeMuzzarela, PizzaVegetariana
-**** Producto
-     - Define la *interfaz* de los objetos creados por el *método de fábrica*
-     Ej. Pizza
-
-     *Observación:*
-     Recordemos que la *interfaz* es el *comportamiento*, osea el conjunto de mensajes
-     que entiende el objeto (la instancia a la clase)
-*** Ventajas y Desventajas
-    Las ventajas podrian ser
-    - Elimina tener que indicar las clases concretas
-
-    Las desventajas podrian ser
-    - Los clientes (objetos) tienenq ue subclasear a la *clase Factory*
-      por cada tipo de producto que quieran crear
-*** Ejemplo General 1
-    #+BEGIN_SRC plantuml :file factoryMethod.png
-      @startuml
-      abstract class Creador{
-              factoryMethod()
-              unaOperacion()
-      }
-
-      class CreadorConcreto{
-              factoryMethod()
-      }
-
-      class Cliente
-      class ProductoConcreto
-      class Producto
-
-      Creador <-right- Cliente
-      Creador <|-down- CreadorConcreto
-      ProductoConcreto <.right. CreadorConcreto
-      Producto <|-down- ProductoConcreto
-
-      note right of Creador : producto=factoryMethod()
-      note right of CreadorConcreto : return new ProductoConcreto
-      @enduml
-    #+END_SRC
-
-    #+RESULTS:
-    [[file:factoryMethod.png]]
-*** Ejemplo General 2
-
-    #+BEGIN_SRC plantuml :file factoryMethod2.png
-      @startuml
-      interface Creador{
-              +factoryMethod()
-              +unaOperacion()
-      }
-
-      class CreadorConcreto1{
-              factoryMethod()
-      }
-
-      class CreadorConcreto2{
-              factoryMethod()
-      }
-
-      class Cliente
-      class ProductoConcreto1
-      class ProductoConcreto2
-      class ProductoConcreto3
-      class Producto
-
-      Creador <-left- Cliente
-      ProductoConcreto1 <-up- CreadorConcreto1
-      ProductoConcreto2 <-up- CreadorConcreto2
-      ProductoConcreto3 <-up- CreadorConcreto2
-
-      Creador <|-down- CreadorConcreto1
-      Creador <|-down- CreadorConcreto2
-
-      Producto <|-up- ProductoConcreto1
-      Producto <|-up- ProductoConcreto2
-      Producto <|-up- ProductoConcreto3
-
-      note right of CreadorConcreto1 : return new ProductoConcreto1
-      @enduml
-    #+END_SRC
-
-    #+RESULTS:
-    [[file:factoryMethod2.png]]
-
-*** Ejemplo 3
-    Supongamos que queremos crear pizzas de distintos sabores,
-    podriamos crear una superclase que se encarge de *construir* las pizzas (será FabricaDePizza)
-    y que delege la responsabilidad de la *instanciación* en las subclases (serán FabricaDePizzaEstandar, FabricaDePizzaVegetariana, ...)
+** Ejemplo 3
+   Supongamos que queremos crear pizzas de distintos sabores,
+   podriamos crear una superclase que se encarge de *construir* las pizzas (será FabricaDePizza)
+   y que delege la responsabilidad de la *instanciación* en las subclases (serán FabricaDePizzaEstandar, FabricaDePizzaVegetariana, ...)
     
-    esas subclases pueden tener *instancias* a clases diferentes (PizzaMuzza, PizzaVegetariana, ...),
-    ó las mismas *instancias* a clases pero con *configuraciones* diferentes (ambas con PizzaMuzza, pero una le agrega más ingredientes)
+   esas subclases pueden tener *instancias* a clases diferentes (PizzaMuzza, PizzaVegetariana, ...),
+   ó las mismas *instancias* a clases pero con *configuraciones* diferentes (ambas con PizzaMuzza, pero una le agrega más ingredientes)
 
-    #+BEGIN_QUOTE
-    Es importante diferenciar *instanciar* con *construir*
+   #+BEGIN_QUOTE
+   Es importante diferenciar *instanciar* con *construir*
 
-    Si instanciamos una pizza
-    new Pizza();
+   Si instanciamos una pizza
+   new Pizza();
 
    
-    Si construimos una pizza 
-    pizza.preparar();
-    pizza.cocinar();
-    pizza.cortar();
-    #+END_QUOTE
+   Si construimos una pizza 
+   pizza.preparar();
+   pizza.cocinar();
+   pizza.cortar();
+   #+END_QUOTE
 
-    En este ejemplo el *factory method* es crearPizza y la *clase factory* es FabricaDePizza 
-**** Implementación en Java 
-    #+BEGIN_SRC java
-      abstract class FabricaDePizza{
-          Pizza fabricarPizza(){
-              pizza = this.crearPizza();
-              pizza.preparar();
-              pizza.cocinar();
-              pizza.cortar();
-              pizza.empaquetar();
+   En este ejemplo el *factory method* es crearPizza y la *clase factory* es FabricaDePizza 
+*** Implementación en Java 
+   #+BEGIN_SRC java
+     abstract class FabricaDePizza{
+         Pizza fabricarPizza(){
+             pizza = this.crearPizza();
+             pizza.preparar();
+             pizza.cocinar();
+             pizza.cortar();
+             pizza.empaquetar();
 
-              return pizza;
-          }
+             return pizza;
+         }
 
-          abstract Pizza crearPizza();
+         abstract Pizza crearPizza();
+     }
+
+     // cada "clase concreta" tiene su propia
+     // "implementación" de crearPizza()
+     class FabricaDePizzaEstandar extends FabricaDePizza{
+         // crearPizza() es nuestro "factory method"
+         @Override
+         Pizza crearPizza(){
+             return new PizzaMuzzarela();
+         }
+     }
+
+     class FabricaDePizzaVegetariana extends FabricaDePizza{
+         // crearPizza() es nuestro "factory method"
+         @Override
+         Pizza crearPizza(){
+             return new PizzaVegetariana();
+         }
+     }
+
+     class FabricaDePizzaPersonalizada extends FabricaDePizza{
+         // constructor
+         public FabricaDePizzaPersonalizada(ingredientesExtra){
+             this.ingredientesExtra = ingredientesExtra;
+         }
+
+         // IMPORTANTE...!
+         // utilizamos la misma instancia de clase que FabricaDePizzaEstandar
+         // pero con una configuación diferente (ingredientes extra)
+         @Override
+         Pizza crearPizza(){
+             pizza = new PizzaMuzzarela();
+             pizza.agregarIngredientes(this.ingredientesExtra);
+             return pizza;
+         }
+     }
+   #+END_SRC
+*** Diagrama de Clases
+   #+BEGIN_SRC plantuml :file img/factoryMethod.png
+     note right of PizzaVegetariana : Producto
+     note right of Pizza : ProductoConcreto
+     note right of FabricaDePizzaVegetariana : CreadorConcreto
+     note right of FabricaDePizza : Creador\n\nPizza fabricarPizza(Pizza p){\nthis.pizza=p\np.preparar()\np.cocinar()\n...\n}
+
+     abstract class FabricaDePizza{
+             int cantidadPersonas
+             List<Pizza> fabricarPizzas()
+             Pizza fabricarPizza()
+     }
+     class FabricaDePizzaVegetariana{
+             Pizza fabricarPizza()
+     }
+     class FabricaDePizzaMixta{
+             Pizza fabricarPizza()
+     }
+     class FabricaDePizzaEstandar{
+             Pizza fabricarPizza()
+     }
+
+     class PizzaVegetariana
+     class PizzaMuzzarella
+
+     class Pizza{
+             preparar()
+             cocinar()
+             cortar()
+             empaquetar()
+     }
+
+     FabricaDePizza <|-down- FabricaDePizzaVegetariana
+     FabricaDePizza <|-down- FabricaDePizzaMixta
+     FabricaDePizza <|-down- FabricaDePizzaEstandar
+
+     PizzaVegetariana <.up. FabricaDePizzaVegetariana
+     PizzaVegetariana <.up. FabricaDePizzaMixta
+
+     PizzaMuzzarella <.up. FabricaDePizzaEstandar
+     PizzaMuzzarella <.up. FabricaDePizzaMixta
+
+     Pizza <|-up- PizzaVegetariana
+     Pizza <|-up- PizzaMuzzarella
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/factoryMethod.png]]
+
+* [DOING] Abstract Factory
+** Intenciones
+   - Propociona una interfaz para crear familias de objetos relacionados
+     o que dependen entre si (sin especificar sus clases concretas)
+** Cuando usar
+   - Cuando hay varias familias de productos relacionados
+     (pero... NO queremos depender de las *clases concretas* de esos productos)
+   - Cuando la *Abstract Factory* tiene un conjunto de *factory-methods*
+   - Cuando una clase trabaja con muchos tipos de productos
+   - Cuando queremos ocultar la creación de los objetos respecto del 
+     código del *cliente*
+** Como implementar
+   1. Diferenciar los *tipos de productos* (abstract product) y las *variantes de los productos* (concrete product)
+   2. Declarar las abstracciones de las interfaces de todos los *tipos de productos*
+      y luego las clases de los *productos concretos* que implementen esas interfaces
+   3. Declarar la interfaz de la *fábrica abstracta*, con un conjunto
+      de metodos de creación para todos los *productos abstractos*
+   4. Implementar las clases de las *fábricas concretas* para cada *variante de producto*
+
+   #+BEGIN_EXAMPLE
+     Supongamos que se trata de la venta de muebles..
+
+     1. Definimos que los tipos de productos son sillas y sillones
+        y las variantes serían modernos y antiguos
+     2. Declaramos las abstracciones de las interfaces
+        de los tipos de productos
+        interface Silla{ ... }, interface Sillon{... }
+
+        y las clases de los productos concretos que las implementan
+        class Antiguo implements Silla{ .. }
+        class Antiguo implements Sillon{ .. }
+        class Moderno implements Silla{ .. }
+        class Moderno implements Sillon{ .. }
+     3. declaramos la interfaz de la "fabrica abstracta"
+        con los metodos que creen los "productos abstractos"
+        interface Fabrica{
+          sentarse(){ ... }
+          lustrar(){ ... }
+        }
+     4. declaramos las clases de las "fabricas concretas"
+        para cada "variante de producto"
+        class FabricaMueblesModernos{
+        }
+        class FabricaMueblesAntiguos{
+        }
+   #+END_EXAMPLE
+** [TODO] Ventajas
+   - Proporcionar una biblioteca de clases, mostrando sus interfaces
+     pero no sus implementaciones
+   - Mejora la *consistencia* entre productos
+   - Facilita el intercambio entre familias de clase (???)
+   - Desacopla los *productos concretos* del código del *cliente*
+** Participantes
+*** Abstract Factory
+    Declara una *interfaz* para las operaciones que crean cada [[Abstract Product][Producto abstracto]]
+*** Concrete Factory
+    *Implementa* las operaciones para crear objetos de [[Concrete Product][Productos Concreto]]
+*** Abstract Product
+    Declara una *interfaz* para un tipo de producto
+    Serían los tipos de productos
+    (Ej. Silla, Mesa)
+*** Concrete Product
+    Creado por la ConcreteFactory quien implementa la interfaz AbstractFactory
+    Serían las distintas variantes de los productos
+    (Ej. Victoriana, Moderna, ..)
+*** Client
+    Utiliza las *interfaces* declaradas por 
+    - Abstract Factory
+    - y Abstract Product
+** Ejemplos
+*** Ejemplo General
+**** Diagrama de Clases (1)
+     #+BEGIN_SRC plantuml :file img/class-diagram/abstract-factory1.png
+       @startuml
+       'Relaciones
+       AbstractFactory <-right- Client
+       AbstractFactory <|.up. ConcreteFactory1
+       AbstractFactory <|.down. ConcreteFactory2
+
+       ConcreteProductA1 <.up. ConcreteFactory1
+       ConcreteProductB1 <.up. ConcreteFactory1
+
+       ConcreteProductA2 <.down. ConcreteFactory2
+       ConcreteProductB2 <.down. ConcreteFactory2
+
+       ProductA <|-up- ConcreteProductA1
+       ProductB <|-up- ConcreteProductB1
+
+       ProductA <|-down- ConcreteProductA2
+       ProductB <|-down- ConcreteProductB2
+
+       'Estructuras
+       class Client{
+               -factory: AbstractFactory
+               +Client(f: AbstractFactory)
+               +someOperation()
+       }
+
+       class ConcreteFactory1{
+               +createProductA() : ProductA
+               +createProductB() : ProductB
+       }
+       class ConcreteFactory2{
+               +createProductA() : ProductA
+               +createProductB() : ProductB
+       }
+
+       interface AbstractFactory{
+               +createProductA() : ProductA
+               +createProductB() : ProductB
+       }
+
+       class ConcreteProductA1
+       class ConcreteProductA2
+
+       class ConcreteProductB1
+       class ConcreteProductB2
+
+       class ProductA
+       class ProductB
+       @enduml
+     #+END_SRC
+
+     #+RESULTS:
+     [[file:img/class-diagram/abstract-factory1.png]]
+*** Ejemplo 1
+**** Diagrama de Clases (2)
+     #+BEGIN_SRC plantuml :file img/class-diagram/abstract-factory2.png
+       @startuml
+       'Relaciones
+       GUIFactory <-right- Application
+       GUIFactory <|.up. WinFactory
+       GUIFactory <|.down. MacFactory
+
+       WinButton <.up. WinFactory
+       WinCheckbox <.up. WinFactory
+
+       MacButton <.down. MacFactory
+       MacCheckbox <.down. MacFactory
+
+       Button <|-up- WinButton
+       Checkbox <|-up- WinCheckbox
+
+       Button <|-down- MacButton
+       Checkbox <|-down- MacCheckbox
+
+       'Estructuras
+       class Application{
+               -factory: GUIFactory
+               -button : Button
+               -checkbox : Checkbox
+               +Application(f: GUIFactory)
+               +paint()
+       }
+
+       class WinFactory{
+               +createButton() : Button
+               +createCheckbox() : Checkbox
+       }
+       class MacFactory{
+               +createButton() : Button
+               +createCheckbox() : Checkbox
+       }
+
+       interface GUIFactory{
+               +createButton() : Button
+               +createCheckbox() : Checkbox
+       }
+
+       class WinButton
+       class MacButton
+
+       class WinCheckbox
+       class MacCheckbox
+
+       class Button
+       class Checkbox
+       @enduml
+     #+END_SRC
+
+     #+ATTR_HTML: :width 650
+     #+RESULTS:
+     [[file:img/class-diagram/abstract-factory2.png]]
+**** Implementación en Java
+     #+BEGIN_SRC java
+       // Abstract Factory
+       interface GUIFactoy{
+           public Button createButton();
+           public Checkbox createCheckbox();
+       }
+
+       // Concrete Factory
+       class WinFactory implements GUIFactory{
+           public Button createButton(){
+               return WinButton();
+           }
+           public Checkbox createCheckbox(){
+               return WinCheckbox();
+           }
+       }
+
+       // Concrete Factory
+       class MacFactory implements GUIFactory{
+           public Button createButton(){
+               return MacButton();
+           }
+           public Checkbox createCheckbox(){
+               return MacCheckbox();
+           }
+       }
+
+       // Abstract Product
+       interface Button{
+           public void paint()
+       }
+
+       // Concrete Product
+       class WinButton implements Button{
+           public void paint(){
+               // lo rendereo como en Windows
+           }
+       }
+
+       // Concrete Product
+       class MacButton implements Button{
+           public void paint(){
+               // lo rendereo como en Mac
+           }
+       }
+
+       // client  
+       class Application{
+           Button button;
+
+           // constructor
+           public Application(GUIFactory factory){
+               // según el concrete factory (Windows ó Mac)
+               // variará el product concrete (sus botones y checkbox)
+               this.factory = factory;
+           }
+
+           public paint(){
+               button.paint()
+           }
+       }
+     #+END_SRC
+* [DOING] Patrón Builder
+** Intenciones
+   - Separar la construcción de un objeto complejo de su representación
+   - Crear diferentes representaciones del proceso de construcción del objeto
+   - Encapsula el proceso de instaciación de un objeto
+** Cuando utilizar
+   - Cuando el algoritmo de construcción de un objeto complejo
+     - debe ser independiente de las partes que lo forman
+     - e independiente de como se ensamblan esas partes
+** Ventajas
+   - Encapsula el código de ensamblaje de las partes
+   - Mayor control sobre el *proceso de construcción*
+     (porque construye el producto paso a paso)
+** Ejemplo General
+*** Diagrama de Clases
+    #+BEGIN_SRC plantuml :file img/class-diagram/builder1.png
+      @startuml
+      Builder <.down. CarBuilder
+      Builder <.down. CarManualBuilder
+      Builder <-right- Director
+
+      Car <-up- CarBuilder
+      Manual <-up- CarManualBuilder
+
+      interface Builder{
+              +reset()
+              +setEngine(engine)
+              +setSeats(number)
+              +setGPS()
+      }
+      class Director
+      class CarBuilder{
+              -car: Car
+              +reset()
+              +setEngine(engine)
+              +setSeats(number)
+              +setGPS()
+              +getResult() : Car
+      }
+      class CarManualBuilder{
+              -manual: Manual
+              +reset()
+              +setEngine(engine)
+              +setSeats(number)
+              +setGPS()
+              +getResult() : Manual
       }
 
-      // cada "clase concreta" tiene su propia
-      // "implementación" de crearPizza()
-      class FabricaDePizzaEstandar extends FabricaDePizza{
-          // crearPizza() es nuestro "factory method"
-          @Override
-          Pizza crearPizza(){
-              return new PizzaMuzzarela();
-          }
-      }
-
-      class FabricaDePizzaVegetariana extends FabricaDePizza{
-          // crearPizza() es nuestro "factory method"
-          @Override
-          Pizza crearPizza(){
-              return new PizzaVegetariana();
-          }
-      }
-
-      class FabricaDePizzaPersonalizada extends FabricaDePizza{
-          // constructor
-          public FabricaDePizzaPersonalizada(ingredientesExtra){
-              this.ingredientesExtra = ingredientesExtra;
-          }
-
-          // IMPORTANTE...!
-          // utilizamos la misma instancia de clase que FabricaDePizzaEstandar
-          // pero con una configuación diferente (ingredientes extra)
-          @Override
-          Pizza crearPizza(){
-              pizza = new PizzaMuzzarela();
-              pizza.agregarIngredientes(this.ingredientesExtra);
-              return pizza;
-          }
-      }
-    #+END_SRC
-**** Diagrama de Clases
-    #+BEGIN_SRC plantuml :file img/factoryMethod.png
-      note right of PizzaVegetariana : Producto
-      note right of Pizza : ProductoConcreto
-      note right of FabricaDePizzaVegetariana : CreadorConcreto
-      note right of FabricaDePizza : Creador\n\nPizza fabricarPizza(Pizza p){\nthis.pizza=p\np.preparar()\np.cocinar()\n...\n}
-
-      abstract class FabricaDePizza{
-              int cantidadPersonas
-              List<Pizza> fabricarPizzas()
-              Pizza fabricarPizza()
-      }
-      class FabricaDePizzaVegetariana{
-              Pizza fabricarPizza()
-      }
-      class FabricaDePizzaMixta{
-              Pizza fabricarPizza()
-      }
-      class FabricaDePizzaEstandar{
-              Pizza fabricarPizza()
-      }
-
-      class PizzaVegetariana
-      class PizzaMuzzarella
-
-      class Pizza{
-              preparar()
-              cocinar()
-              cortar()
-              empaquetar()
-      }
-
-      FabricaDePizza <|-down- FabricaDePizzaVegetariana
-      FabricaDePizza <|-down- FabricaDePizzaMixta
-      FabricaDePizza <|-down- FabricaDePizzaEstandar
-
-      PizzaVegetariana <.up. FabricaDePizzaVegetariana
-      PizzaVegetariana <.up. FabricaDePizzaMixta
-
-      PizzaMuzzarella <.up. FabricaDePizzaEstandar
-      PizzaMuzzarella <.up. FabricaDePizzaMixta
-
-      Pizza <|-up- PizzaVegetariana
-      Pizza <|-up- PizzaMuzzarella
+      class Car
+      class Manual
+      @enduml
     #+END_SRC
 
     #+RESULTS:
-    [[file:img/factoryMethod.png]]
+    [[file:img/class-diagram/builder1.png]]
 
-** [DOING] Abstract Factory
-*** Intenciones
-    - Propociona una interfaz para crear familias de objetos relacionados
-      o que dependen entre si (sin especificar sus clases concretas)
-*** Cuando usar
-    - Cuando hay varias familias de productos relacionados
-      (pero... NO queremos depender de las *clases concretas* de esos productos)
-    - Cuando la *Abstract Factory* tiene un conjunto de *factory-methods*
-    - Cuando una clase trabaja con muchos tipos de productos
-    - Cuando queremos ocultar la creación de los objetos respecto del 
-      código del *cliente*
-*** Como implementar
-    1. Diferenciar los *tipos de productos* (abstract product) y las *variantes de los productos* (concrete product)
-    2. Declarar las abstracciones de las interfaces de todos los *tipos de productos*
-       y luego las clases de los *productos concretos* que implementen esas interfaces
-    3. Declarar la interfaz de la *fábrica abstracta*, con un conjunto
-       de metodos de creación para todos los *productos abstractos*
-    4. Implementar las clases de las *fábricas concretas* para cada *variante de producto*
+*** Diagrama de secuencia
+    #+BEGIN_SRC plantuml :file img/secuence-diagrams/builder.png
+      @startuml
+      unDirector -> unBuilderConcreto : construirParteA
+      unDirector -> unBuilderConcreto : construirParteB
+      unDirector -> unBuilderConcreto : construirParteC
+      unDirector -> unBuilderConcreto : obtenerResultado
+      unDirector <-- unBuilderConcreto : productoTerminado
+      @enduml
+    #+END_SRC
 
-    #+BEGIN_EXAMPLE
-      Supongamos que se trata de la venta de muebles..
+    #+RESULTS:
+    [[file:img/secuence-diagrams/builder.png]]
+** Ejemplo General 2
+** [TODO] Ejemplo 2
+*** Implementación en Java
+    #+BEGIN_SRC java
+      public abstract class BebidaBuilder{
+          public abstract void prepararAgua();
+          public abstract void prepararInfusion();
+          public abstract void servir();
+          public abstract void agregarExtras();
+          public Bebida obtenerBebida();
+      }
 
-      1. Definimos que los tipos de productos son sillas y sillones
-         y las variantes serían modernos y antiguos
-      2. Declaramos las abstracciones de las interfaces
-         de los tipos de productos
-         interface Silla{ ... }, interface Sillon{... }
+      public class CafeBuilder extends BebidaBuilder{
+          public abstract void prepararAgua(){
+          }
 
-         y las clases de los productos concretos que las implementan
-         class Antiguo implements Silla{ .. }
-         class Antiguo implements Sillon{ .. }
-         class Moderno implements Silla{ .. }
-         class Moderno implements Sillon{ .. }
-      3. declaramos la interfaz de la "fabrica abstracta"
-         con los metodos que creen los "productos abstractos"
-         interface Fabrica{
-           sentarse(){ ... }
-           lustrar(){ ... }
-         }
-      4. declaramos las clases de las "fabricas concretas"
-         para cada "variante de producto"
-         class FabricaMueblesModernos{
-         }
-         class FabricaMueblesAntiguos{
-         }
-    #+END_EXAMPLE
-*** [TODO] Ventajas
-    - Proporcionar una biblioteca de clases, mostrando sus interfaces
-      pero no sus implementaciones
-    - Mejora la *consistencia* entre productos
-    - Facilita el intercambio entre familias de clase (???)
-    - Desacopla los *productos concretos* del código del *cliente*
-*** Participantes
-**** Abstract Factory
-     Declara una *interfaz* para las operaciones que crean cada [[Abstract Product][Producto abstracto]]
-**** Concrete Factory
-     *Implementa* las operaciones para crear objetos de [[Concrete Product][Productos Concreto]]
-**** Abstract Product
-     Declara una *interfaz* para un tipo de producto
-     Serían los tipos de productos
-     (Ej. Silla, Mesa)
-**** Concrete Product
-     Creado por la ConcreteFactory quien implementa la interfaz AbstractFactory
-     Serían las distintas variantes de los productos
-     (Ej. Victoriana, Moderna, ..)
-**** Client
-     Utiliza las *interfaces* declaradas por 
-     - Abstract Factory
-     - y Abstract Product
-*** Ejemplos
-**** Ejemplo General
-***** Diagrama de Clases (1)
-      #+BEGIN_SRC plantuml :file img/class-diagram/abstract-factory1.png
-        @startuml
-        'Relaciones
-        AbstractFactory <-right- Client
-        AbstractFactory <|.up. ConcreteFactory1
-        AbstractFactory <|.down. ConcreteFactory2
+          public abstract void prepararInfusion(){
+          }
 
-        ConcreteProductA1 <.up. ConcreteFactory1
-        ConcreteProductB1 <.up. ConcreteFactory1
+          public abstract void servir(){
+          }
 
-        ConcreteProductA2 <.down. ConcreteFactory2
-        ConcreteProductB2 <.down. ConcreteFactory2
+          public abstract void agregarExtras(){
+          }
 
-        ProductA <|-up- ConcreteProductA1
-        ProductB <|-up- ConcreteProductB1
-
-        ProductA <|-down- ConcreteProductA2
-        ProductB <|-down- ConcreteProductB2
-
-        'Estructuras
-        class Client{
-                -factory: AbstractFactory
-                +Client(f: AbstractFactory)
-                +someOperation()
-        }
-
-        class ConcreteFactory1{
-                +createProductA() : ProductA
-                +createProductB() : ProductB
-        }
-        class ConcreteFactory2{
-                +createProductA() : ProductA
-                +createProductB() : ProductB
-        }
-
-        interface AbstractFactory{
-                +createProductA() : ProductA
-                +createProductB() : ProductB
-        }
-
-        class ConcreteProductA1
-        class ConcreteProductA2
-
-        class ConcreteProductB1
-        class ConcreteProductB2
-
-        class ProductA
-        class ProductB
-        @enduml
-      #+END_SRC
-
-      #+RESULTS:
-      [[file:img/class-diagram/abstract-factory1.png]]
-**** Ejemplo 1
-***** Diagrama de Clases (2)
-      #+BEGIN_SRC plantuml :file img/class-diagram/abstract-factory2.png
-        @startuml
-        'Relaciones
-        GUIFactory <-right- Application
-        GUIFactory <|.up. WinFactory
-        GUIFactory <|.down. MacFactory
-
-        WinButton <.up. WinFactory
-        WinCheckbox <.up. WinFactory
-
-        MacButton <.down. MacFactory
-        MacCheckbox <.down. MacFactory
-
-        Button <|-up- WinButton
-        Checkbox <|-up- WinCheckbox
-
-        Button <|-down- MacButton
-        Checkbox <|-down- MacCheckbox
-
-        'Estructuras
-        class Application{
-                -factory: GUIFactory
-                -button : Button
-                -checkbox : Checkbox
-                +Application(f: GUIFactory)
-                +paint()
-        }
-
-        class WinFactory{
-                +createButton() : Button
-                +createCheckbox() : Checkbox
-        }
-        class MacFactory{
-                +createButton() : Button
-                +createCheckbox() : Checkbox
-        }
-
-        interface GUIFactory{
-                +createButton() : Button
-                +createCheckbox() : Checkbox
-        }
-
-        class WinButton
-        class MacButton
-
-        class WinCheckbox
-        class MacCheckbox
-
-        class Button
-        class Checkbox
-        @enduml
-      #+END_SRC
-
-      #+ATTR_HTML: :width 650
-      #+RESULTS:
-      [[file:img/class-diagram/abstract-factory2.png]]
-***** Implementación en Java
-      #+BEGIN_SRC java
-        // Abstract Factory
-        interface GUIFactoy{
-            public Button createButton();
-            public Checkbox createCheckbox();
-        }
-
-        // Concrete Factory
-        class WinFactory implements GUIFactory{
-            public Button createButton(){
-                return WinButton();
-            }
-            public Checkbox createCheckbox(){
-                return WinCheckbox();
-            }
-        }
-
-        // Concrete Factory
-        class MacFactory implements GUIFactory{
-            public Button createButton(){
-                return MacButton();
-            }
-            public Checkbox createCheckbox(){
-                return MacCheckbox();
-            }
-        }
-
-        // Abstract Product
-        interface Button{
-            public void paint()
-        }
-
-        // Concrete Product
-        class WinButton implements Button{
-            public void paint(){
-                // lo rendereo como en Windows
-            }
-        }
-
-        // Concrete Product
-        class MacButton implements Button{
-            public void paint(){
-                // lo rendereo como en Mac
-            }
-        }
-
-        // client  
-        class Application{
-            Button button;
-
-            // constructor
-            public Application(GUIFactory factory){
-                // según el concrete factory (Windows ó Mac)
-                // variará el product concrete (sus botones y checkbox)
-                this.factory = factory;
-            }
-
-            public paint(){
-                button.paint()
-            }
-        }
-      #+END_SRC
-** [DOING] Patrón Builder
-*** Intenciones
-    - Separar la construcción de un objeto complejo de su representación
-    - Crear diferentes representaciones del proceso de construcción del objeto
-    - Encapsula el proceso de instaciación de un objeto
-*** Cuando utilizar
-    - Cuando el algoritmo de construcción de un objeto complejo
-      - debe ser independiente de las partes que lo forman
-      - e independiente de como se ensamblan esas partes
-*** Ventajas
-    - Encapsula el código de ensamblaje de las partes
-    - Mayor control sobre el *proceso de construcción*
-      (porque construye el producto paso a paso)
-*** Ejemplo General
-**** Diagrama de Clases
-     #+BEGIN_SRC plantuml :file img/class-diagram/builder1.png
-       @startuml
-       Builder <.down. CarBuilder
-       Builder <.down. CarManualBuilder
-       Builder <-right- Director
-
-       Car <-up- CarBuilder
-       Manual <-up- CarManualBuilder
-
-       interface Builder{
-               +reset()
-               +setEngine(engine)
-               +setSeats(number)
-               +setGPS()
-       }
-       class Director
-       class CarBuilder{
-               -car: Car
-               +reset()
-               +setEngine(engine)
-               +setSeats(number)
-               +setGPS()
-               +getResult() : Car
-       }
-       class CarManualBuilder{
-               -manual: Manual
-               +reset()
-               +setEngine(engine)
-               +setSeats(number)
-               +setGPS()
-               +getResult() : Manual
-       }
-
-       class Car
-       class Manual
-       @enduml
-     #+END_SRC
-
-     #+RESULTS:
-     [[file:img/class-diagram/builder1.png]]
-
-**** Diagrama de secuencia
-     #+BEGIN_SRC plantuml :file img/secuence-diagrams/builder.png
-       @startuml
-       unDirector -> unBuilderConcreto : construirParteA
-       unDirector -> unBuilderConcreto : construirParteB
-       unDirector -> unBuilderConcreto : construirParteC
-       unDirector -> unBuilderConcreto : obtenerResultado
-       unDirector <-- unBuilderConcreto : productoTerminado
-       @enduml
-     #+END_SRC
-
-     #+RESULTS:
-     [[file:img/secuence-diagrams/builder.png]]
-*** Ejemplo General 2
-*** [TODO] Ejemplo 2
-**** Implementación en Java
-     #+BEGIN_SRC java
-       public abstract class BebidaBuilder{
-           public abstract void prepararAgua();
-           public abstract void prepararInfusion();
-           public abstract void servir();
-           public abstract void agregarExtras();
-           public Bebida obtenerBebida();
-       }
-
-       public class CafeBuilder extends BebidaBuilder{
-           public abstract void prepararAgua(){
-           }
-
-           public abstract void prepararInfusion(){
-           }
-
-           public abstract void servir(){
-           }
-
-           public abstract void agregarExtras(){
-           }
-
-           public Bebida obtenerBebida(){
-           }
-       }
+          public Bebida obtenerBebida(){
+          }
+      }
      
-       public class Bebida{
-       }
-     #+END_SRC
-**** Diagrama de secuencia
-     #+BEGIN_SRC plantuml :file img/secuence-diagrams/builder2.png
-       @startuml
-       unDirector -> unBuilderCafe : prepararAgua
-       unDirector -> unBuilderCafe : prepararInfusion
-       unDirector -> unBuilderCafe : servir
-       unDirector -> unBuilderCafe : agregarExtras
-       unDirector -> unBuilderCafe : obtenerBebida
-       unDirector <-- unBuilderCafe : cafeTerminado
-       @enduml
-     #+END_SRC
+      public class Bebida{
+      }
+    #+END_SRC
+*** Diagrama de secuencia
+    #+BEGIN_SRC plantuml :file img/secuence-diagrams/builder2.png
+      @startuml
+      unDirector -> unBuilderCafe : prepararAgua
+      unDirector -> unBuilderCafe : prepararInfusion
+      unDirector -> unBuilderCafe : servir
+      unDirector -> unBuilderCafe : agregarExtras
+      unDirector -> unBuilderCafe : obtenerBebida
+      unDirector <-- unBuilderCafe : cafeTerminado
+      @enduml
+    #+END_SRC
 
-     #+RESULTS:
-     [[file:img/secuence-diagrams/builder2.png]]
-**** Diagrama de clases
-     #+BEGIN_SRC plantuml :file img/builder2.png
-       @startuml
-       class Director
-       class BebidaBuilder{
-               bebida
-               abstract void prepararAgua()
-               abstract void prepararInfusion()
-               abstract void servir()
-               abstract void agregarExtras()
-               Bebida obtenerBebida()
-       }
+    #+RESULTS:
+    [[file:img/secuence-diagrams/builder2.png]]
+*** Diagrama de clases
+    #+BEGIN_SRC plantuml :file img/builder2.png
+      @startuml
+      class Director
+      class BebidaBuilder{
+              bebida
+              abstract void prepararAgua()
+              abstract void prepararInfusion()
+              abstract void servir()
+              abstract void agregarExtras()
+              Bebida obtenerBebida()
+      }
 
-       class TeBuilder{
-               void prepararAgua()
-               void prepararInfusion()
-               void servir()
-               void agregarExtras()
-       }
+      class TeBuilder{
+              void prepararAgua()
+              void prepararInfusion()
+              void servir()
+              void agregarExtras()
+      }
 
-       class CafeBuilder{
-               void prepararAgua()
-               void prepararInfusion()
-               void servir()
-               void agregarExtras()
-       }
+      class CafeBuilder{
+              void prepararAgua()
+              void prepararInfusion()
+              void servir()
+              void agregarExtras()
+      }
 
-       BebidaBuilder <-up- Director
-       BebidaBuilder <|-down- TeBuilder
-       BebidaBuilder <|-down- CafeBuilder
-       @enduml
-     #+END_SRC
+      BebidaBuilder <-up- Director
+      BebidaBuilder <|-down- TeBuilder
+      BebidaBuilder <|-down- CafeBuilder
+      @enduml
+    #+END_SRC
 
-     #+RESULTS:
-     [[file:img/builder2.png]]
+    #+RESULTS:
+    [[file:img/builder2.png]]
 
-* Conclusiones

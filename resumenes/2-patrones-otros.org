@@ -1,0 +1,45 @@
+#+TITLE: Resumen - Otros Patrones
+* [DOING] Singleton
+** Intención
+   1. Que una clase tenga una *única instancia*
+      (que no se repita, osea que no se pueda hacer otro *new*)
+   2. Proveer un *único punto de acceso global* bien conocido a ella
+      (acceder a ella de una sola manera en todo el sistema)
+   3. Mantener un solo *estado interno*
+      (estructura/atributos)
+
+  *Observación:*
+  - Utilizar como última opción, su uso trae muchos problemas
+  - Se recomienda NO utilizar cuando el el objeto tiene *estado mutable*
+** Ejemplo 1
+   #+BEGIN_SRC java
+     class DragonQueCumpleDeseos{
+         // con el atributo final  hacemos que sea "no modificable"
+         // y el modificador private para que solo se acceda desde la clase
+         private static final DragonQueCumpleDeseos INSTANCE = new DragonQueCumpleDeseos();
+
+         public static instance(){
+             return INSTANCE;
+         }
+
+         // constructor
+         private DragonQueCumpleDeseos(){
+             // inicializamos al dragon
+         }
+
+         public cumplirDeseo(List<Esfera> esferas, Deseo deseo){
+             //
+         }
+     }
+
+     class GuerreroZ{
+         void pedirDeseo(){
+             List<Esfera> esferas = recolectarEsferas();
+             Deseo deseo = pensarDeseo();
+             DragoQueCumpleDeseos.instance().cumplirDeseo(esferas, deseo);
+         }
+     }
+
+     // no compila (porque se decidió que sea unica instancia)
+     otroDragon = new DragonQueCumpleDeseos();
+   #+END_SRC

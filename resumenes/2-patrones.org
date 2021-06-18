@@ -1,0 +1,122 @@
+#+TITLE: Resumen - Patrones de Diseño
+
+* Conceptos
+  - Son estrategias en el paradigma de objetos
+  - Para abstraer el *proceso de construcción*
+    (cuando el *proceso de configuración* es complejo)
+  - Permite que el sistema de independice de como sus objetos
+    - son creados
+    - y son  representados
+* Configuración Vs Instanciación
+** Posibles escenarios
+*** Solo hay Instanciación, no hay configuración
+   Cuando tenemos una clase donde inicializamos con el constructor
+
+   1. solo estamos instanciando
+   2. no hay configuración porque no damos la posibilidad de 
+     pasarle valores
+
+   #+BEGIN_EXAMPLE
+   clase Persona
+     constructor
+        this.enegia = 100
+  
+   pepe = new Persona()
+   #+END_EXAMPLE
+*** Aumentamos la flexibilidad, hay configuración, nuevas responsabilidade
+   Si permitimos inicializar sus valores, definiendo un constructor
+   
+   1. la flexibilidad se da porque estamos agregando una característica
+   2. la configuración aparece porque ahora podemos asignar un valor inicial
+   3. las nuevas responsabilidades sería validar cuales serían
+     los valores correctos que debe recibir
+
+   #+BEGIN_EXAMPLE
+   pepe = new Persona(200)
+   pepe.caminar()
+   #+END_EXAMPLE
+*** Aumentamos más la flexibilidad, perdemos robustez
+   Si le agregamos setters para inicializar valores cuando queramos
+
+   1. la flexibilidad aumenta, porque es una característica adicional
+   2. se pierde robustez, porque ahora nos podría lanzar excepciones
+     si no le pasamos energia
+    
+   #+BEGIN_EXAMPLE
+   pepe = new Persona()
+   pepe.enegia(15)
+   pepe.caminar()
+   #+END_EXAMPLE
+ 
+** Instaciación
+   A partir de una clase, traer al *ambiente* un nuevo objeto
+** Inicialización
+   Darle un valor inicial al *estado* del objeto, mediante
+   - mensajes del tipo *setters*
+   - pasandole parámetros al *constructor*
+   - la combinación de las dos primeras
+** Configuración/Construcción/Creación
+   Es una combinacion de *instanciación* e *inicialización* 
+   - Traemos un objeto al ambiente
+   - Le damos un estado inicial
+     - que sea consistente y conocido (<<DUDA 1>>)
+     - que tenga sentido en el dominio
+     - lo deje listo para usar
+* Que es un Patrón de Diseño
+  - Es una regla que expresa la relación entre
+    - un contexto
+    - un problema
+    - una solución
+  - Una *solución* (probada) a un *problema* en un *contexto* determinado
+  
+  #+BEGIN_QUOTE
+  Los patrones de diseño de libro *no son implementables*
+  se necesitan aplicar sobre un *dominio* para ser algo concreto
+
+  Porque son una abstracción
+  #+END_QUOTE
+* Que contiene
+** Un nombre que describa el problema
+   - Facilita y simplifica la comunicación (porque ya sabe de que se trata)
+   - Aumenta el nivel de *abstracción*
+** El problema
+   - define cuando aplicar el patrón de diseño
+** [TODO] La Solución
+   Contiene una plantilla genérica de los elementos que componen
+   - el diseño
+   - sus responsabilidades
+   - sus relaciones
+   - sus colaboraciones
+** Las consecuencias
+   - Se analiza el *impacto* que tiene utilizar el patrón
+     (las ventajas/desventajas)
+
+* Tips
+  - Usarlos de manera incorrecta puede agregar un nivel de complejidad
+    innecesaria al diseño (Recordar YAGNI y ..)
+  #+BEGIN_QUOTE
+  #+END_QUOTE
+* Clasificación
+  #+BEGIN_QUOTE
+  Se recomienda concentrarse en *encapsular* la parte más *variante*
+  del sistema
+  #+END_QUOTE
+  
+** [TODO] Creacionales
+   Abstraen el proceso de instaciación y configuración de los objetos
+** Estructurales
+   - Para definir estructuras de objetos
+   - Se analizan con diagramas de clases y su implementación (código)
+** De Comportamiento
+   - Para asignación de *responsabilidades* entre objetos
+     y cómo se *comunican* entre si
+   - Se analizan con
+     - Diagramas de secuencia
+     - Diagramas de colaboración
+     - Su implementación (código)
+
+* Glosario
+** Observer
+   Es el objeto que es notificado ante cualquier cambio
+   que sufra un objeto
+
