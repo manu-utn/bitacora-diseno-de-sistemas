@@ -1,0 +1,16 @@
+/**
+ * Concrete Product - Documento PDF
+ */
+public class DocumentoPDF implements Documento{
+  @Override
+  public void abrir(){
+  }
+  
+  @Override
+  public void cerrar(){
+  }
+  
+  @Override
+  public void guardar(){
+  } 
+}

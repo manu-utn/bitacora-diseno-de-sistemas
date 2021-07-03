@@ -1,0 +1,16 @@
+/**
+ * Concrete Product - Documento Word
+ */
+public class DocumentoWord implements Documento{
+  @Override
+  public void abrir(){
+  }
+  
+  @Override
+  public void cerrar(){
+  }
+  
+  @Override
+  public void guardar(){
+  }
+}
