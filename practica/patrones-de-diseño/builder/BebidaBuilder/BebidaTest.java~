@@ -1,0 +1,10 @@
+import junit.framework.TestCase;
+
+public class BebidaTest extends TestCase {  
+  public void testBebidaTieneTemperatura() {
+    Cafe leche = new Cafe(15, "dulce");
+    
+    assertEquals(15, leche.getTemperatura());
+    
+  }
+}

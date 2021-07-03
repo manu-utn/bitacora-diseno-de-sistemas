@@ -1,0 +1,11 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class TeBuilder implements BebidaBuilder {  
+  public void prepararAgua(){
+  }
+  public void servir(){
+  }
+  public void agregarExtras(){
+  }  
+}

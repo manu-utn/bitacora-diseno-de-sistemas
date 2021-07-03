@@ -1,0 +1,12 @@
+/**
+ * Director
+ */
+public class Cafeteria {
+  BebidaBuilder bebidaBuilder;
+  
+  public void cambiarBebida(){
+  }
+  
+  public void prepararBebida(){
+  }
+}

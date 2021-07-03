@@ -1,0 +1,35 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class CafeBuilder extends BebidaBuilder{
+  private int temperatura;
+  private String tipo; // dulce, salado, picante
+  
+  private Cafe(){ // constructor
+  }
+  
+  public int getTemperatura(){
+    return temperatura;
+  }
+
+  public void setTemperatura(int temperatura){
+    this.temperatura = temperatura;
+  }
+  
+  public String getTipo(){
+    return tipo;
+  }
+  
+  public void setTipo(String tipo){
+    this.tipo = tipo;
+  }
+
+  
+  public Bebida build(){
+    Cafe bebida = new Cafe();
+    bebida.prepararInfusion();
+    bebida.prepararAgua();
+    
+    return bebida;
+  }
+}
