@@ -1,0 +1,12 @@
+/**
+ * Auto Generated Java Class.
+ */
+public abstract class Prestamo {
+  int intereses;
+  
+  public abstract void calcularIntereses();
+  
+  public int getIntereses(){
+    return intereses;
+  }
+}

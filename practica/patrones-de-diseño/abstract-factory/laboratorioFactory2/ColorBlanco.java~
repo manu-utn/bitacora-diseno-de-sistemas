@@ -1,0 +1,8 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class Blanco implements Color{
+  @Override
+  public String getColor(){
+  }
+}

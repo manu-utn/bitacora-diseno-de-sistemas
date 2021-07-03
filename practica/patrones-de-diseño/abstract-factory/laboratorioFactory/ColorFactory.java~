@@ -1,0 +1,8 @@
+/**
+ * Concrete Factory - Colores
+ */
+public class ColorFactory implements LaboratorioFactory<Color>{
+  
+  
+  
+}

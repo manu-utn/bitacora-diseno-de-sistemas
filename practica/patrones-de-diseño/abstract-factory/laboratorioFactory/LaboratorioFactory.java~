@@ -1,0 +1,6 @@
+/**
+ * Abstract Factory - Laboratorio
+ */
+public interface LaboratorioFactory<T> {
+  T crearAnimal(String tipoAnimal)
+}

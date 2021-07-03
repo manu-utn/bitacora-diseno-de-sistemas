@@ -1,0 +1,14 @@
+/**
+ * Concrete Product - Banco Provincia
+ */
+public class BancoProvincia {
+  private final String nombre;
+  
+  public BancoCiudad(){
+    nombre = "Banco Provincia";
+  }
+  
+  public String getNombreBanco(){
+    return nombre;
+  }
+}

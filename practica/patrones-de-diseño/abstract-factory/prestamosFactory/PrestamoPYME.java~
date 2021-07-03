@@ -1,0 +1,8 @@
+/**
+ * Concrete Product - Prestamo PYME
+ */
+public class PrestamoPYME extends Prestamo{
+  public void calcularIntereses(int montoPedido){
+    intereses = montoPedido * 0.30;
+  }
+}

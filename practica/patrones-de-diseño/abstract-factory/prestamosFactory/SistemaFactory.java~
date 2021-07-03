@@ -1,0 +1,7 @@
+/**
+ * Auto Generated Java Class.
+ */
+public abstract class SistemaFactory {
+  public Prestamo crearPrestamo(String tipoPrestamo);
+  public Banco crearBanco(String nombreBanco);
+}
