@@ -1,0 +1,1169 @@
+#+TITLE: Patrones de Diseño
+#+STARTUP: inlineimages
+* Builder
+** Builder Coche (clase abstracta)
+ #+BEGIN_SRC plantuml :file diagrama-de-clases/builder-coche.png :exports results
+   @startuml
+   Title Patron Builder
+
+   ' ================
+   ' ==== CLASES ====
+   ' ================
+
+   abstract class BuilderCoche{
+       #coche;
+       +crearCoche();
+       +getCoche();
+       +{abstract} construirMotor();
+       +{abstract} construirCarroceria()
+       +construir()
+   }
+
+   class BuilderCocheModerno{
+       +construirMotor();
+       +construirCarroceria()
+   }
+
+   class BuilderCocheAntiguo{
+       +construirMotor();
+       +construirCarroceria()
+   }
+
+   class Coche{
+       -carroceria
+       -motor
+       -velocidad
+   }
+
+   ' ================
+   ' == RELACIONES ==
+   ' ================
+
+   BuilderCoche -r-> Coche
+   BuilderCocheModerno -u-|> BuilderCoche
+   BuilderCocheAntiguo -u-|> BuilderCoche
+
+   ' ================
+   ' ==== NOTAS =====
+   ' ================
+
+   note top of Coche
+   ,**Product**
+   ,* Se crean objetos de este tipo
+   end note
+
+   note top of BuilderCoche
+   ,**Abstract Builder**
+   ,* No se instancia, generaliza
+   ,* Construye el objeto y lo devuelve
+   ,* **construir()** ejecuta las configuraciones
+   end note
+
+   note as N
+   ,**Concrete Builder**
+   ,* Configuran el abstract builder
+   ,* Implementan las configuraciones
+   end note
+
+   N .u. BuilderCocheAntiguo
+   N .u. BuilderCocheModerno
+
+   @enduml
+ #+END_SRC
+
+ #+RESULTS:
+ [[file:diagrama-de-clases/builder-coche.png]]
+** Builder Bebida (clase abstracta)
+ #+BEGIN_SRC plantuml :file diagrama-de-clases/builder-bebida.png :exports results
+   @startuml
+   Title Patrón Builder
+
+   ' ================
+   ' ==== CLASES ====
+   ' ================
+
+   abstract class BebidaBuilder{
+       #bebida
+       +{abstract} void servir()
+       +{abstract} void calentarAgua()
+       +{abstract} void agregarExtras()
+       +void preparar()
+       +void crearBebida()
+       +Bebida getBebida()
+   }
+
+   class CafeBuilder{
+       +void servir()
+       +void calentarAgua()
+       +void agregarExtras()
+   }
+
+   class TeBuilder{
+       +void servir()
+       +void calentarAgua()
+       +void agregarExtras()
+   }
+
+   class Bebida{
+       -int temperatura
+       -String tipo
+       -TamanioVaso tamanioVaso
+   }
+
+   ' ================
+   ' == RELACIONES ==
+   ' ================
+
+   together {
+   TeBuilder       -u-|> BebidaBuilder
+   CafeBuilder     -u-|> BebidaBuilder
+   BebidaBuilder   -r->  Bebida
+   }
+
+   ' ================
+   ' ==== NOTAS =====
+   ' ================
+
+   note as N1
+   ,**Abstract Builder**
+   Declara los pasos de construcción
+   que comparten los AbstractBuilder
+
+   crearBebida(){
+       bebida = new Bebida()
+   }
+
+   preparar(){
+       crearBebida()
+       calentarAgua()
+       agregarExtra()
+       servir()
+   }
+   end note
+
+   note as N2
+   @Override
+   calentarAgua(){
+       bebida.setTemperatura(60)
+   }
+   end note
+
+   note as N3
+   ,**Concrete Builder**
+   ,* Implementa los pasos de construcción
+   ,* Cada uno tiene su propia implementación
+
+   @Override
+   calentarAgua(){
+       bebida.setTemperatura(90)
+   }
+   end note
+
+   note as N4
+   ,**Product**
+   ,* Objeto que se va a construir
+   end note
+
+   N1 .r. BebidaBuilder
+   N2 .u. CafeBuilder
+   N3 .u. TeBuilder
+   N4 .l. Bebida
+
+   @enduml
+ #+END_SRC
+
+ #+RESULTS:
+ [[file:diagrama-de-clases/builder-bebida.png]]
+** Builder Bebida (con interfaz)
+   #+BEGIN_SRC plantuml :file diagrama-de-clases/builder-bebida-interfaz.png :exports results
+     @startuml
+     Title Patrón Builder (con interfáz)
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     class Cafeteria{
+         +void cambiarBebida(BebidaBuilder builder)
+         +void prepararBebida(BebidaBuilder builder)
+     }
+
+     interface BebidaBuilder{
+         +void servir()
+         +void calentarAgua()
+         +void agregarExtras()
+     }
+
+     class CafeBuilder{
+         -Cafe bebida
+    
+         +void servir()
+         +void calentarAgua()
+         +void agregarExtras()
+         +Cafe getBebida()
+     }
+
+     class TeBuilder{
+         -Te bebida
+    
+         +void servir()
+         +void calentarAgua()
+         +void agregarExtras()
+         +Te getBebida()
+     }
+
+     class Cafe{
+         -int temperatura
+         -String tipo
+         -TamanioVaso tamanioVaso
+     }
+
+     class Te{
+         -int temperatura
+         -String tipo
+         -TamanioVaso tamanioVaso
+     }
+
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     Cafeteria       -d-> BebidaBuilder
+
+     TeBuilder       .u.|> BebidaBuilder
+     CafeBuilder     .u.|> BebidaBuilder
+
+     TeBuilder       -d-> Te
+     CafeBuilder     -d-> Cafe
+
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+     note as N1
+     ,**Abstract Builder**
+
+     end note
+
+     note as N2
+     ,**Concrete Builder**
+       TeBuilder(){ // constructor
+         bebida = new Te()
+       }
+
+       @Override
+       void calentarAgua(){    
+         bebida.setTemperatura(80)
+       }
+  
+       @Override
+       void agregarExtras(){
+         bebida.setTipo("dulce")
+       }
+     end note
+
+     note as N3
+     ,**Director**
+
+     void prepararBebida(BebidaBuilder builder){
+         cambiarBebida(bebidaBuilder)
+    
+         bebidaBuilder.calentarAgua()
+         bebidaBuilder.agregarExtras()
+         bebidaBuilder.servir()
+     }
+     end note
+
+     N1 .l. BebidaBuilder
+     N2 .r. TeBuilder
+     N3 .r. Cafeteria
+
+     note right of Te : **Product**
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagrama-de-clases/builder-bebida-interfaz.png]]
+* Factory Method
+** Videojuego Personajes Factory
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/personaje-factory.png :exports results
+     @startuml
+     Title Patrón Factory-Method
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     rectangle "Factory - Concrete Factory" as A{
+     abstract class PersonajeFactory{
+         +void accion()
+         +Personaje crearPersonaje()
+     }
+
+     class RandomFactory{
+         +Personaje crearPersonaje()
+     }
+     class PoderososFactory{
+         +Personaje crearPersonaje()
+     }
+     }
+
+     rectangle "Product - Concrete Product" as B{
+     interface Personaje{
+         +void correr()
+         +void saltar()
+     }
+
+     class Arquero{
+     }
+
+     class Barbaro{
+     }
+     }
+
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     '
+     Arquero .u.|> Personaje
+     Barbaro .u.|> Personaje
+
+     RandomFactory       -u-|> PersonajeFactory
+     PoderososFactory   -u-|> PersonajeFactory
+
+     PersonajeFactory    .r.>  Personaje : usa
+
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+     note as N1
+     ,**Concrete Factory**
+
+     crearPersonaje(){
+     // un algoritmo para
+     // elegir un personaje random
+     }
+     end note
+
+     note as N2
+     ,**Concrete Factory**
+
+     crearPersonaje(){
+     // otro algoritmo para
+     // elegir los más poderosos
+     }
+     end note
+
+     N1 .u. RandomFactory
+     N2 .u. PoderososFactory
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/personaje-factory.png]]
+** Archivos Factory
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/archivo-factory.png :exports results
+     @startuml
+     Title Patrón Factory-Method
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     rectangle "Product - Concrete Product" as A{
+         interface Archivo{
+             +void abrir()
+             +void cerrar()
+             +void guardar()
+         }
+    
+         class ArchivoPDF
+         class ArchivoTXT
+     }
+
+
+     rectangle "Factory - Concrete Factory" as B{
+         abstract class ArchivoFactory{
+             +void accion()
+             +Archivo crearArchivo()
+         }
+    
+         class WindowsFactory{
+             +Archivo crearArchivo()
+         }
+    
+         class LinuxFactory{
+             +Archivo crearArchivo()
+         }
+     }
+
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     ArchivoPDF .u.|> Archivo
+     ArchivoTXT .u.|> Archivo
+
+     WindowsFactory  -u-|> ArchivoFactory
+     LinuxFactory    -u-|> ArchivoFactory
+
+     ArchivoFactory  .r.> Archivo
+
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+     note as N1
+     crearArchivo(){
+     // implementacion para windows
+     }
+     end note
+
+     note as N2
+     crearArchivo(){
+     // implementacion para linux
+     }
+     end note
+
+     N1 .u. WindowsFactory
+     N2 .u. LinuxFactory
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/archivo-factory.png]]
+** [TODO] Multimedia Factory
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/multimedia-factory.png :exports results
+     @startuml
+     Title Patrón Factory-Method
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     abstract class ArchivoFactory{
+         +ArchivoMultimedia crearArchivo()
+     }
+
+     class FullHDFactory{
+         +ArchivoMultimedia crearArchivo()
+     }
+
+     class LowFactory{
+         +ArchivoMultimedia crearArchivo()
+     }
+
+     interface ArchivoMultimedia{
+         +void reproducir()
+     }
+
+     class ArchivoVideo
+     class ArchivoAudio
+
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     ArchivoVideo .u.|> ArchivoMultimedia
+     ArchivoAudio .u.|> ArchivoMultimedia
+
+     FullHDFactory    -u-|> ArchivoFactory
+     LowFactory       -u-|> ArchivoFactory
+
+     ArchivoFactory .r.> ArchivoMultimedia
+
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+     @enduml
+   #+END_SRC
+** Agencia Vehiculos Factory
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/agencia-vehiculos-factory.png :exports results
+     @startuml
+     Title Patrón Factory-Method
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     rectangle "Product - Concrete Product" as A{
+         interface Vehiculo{
+             +void conducir()
+         }
+    
+         class Bicicleta{
+             +int cantRuedas
+             +void conducir()
+         }
+    
+         class Auto{
+             +int cantRuedas
+             +void conducir()
+         }
+     }
+
+     rectangle "Factory - Concrete Factory" as B{
+         abstract class AgenciaVehiculoFactory{
+             +Vehiculo crearVehiculo()
+         }
+    
+         class LineaDeportivaFactory{
+             +Vehiculo crearVehiculo()
+         }
+    
+         class LineaFamiliarFactory{
+             +Vehiculo crearVehiculo()
+         }
+     }
+
+
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     Bicicleta   .u.|> Vehiculo
+     Auto        .u.|> Vehiculo
+
+     AgenciaVehiculoFactory .r.> Vehiculo
+
+     LineaDeportivaFactory -u-|> AgenciaVehiculoFactory
+     LineaFamiliarFactory -u-|> AgenciaVehiculoFactory
+
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/agencia-vehiculos-factory.png]]
+** Servicio Mensajes Factory
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/servicio-mensajes-factory.png :exports results
+     @startuml
+     Title Patrón Factory-Method
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     rectangle "Product - Concrete Product" as A{
+         interface Mensaje{
+             +void enviar()
+         }
+    
+         class MensajeDeVoz{
+             -String destinatario
+             -int duracion
+             -int calidad
+             +void enviar()
+         }
+         class MensajeSMS{
+             -String destinatario
+             -String texto
+             +void enviar()
+         }
+     }
+
+     rectangle "Factory - Factory Product" as B{
+         abstract class ServicioMensajeFactory{
+             +Mensaje crearMensaje()
+         }
+    
+         class WhatsappFactory{
+             +Mensaje crearMensaje()
+         }
+    
+         class TelegramFactory{
+             +Mensaje crearMensaje()
+         }
+     }
+
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     MensajeDeVoz .u.|> Mensaje
+     MensajeSMS .u.|> Mensaje
+
+     ServicioMensajeFactory -r-> Mensaje
+
+     WhatsappFactory -u-|> ServicioMensajeFactory
+     TelegramFactory -u-|> ServicioMensajeFactory
+
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/servicio-mensajes-factory.png]]
+* Abstract Factory
+** Panaderia Abstract Factory
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/panaderia-abstract-factory.png :exports results
+     @startuml
+     Title Patrón Abstract Factory
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+
+     rectangle "Product - Concrete Product" as A #lightgreen{
+         interface Sanwich{
+             +void calentar()
+             +void agregarCondimentos()
+         }
+    
+         class SanwichMilanesa
+         class SanwichVegetariano
+     }
+
+
+     rectangle "Product - Concrete Product" as B #lightblue{
+         interface Empanada{
+             +void cocinar()
+             +void hacerRepulge()
+         }
+    
+         class EmpanadaCarne
+         class EmpanadaVerdura
+     }
+
+     rectangle "Concrete Factories - Abstract Factory" as c{
+     abstract class PanaderiaFactory{
+         -Factory factory
+         +Empanada crearEmpanada()
+         +Pizza crearPizza()
+     }
+
+     class PanaderiaBarrialFactory{
+         +Empanada crearEmpanada()
+         +Pizza crearPizza()
+     }
+
+     class PanaderiaGourmetFactory{
+         +Empanada crearEmpanada()
+         +Pizza crearPizza()
+     }
+     }
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     PanaderiaBarrialFactory -u-|> PanaderiaFactory
+     PanaderiaGourmetFactory -u-|> PanaderiaFactory
+
+     PanaderiaBarrialFactory .[#blue,dashed,thickness=2]d.> EmpanadaCarne
+     PanaderiaGourmetFactory .[#blue,dashed,thickness=2]r.> EmpanadaVerdura
+
+     PanaderiaBarrialFactory .[#green,dashed,thickness=2]d.> SanwichMilanesa
+     PanaderiaGourmetFactory .[#green,dashed,thickness=2]r.> SanwichVegetariano
+
+     EmpanadaVerdura     .u.|> Empanada
+     EmpanadaCarne       .u.|> Empanada
+
+     SanwichVegetariano  .u.|> Sanwich
+     SanwichMilanesa     .U.|> Sanwich
+
+
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/panaderia-abstract-factory.png]]
+** GUI Abstract Factory
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/gui-abstract-factory.png :exports results
+     @startuml
+     Title Patrón Abstract Factory - GUI Windows/Linux
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     rectangle "Product #1 - Concrete Products\nFamilia de Botones"{
+         interface Boton{
+             +void cerrarVentana()
+             +void reproducirSonido()
+         }
+
+         class WinBoton{
+             +void cerrarVentana()
+             +void reproducirSonido()
+         }
+         class LinuxBoton{
+             +void cerrarVentana()
+             +void reproducirSonido()
+         }
+     }
+
+     rectangle "Product #2 - Concrete Products\nFamilia de Checkboxes"{
+         interface Checkbox{
+             +void click()
+         }
+
+         class WinCheckbox{
+             +void click()
+         }
+         class LinuxCheckbox{
+             +void click()
+         }
+     }
+
+     rectangle "Abstract Factory - Concrete Factories"{
+         abstract class GUIFactory{
+             -Factory GUIFactory
+             +{abstract} Boton crearBoton()
+             +{abstract} Checkbox crearCheckbox()
+         }
+
+         class GUIWinFactory{
+             +Boton crearBoton()
+             +Checkbox crearCheckbox()
+         }
+
+         class GUILinuxFactory{
+             +Boton crearBoton()
+             +Checkbox crearCheckbox()
+         }
+     }
+
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     GUIWinFactory      -u-|> GUIFactory
+     GUILinuxFactory    -u-|> GUIFactory
+
+     WinBoton        .u.|> Boton
+     LinuxBoton      .u.|> Boton
+
+     WinCheckbox     .u.|> Checkbox
+     LinuxCheckbox   .u.|> Checkbox
+
+     GUIWinFactory      .r.> WinCheckbox
+     GUIWinFactory      .r.> WinBoton
+
+     GUILinuxFactory    .d.> LinuxCheckbox
+     GUILinuxFactory    .d.> LinuxBoton
+
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/gui-abstract-factory.png]]
+** Jugeteria Abstract Factory (con función genérica)
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/jugeteria-abstract-factory.png :exports results
+     @startuml
+     Title Patrón Abstract Factory - Jugeteria
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     class Programa{
+         JugeteriaFactory getFactory(String factory)
+     }
+
+     rectangle "Product - Concrete Products \nFamilia de Animales" as Animales{
+         interface Animal{
+             +String getTipo()    
+             +void caminar()
+             +void gruñir()
+         }
+         class Leon{
+             +String getTipo()    
+             +void caminar()
+             +void gruñir()
+         }
+
+         class Puma{
+             +String getTipo()    
+             +void caminar()
+             +void gruñir()
+         }
+
+         class Tigre{
+             +String getTipo()    
+             +void caminar()
+             +void gruñir()
+         }
+     }
+
+     rectangle "Product - Concrete Products \nFamilia de Colores" as Colores{
+         interface Color{
+             +String getColor()
+         }
+         class Blanco{
+             +String getColor()
+         }
+
+         class Naranja{
+             +String getColor()
+         }
+     }
+
+
+     class AnimalFactory{
+         +Animal crearAnimal(String tipo)
+     }
+
+     class ColorFactory{
+         +Color crearColor(String tipo)
+     }
+
+     interface JugeteriaFactory{
+         +T crear(String factory)
+     }
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     Leon    .u.|> Animal
+     Tigre   .u.|> Animal
+     Puma    .u.|> Animal
+
+     Blanco      .u.|> Color
+     Naranja     .u.|> Color
+
+     AnimalFactory   .u.|> JugeteriaFactory
+     ColorFactory    .u.|> JugeteriaFactory
+
+     AnimalFactory   .d.> Animal
+     ColorFactory    .d.> Color
+
+     Programa .l.> JugeteriaFactory
+
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/jugeteria-abstract-factory.png]]
+** Laboratorio Abstract Factory
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/laboratorio2-abstract-factory.png :exports results
+     @startuml
+     Title Patrón Abstract Factory - Animales
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     class Programa{
+         LaboratorioFactory getFactory(String factory)
+     }
+
+     rectangle "Product - Concrete Products \nFamilia de Animales" as Animales{
+         interface Animal{
+             +String getTipo()    
+             +void caminar()
+             +void gruñir()
+         }
+         class Leon{
+             +String getTipo()    
+             +void caminar()
+             +void gruñir()
+         }
+    
+         class Puma{
+             +String getTipo()    
+             +void caminar()
+             +void gruñir()
+         }
+    
+         class Tigre{
+             +String getTipo()    
+             +void caminar()
+             +void gruñir()
+         }
+     }
+
+     rectangle "Product - Concrete Products \nFamilia de Colores" as Colores{
+         interface Color{
+             +String getColor()
+         }
+         class Blanco{
+             +String getColor()
+         }
+    
+         class Naranja{
+             +String getColor()
+         }
+     }
+
+
+     class AnimalFactory{
+         +Animal crearAnimal(String tipo)
+         +Color crearColor(String tipo)
+     }
+
+     class ColorFactory{
+         +Color crearColor(String tipo)
+         +Animal crearAnimal(String tipo)
+     }
+
+     interface LaboratorioFactory{
+         Animal crearAnimal(String animal)
+         Color crearColor(String color)
+     }
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     Leon    .u.|> Animal
+     Tigre   .u.|> Animal
+     Puma    .u.|> Animal
+
+     Blanco      .u.|> Color
+     Naranja     .u.|> Color
+
+     AnimalFactory   .u.|> LaboratorioFactory
+     ColorFactory    .u.|> LaboratorioFactory
+
+     AnimalFactory   .d.> Animal
+     ColorFactory    .d.> Color
+
+     Programa .l.> LaboratorioFactory
+
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+     note as N1
+     Si usaramos una función genérica
+     como **T crear(String tipo)**
+     no necesitaríamos agregar una función
+     por cada factoria concreta
+     end note
+
+     N1 .r. LaboratorioFactory
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/laboratorio2-abstract-factory.png]]
+** Prestamos Bancarios Abstract Factory
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/prestamos-abstract-factory.png :exports results
+     @startuml
+     Title Patrón Abstract Factory - Prestamos Bancarios
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     cloud "Client"{
+         class Aplicacion{
+             +{static} SistemaFactory getFactory(String Factory)
+         }
+     }
+
+     rectangle "Product - Concrete Products \nFamilia de Bancos" as A{
+         interface Banco{
+             +String getNombre()
+         }
+    
+         class BancoCiudad{
+             -String nombre
+             +String getNombre()
+         }
+    
+         class BancoProvincia{
+             -String nombre
+             +String getNombre()
+         }
+     }
+
+     rectangle "Product - Concrete Products \nFamilia de Prestamos" as B{
+         abstract class Prestamo{
+             -int valor
+             -int intereses
+             +{abstract} void calcularIntereses()
+             +void calcularPestamo()
+         }
+    
+         class PrestamoEstudiantil{
+             +void calcularIntereses()
+         }
+    
+         class PrestamoPYME{
+             +void calcularIntereses()
+         }
+    
+         class PrestamoFamiliar{
+             +void calcularIntereses()
+         }
+     }
+
+     rectangle "Abstract Factory - Concrete Factories" as C{
+         class BancoFactory{
+             +Banco crearBanco()
+         }
+    
+         class PrestamoFactory{
+             +Prestamo crearPrestamo()
+         }
+    
+         abstract class SistemaFactory{
+             +Prestamo crearPrestamo()
+             +Banco crearBanco()
+         }
+     }
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     BancoCiudad     .u.|> Banco
+     BancoProvincia  .u.|> Banco
+
+
+     PrestamoEstudiantil -u-|> Prestamo
+     PrestamoPYME        -u-|> Prestamo
+     PrestamoFamiliar    -u-|> Prestamo
+
+     BancoFactory    -u-|> SistemaFactory
+     PrestamoFactory -u-|> SistemaFactory
+
+     PrestamoFactory .d.> Prestamo
+     BancoFactory    .d.> Banco
+
+     Aplicacion .l.>  SistemaFactory
+
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/prestamos-abstract-factory.png]]
+
+* Strategy
+** Strategy - Mortal Kobat
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/mortal-kombat-strategy.png :exports results
+     @startuml
+     Title Strategy - Mortal Kombat
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     rectangle "Context" as A{
+         abstract class Luchador{
+             -Patada patada
+             -Puñetazo puñetazo
+        
+             +void darPatada()
+             +void darPuñetazo()
+             +{abstract} String getNombre()
+             +void setPatada()
+             +void setPuñetazo()
+         }
+    
+         class Scorpion{
+             +String getNombre()
+             +void darPatada()
+             +void darPuñetazo()
+         }
+    
+         class Goro{
+             +String getNombre()
+             +void darPuñetazo()
+         }
+     }
+
+     rectangle "Strategy #1\nComportamiento Encapsulado" #lightgreen{
+         interface Patada{
+             +void darPatada()
+         }
+    
+         class PatadaRapida{
+             +void darPatada()
+         }
+    
+         class PatadaVoladora{
+             +void darPatada()
+         }
+     }
+
+     rectangle "Strategy #2\nComportamiento Encapsulado" #lightblue{
+         interface Puñetazo{
+             +void darPuñetazo()
+         }
+    
+         class PuñetazoPerforante{
+         +void darPuñetazo()
+         }
+    
+         class PuñetazoSangrante{
+             +void darPuñetazo()
+         }
+     }
+
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     Scorpion    .u.|> Luchador
+     Goro        .u.|> Luchador
+
+     PatadaVoladora      .u.|> Patada
+     PatadaRapida        .u.|> Patada
+
+     PuñetazoPerforante   .u.|> Puñetazo
+     PuñetazoSangrante   .u.|> Puñetazo
+
+     Luchador::patada    -l[thickness=2]-> Patada
+     Luchador::puñetazo  -r[thickness=2]-> Puñetazo
+
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/mortal-kombat-strategy.png]]
+
+* Referencias
+#+BEGIN_COMMENT
+Chequear referencias
+  1. https://www.fdi.ucm.es/profesor/jpavon/poo/2.14pdoo.pdf
+  2. https://informaticapc.com/patrones-de-diseno/abstract-factory.php
+  3. https://refactoring.guru/es/design-patterns/factory-method/java/example
+  4. https://github.com/eugenp/tutorials/tree/master/patterns/design-patterns-creational/src/main/java/com/baeldung
+  5. https://aprendeyprogramablog.wordpress.com/2016/07/10/ejemplo-abstract-factory/
+  6. https://www.javatpoint.com/design-patterns-in-java
+  7. https://github.com/miw-upm/apaw/tree/develop/src/main/java/es/upm/miw/pd
+  8. https://www.geeksforgeeks.org/abstract-factory-pattern/
+
+ **generales*
+  9. https://www.fdi.ucm.es/profesor/jpavon/poo/2.14pdoo.pdf
+**otras**
+ 10. https://picodotdev.github.io/blog-bitix/2020/12/para-que-sirve-la-palabra-clave-final-en-el-codigo-fuente-java/
+#+END_COMMENT
