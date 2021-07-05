@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<drjava version="drjava-20190813-220051">
+  <project autorefresh="false" main="" root="" work="">
+    <createjar file=""/>
+    <source>
+      <file active="true" name="LuchadorTest.java" package="" timestamp="03-Jul-2021 03:29:45">
+        <select from="796" to="796"/>
+        <scroll column="112" row="0"/>
+      </file>
+      <file name="PatadaVoladora.java" package="" timestamp="03-Jul-2021 03:08:16">
+        <select from="796" to="796"/>
+        <scroll column="112" row="0"/>
+      </file>
+      <file name="PatadaRapida.java" package="" timestamp="03-Jul-2021 03:08:59">
+        <select from="796" to="796"/>
+        <scroll column="112" row="0"/>
+      </file>
+      <file name="Patada.java" package="" timestamp="03-Jul-2021 03:10:41">
+        <select from="796" to="796"/>
+        <scroll column="112" row="0"/>
+      </file>
+      <file name="Punietazo.java" package="" timestamp="03-Jul-2021 03:10:46">
+        <select from="796" to="796"/>
+        <scroll column="112" row="0"/>
+      </file>
+      <file name="PunietazoPerforante.java" package="" timestamp="03-Jul-2021 03:13:14">
+        <select from="796" to="796"/>
+        <scroll column="112" row="0"/>
+      </file>
+      <file name="PunietazoSangrante.java" package="" timestamp="03-Jul-2021 03:14:06">
+        <select from="796" to="796"/>
+        <scroll column="112" row="0"/>
+      </file>
+      <file name="Goro.java" package="" timestamp="03-Jul-2021 03:19:12">
+        <select from="796" to="796"/>
+        <scroll column="112" row="0"/>
+      </file>
+      <file name="Luchador.java" package="" timestamp="03-Jul-2021 03:19:41">
+        <select from="796" to="796"/>
+        <scroll column="112" row="0"/>
+      </file>
+      <file name="Scorpion.java" package="" timestamp="03-Jul-2021 03:27:01">
+        <select from="796" to="796"/>
+        <scroll column="112" row="0"/>
+      </file>
+    </source>
+    <included/>
+    <excluded/>
+    <collapsed/>
+    <classpath/>
+    <breakpoints/>
+    <watches/>
+    <bookmarks/>
+    <preferences/>
+  </project>
+</drjava>
