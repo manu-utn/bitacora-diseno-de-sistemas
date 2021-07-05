@@ -1,0 +1,16 @@
+/**
+ * Concrete Command - Guardar
+ */
+public class AccionGuardar implements Command{
+  private Documento documento;
+  
+  // constructor
+  public AccionGuardar(Documento documento){
+    this.documento = documento;
+  }
+  
+  @Override
+  public void ejecutar(){
+    documento.guardar();
+  }
+}

@@ -1,0 +1,12 @@
+/**
+ * Receptor - Lampara
+ */
+public class Lampara {
+  public void accionEncender(){
+    System.out.println("Lampara encendida");
+  }
+  
+  public void accionApagar(){
+    System.out.println("Lampara apagada");
+  }
+}

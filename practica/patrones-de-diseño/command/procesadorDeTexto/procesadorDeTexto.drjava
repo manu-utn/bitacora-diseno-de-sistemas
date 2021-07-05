@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<drjava version="drjava-20190813-220051">
+  <project autorefresh="false" root="" work="">
+    <createjar file=""/>
+    <source>
+      <file active="true" name="UsuarioJugandoConEditor.java" package="" timestamp="04-Jul-2021 20:23:16">
+        <select from="602" to="602"/>
+        <scroll column="7" row="0"/>
+      </file>
+      <file name="Command.java" package="" timestamp="04-Jul-2021 02:26:31">
+        <select from="602" to="602"/>
+        <scroll column="7" row="0"/>
+      </file>
+      <file name="MenuOpciones.java" package="" timestamp="04-Jul-2021 20:17:47">
+        <select from="602" to="602"/>
+        <scroll column="7" row="0"/>
+      </file>
+      <file name="EditorTexto.java" package="" timestamp="04-Jul-2021 20:22:51">
+        <select from="602" to="602"/>
+        <scroll column="7" row="0"/>
+      </file>
+      <file name="CommandAbrir.java" package="" timestamp="04-Jul-2021 20:24:34">
+        <select from="602" to="602"/>
+        <scroll column="7" row="0"/>
+      </file>
+      <file name="CommandCerrar.java" package="" timestamp="04-Jul-2021 20:24:39">
+        <select from="602" to="602"/>
+        <scroll column="7" row="0"/>
+      </file>
+      <file name="CommandGuardar.java" package="" timestamp="04-Jul-2021 20:24:44">
+        <select from="602" to="602"/>
+        <scroll column="7" row="0"/>
+      </file>
+    </source>
+    <included/>
+    <excluded/>
+    <collapsed/>
+    <classpath/>
+    <breakpoints/>
+    <watches/>
+    <bookmarks/>
+    <preferences/>
+  </project>
+</drjava>

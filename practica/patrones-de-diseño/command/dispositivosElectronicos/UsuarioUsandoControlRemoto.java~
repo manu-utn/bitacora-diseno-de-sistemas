@@ -1,0 +1,10 @@
+/**
+ * Client
+ */
+public class UsuarioUsandoControlRemoto {
+  
+  public static void main(String[] args) { 
+    
+  }
+  
+}

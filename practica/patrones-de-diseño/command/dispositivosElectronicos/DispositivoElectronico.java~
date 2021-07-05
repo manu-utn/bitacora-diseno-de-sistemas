@@ -1,0 +1,7 @@
+/**
+ * Auto Generated Java Class.
+ */
+public interface DispositivoElectronico {
+  public void accionEncender();
+  public void accionApagar();
+}

@@ -1,0 +1,19 @@
+/**
+ * Cliente
+ */
+public class Usuario {
+  public static void main(String[] args) { 
+    Documento documento;
+    
+    documento = new Documento();
+    
+    AccionAbrir clickAbrir = new AccionAbrir(documento);
+    AccionGuardar clickGuardar = new AccionGuardar(documento);
+    
+    MenuOpciones menu = new MenuOpciones(clickAbrir, clickGuardar);
+    
+    menu.clickAbrir();
+    
+    menu.clickGuardar();
+  }
+}

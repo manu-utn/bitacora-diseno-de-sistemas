@@ -1,0 +1,20 @@
+/**
+ * Invocador
+ */
+public class MenuOpciones {
+  private Command commandAbrir;
+  private Command commandGuardar;
+  
+  public MenuOpciones(Command commandAbrir, Command commandGuardar){
+    this.commandAbrir = commandAbrir;
+    this.commandGuardar = commandGuardar;
+  }
+  
+  public void clickAbrir(){
+    commandAbrir.ejecutar();
+  }
+  
+  public void clickGuardar(){
+    commandGuardar.ejecutar();
+  }  
+}

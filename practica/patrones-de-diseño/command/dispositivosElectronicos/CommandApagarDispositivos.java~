@@ -1,0 +1,15 @@
+/**
+ * Concrete Command - Apagar todos los dispositivos
+ */
+
+public class CommandApagarTodosDispositivos implements Command{
+  DispositivoElectronico dispositivo;
+  
+  public CommandApagarTodos(DispositivoElectronico dispositivo){
+    this.dispositivo = dispositivo;
+  }
+  
+  public void ejecutar(){
+    dispositivo.accionEncender();
+  }
+}
