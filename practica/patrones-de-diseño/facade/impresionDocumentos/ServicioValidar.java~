@@ -1,0 +1,8 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class ServicioValidacion {
+  public void validar(){
+    System.out.println("Imprimiendo documento");
+  }
+}

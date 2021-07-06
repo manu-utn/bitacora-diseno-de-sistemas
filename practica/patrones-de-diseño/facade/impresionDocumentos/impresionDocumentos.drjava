@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<drjava version="drjava-20190813-220051">
+  <project autorefresh="false" main="" root="" work="">
+    <createjar file=""/>
+    <source>
+      <file active="true" name="ServicioValidar.java" package="" timestamp="06-Jul-2021 04:40:21">
+        <select from="168" to="168"/>
+        <scroll column="0" row="0"/>
+      </file>
+      <file name="ServicioImpresionFachada.java" package="" timestamp="06-Jul-2021 04:29:48">
+        <select from="168" to="168"/>
+        <scroll column="0" row="0"/>
+      </file>
+      <file name="Documento.java" package="" timestamp="06-Jul-2021 04:39:11">
+        <select from="168" to="168"/>
+        <scroll column="0" row="0"/>
+      </file>
+      <file name="ServicioFirmaDigital.java" package="" timestamp="06-Jul-2021 04:40:14">
+        <select from="168" to="168"/>
+        <scroll column="0" row="0"/>
+      </file>
+      <file name="ServicioImprimir.java" package="" timestamp="06-Jul-2021 04:40:18">
+        <select from="168" to="168"/>
+        <scroll column="0" row="0"/>
+      </file>
+      <file name="ServicioImpresionDemo.java" package="" timestamp="06-Jul-2021 04:41:26">
+        <select from="168" to="168"/>
+        <scroll column="0" row="0"/>
+      </file>
+    </source>
+    <included/>
+    <excluded/>
+    <collapsed/>
+    <classpath/>
+    <breakpoints/>
+    <watches/>
+    <bookmarks/>
+    <preferences/>
+  </project>
+</drjava>

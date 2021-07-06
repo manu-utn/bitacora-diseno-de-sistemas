@@ -1,0 +1,8 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class ServicioImprimir {
+  public void imprimir(){
+    System.out.println("Imprimiendo documento");
+  }
+}
