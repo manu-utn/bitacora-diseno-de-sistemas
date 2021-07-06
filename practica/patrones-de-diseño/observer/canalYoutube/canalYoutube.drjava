@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<drjava version="drjava-20190813-220051">
+  <project autorefresh="false" main="" root="" work="">
+    <createjar file=""/>
+    <source>
+      <file active="true" name="CanalYoutubeCocinaObservable.java" package="" timestamp="05-Jul-2021 20:37:50">
+        <select from="1156" to="1156"/>
+        <scroll column="344" row="0"/>
+      </file>
+      <file name="SuscriptorObserver.java" package="" timestamp="05-Jul-2021 19:55:41">
+        <select from="1156" to="1156"/>
+        <scroll column="344" row="0"/>
+      </file>
+      <file name="CanalYoutubeObservable.java" package="" timestamp="05-Jul-2021 20:11:16">
+        <select from="1156" to="1156"/>
+        <scroll column="344" row="0"/>
+      </file>
+      <file name="DemoCanalYoutube.java" package="" timestamp="05-Jul-2021 20:41:54">
+        <select from="1156" to="1156"/>
+        <scroll column="344" row="0"/>
+      </file>
+      <file name="SuscriptorRecetasObserver.java" package="" timestamp="05-Jul-2021 20:42:33">
+        <select from="1156" to="1156"/>
+        <scroll column="344" row="0"/>
+      </file>
+    </source>
+    <included/>
+    <excluded/>
+    <collapsed/>
+    <classpath/>
+    <breakpoints/>
+    <watches/>
+    <bookmarks/>
+    <preferences/>
+  </project>
+</drjava>

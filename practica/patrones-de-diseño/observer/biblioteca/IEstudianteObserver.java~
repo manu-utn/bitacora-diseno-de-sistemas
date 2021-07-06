@@ -1,0 +1,6 @@
+/**
+ * Observer
+ */
+public interface IEstudianteObserver {
+  public void actualizar(Libro libro);
+}

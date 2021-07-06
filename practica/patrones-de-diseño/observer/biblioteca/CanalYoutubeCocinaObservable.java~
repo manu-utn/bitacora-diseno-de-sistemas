@@ -1,0 +1,31 @@
+/**
+ * Concrete Subject/Observable 
+ */
+
+import java.util.ArrayList;
+
+public class CanalYoutubeCocina implements CanalYoutube{
+  ArrayList<Suscriptor> suscriptores; // observers
+  int cantidadRecetas; // estado
+  
+  public CanalYoutubeCocina(){ // constructor
+    // inicializamos
+    suscriptores = new ArrayList<Suscriptor>();
+  }
+  
+  // register
+  public void suscribir(Suscriptor nuevoSuscriptor){
+    suscriptores.add(nuevoSuscriptor);
+  }
+  
+  // unregister
+  public void desuscribir(Suscriptor suscriptor){
+    int idSuscriptor = suscriptores.indexof(suscriptor);
+    suscriptores.remove(idSuscriptor);
+  }
+  
+  // notifyObservers
+  public void notificarSuscriptores(){
+    suscriptores.forEach(suscriptor -> suscriptor.actualizar(cantidadRecetas));
+  }
+}
