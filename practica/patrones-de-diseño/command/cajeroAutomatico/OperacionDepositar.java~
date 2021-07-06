@@ -1,0 +1,7 @@
+/**
+ * Concrete Command - Depositar
+ * https://www.youtube.com/watch?v=hDBOfyzFKEU&ab_channel=MitoCode
+ */
+public class OperacionDepositar {
+  
+}

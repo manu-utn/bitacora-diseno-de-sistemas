@@ -3,33 +3,33 @@
   <project autorefresh="false" root="" work="">
     <createjar file=""/>
     <source>
-      <file active="true" name="UsuarioJugandoConEditor.java" package="" timestamp="04-Jul-2021 20:23:16">
-        <select from="602" to="602"/>
-        <scroll column="7" row="0"/>
+      <file active="true" name="EditorTexto.java" package="" timestamp="05-Jul-2021 01:36:59">
+        <select from="64" to="64"/>
+        <scroll column="0" row="0"/>
+      </file>
+      <file name="UsuarioJugandoConEditor.java" package="" timestamp="04-Jul-2021 20:23:16">
+        <select from="64" to="64"/>
+        <scroll column="0" row="0"/>
       </file>
       <file name="Command.java" package="" timestamp="04-Jul-2021 02:26:31">
-        <select from="602" to="602"/>
-        <scroll column="7" row="0"/>
-      </file>
-      <file name="MenuOpciones.java" package="" timestamp="04-Jul-2021 20:17:47">
-        <select from="602" to="602"/>
-        <scroll column="7" row="0"/>
-      </file>
-      <file name="EditorTexto.java" package="" timestamp="04-Jul-2021 20:22:51">
-        <select from="602" to="602"/>
-        <scroll column="7" row="0"/>
+        <select from="64" to="64"/>
+        <scroll column="0" row="0"/>
       </file>
       <file name="CommandAbrir.java" package="" timestamp="04-Jul-2021 20:24:34">
-        <select from="602" to="602"/>
-        <scroll column="7" row="0"/>
+        <select from="64" to="64"/>
+        <scroll column="0" row="0"/>
       </file>
       <file name="CommandCerrar.java" package="" timestamp="04-Jul-2021 20:24:39">
-        <select from="602" to="602"/>
-        <scroll column="7" row="0"/>
+        <select from="64" to="64"/>
+        <scroll column="0" row="0"/>
       </file>
       <file name="CommandGuardar.java" package="" timestamp="04-Jul-2021 20:24:44">
-        <select from="602" to="602"/>
-        <scroll column="7" row="0"/>
+        <select from="64" to="64"/>
+        <scroll column="0" row="0"/>
+      </file>
+      <file name="MenuOpciones.java" package="" timestamp="05-Jul-2021 01:36:38">
+        <select from="64" to="64"/>
+        <scroll column="0" row="0"/>
       </file>
     </source>
     <included/>

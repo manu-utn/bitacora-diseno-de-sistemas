@@ -2,20 +2,15 @@
  * Concrete Command - Abrir
  */
 public class CommandAbrir implements Command{
-  private EditorTexto editor;
+  private EditorTexto nombreArchivo;
   
   // constructor
-  public CommandAbrir(EditorTexto editor){
-    this.editor = editor;
+  public CommandAbrir(EditorTexto nombreArchivo){
+    this.nombreArchivo = nombreArchivo;
   }
   
   @Override
-  public void ejecutar(){
-    editor.accionAbrir();
-  }
-  
-  @Override
-  public String getNombre(){
-    return "abrir";
+  public String ejecutar(){
+    return nombreArchivo.accionAbrir();
   }
 }

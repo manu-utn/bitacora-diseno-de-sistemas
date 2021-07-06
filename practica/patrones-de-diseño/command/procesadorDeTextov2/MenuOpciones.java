@@ -1,24 +1,20 @@
 /**
- * Invocador - Menu de Opciones del Editor de texto
- * (Ej. el típico toolbar)
+ * Invocador - Menu de Opciones del Editor de texto (Ej. el típico toolbar)
+ * 
+ * - con un historial de las acciones/operaciones realizadas
+ * - en el add() no se evalua la existencia o no de la operación en el historial
+ * porque se quiere conservar cada acción
  */
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 public class MenuOpciones {
-  private Map<String, Command> concreteCommands;
-  
-  public MenuOpciones(){
-    // lo inicializamos
-    concreteCommands = new HashMap<>();
+  private Command command;
+  private final List<Command> historialAcciones = new ArrayList<>();
+
+  public String clickBoton(Command concreteCommand){
+    historialAcciones.add(concreteCommand);
+    
+    return concreteCommand.ejecutar();
   }
-  
-  public void clickBoton(String nombreBoton){
-    concreteCommands.get(nombreBoton).ejecutar();
-  }
-  
-  public void addConcreteCommand(Command concreteCommand){
-    this.concreteCommands.put(concreteCommand.getNombre(), concreteCommand);
-  }
-  
 }

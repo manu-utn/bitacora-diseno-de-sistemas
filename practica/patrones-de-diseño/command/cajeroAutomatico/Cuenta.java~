@@ -1,0 +1,17 @@
+/**
+ * Receptor
+ */
+public class Cuenta {
+  private int numeroCuenta;
+  private double saldo;
+  
+  public void depositar(double monto){
+    saldo += monto;
+  }
+  
+  public void retirar(double monto){
+    if( saldo - monto >= 10){
+      saldo -= monto;
+    }
+  }
+}

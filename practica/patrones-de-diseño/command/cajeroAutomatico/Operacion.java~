@@ -1,0 +1,6 @@
+/**
+ * Auto Generated Java Class.
+ */
+public interface Operacion {
+  public void ejecutar();
+}

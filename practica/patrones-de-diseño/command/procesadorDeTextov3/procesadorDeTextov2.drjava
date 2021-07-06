@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<drjava version="drjava-20190813-220051">
+  <project autorefresh="false" root="" work="">
+    <createjar file=""/>
+    <source>
+      <file active="true" name="MenuOpciones.java" package="" timestamp="04-Jul-2021 21:36:52">
+        <select from="213" to="213"/>
+        <scroll column="45" row="0"/>
+      </file>
+      <file name="EditorTexto.java" package="" timestamp="04-Jul-2021 21:20:55">
+        <select from="213" to="213"/>
+        <scroll column="45" row="0"/>
+      </file>
+      <file name="Command.java" package="" timestamp="04-Jul-2021 21:30:55">
+        <select from="213" to="213"/>
+        <scroll column="45" row="0"/>
+      </file>
+      <file name="CommandAbrir.java" package="" timestamp="04-Jul-2021 21:31:15">
+        <select from="213" to="213"/>
+        <scroll column="45" row="0"/>
+      </file>
+      <file name="CommandCerrar.java" package="" timestamp="04-Jul-2021 21:31:29">
+        <select from="213" to="213"/>
+        <scroll column="45" row="0"/>
+      </file>
+      <file name="CommandGuardar.java" package="" timestamp="04-Jul-2021 21:31:40">
+        <select from="213" to="213"/>
+        <scroll column="45" row="0"/>
+      </file>
+      <file name="UsuarioJugandoConEditor.java" package="" timestamp="04-Jul-2021 21:38:51">
+        <select from="213" to="213"/>
+        <scroll column="45" row="0"/>
+      </file>
+    </source>
+    <included/>
+    <excluded/>
+    <collapsed/>
+    <classpath/>
+    <breakpoints/>
+    <watches/>
+    <bookmarks/>
+    <preferences/>
+  </project>
+</drjava>

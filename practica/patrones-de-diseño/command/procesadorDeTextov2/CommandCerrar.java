@@ -2,20 +2,15 @@
  * Concrete Command - Cerrar
  */
 public class CommandCerrar implements Command{
-  private EditorTexto editor;
+  private EditorTexto nombreArchivo;
   
   // constructor
-  public CommandCerrar(EditorTexto editor){
-    this.editor = editor;
+  public CommandCerrar(EditorTexto nombreArchivo){
+    this.nombreArchivo = nombreArchivo;
   }
   
   @Override
-  public void ejecutar(){
-    editor.accionCerrar();
-  }
-  
-  @Override
-  public String getNombre(){
-    return "cerrar";
+  public String ejecutar(){
+    return nombreArchivo.accionCerrar();
   }
 }

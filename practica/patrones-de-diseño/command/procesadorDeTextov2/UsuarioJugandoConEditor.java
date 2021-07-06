@@ -5,15 +5,12 @@ public class UsuarioJugandoConEditor {
   
   public static void main(String[] args) { 
     
-    EditorTexto editor = new EditorTexto();
-    
     MenuOpciones menu = new MenuOpciones();
-    menu.addConcreteCommand(new CommandAbrir(editor));
-    menu.addConcreteCommand(new CommandCerrar(editor));
-    menu.addConcreteCommand(new CommandGuardar(editor));
+   
+    menu.clickBoton(new CommandAbrir(new EditorTexto("pepe.txt")));
+    menu.clickBoton(new CommandGuardar(new EditorTexto("pepe.txt")));
+    menu.clickBoton(new CommandCerrar(new EditorTexto("pepe.txt")));   
     
-    menu.clickBoton("abrir");
-    menu.clickBoton("guardar");
-    menu.clickBoton("cerrar");   
+    menu.clickBoton(() -> "probando.txt");
   }
 }

@@ -1,0 +1,12 @@
+/**
+ * Receptor
+ */
+public class Documento {
+  public void abrir(){
+    System.out.println("Abriendo documento..");
+  }
+  
+  public void guardar(){
+    System.out.println("Guardando documento..");
+  }
+}

@@ -1,0 +1,6 @@
+/**
+ * Invocador - Teclado del Cajero Automático
+ */
+public class TecladoCajero {
+  Operacion operacion;
+}

@@ -2,20 +2,15 @@
  * Concrete Command - Guardar
  */
 public class CommandGuardar implements Command{
-  private EditorTexto editor;
+  private EditorTexto nombreArchivo;
   
   // constructor
-  public CommandGuardar(EditorTexto editor){
-    this.editor = editor;
+  public CommandGuardar(EditorTexto nombreArchivo){
+    this.nombreArchivo = nombreArchivo;
   }
   
   @Override
-  public void ejecutar(){
-    editor.accionGuardar();
-  }
-  
-  @Override
-  public String getNombre(){
-    return "guardar";
+  public String ejecutar(){
+    return nombreArchivo.accionGuardar();
   }
 }

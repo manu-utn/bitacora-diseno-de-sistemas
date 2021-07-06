@@ -1,16 +1,29 @@
 /**
  * Receptor - Editor de Texto
  */
-public class EditorTexto {
-  public void accionAbrir(){
-    System.out.println("Abriendo un achivo..");
+public class EditorTexto {    
+  private String nombreArchivo;
+  private String mensaje;
+  
+  public EditorTexto(String nombreArchivo){
+    this.nombreArchivo = nombreArchivo;
   }
   
-  public void accionCerrar(){
-    System.out.println("Cerrando un archivo..");
+  public String accionAbrir(){
+    mensaje = "Abriendo el archivo " + nombreArchivo;
+    System.out.println(mensaje);
+    return mensaje;
   }
   
-  public void accionGuardar(){
-    System.out.println("Guardando cambios del archivo..");
+  public String accionCerrar(){
+    mensaje = "Cerrando el archivo " + nombreArchivo;
+    System.out.println(mensaje);
+    return mensaje;
+  }
+  
+  public String accionGuardar(){
+    mensaje = "Guardando los cambios del archivo " + nombreArchivo;
+    System.out.println(mensaje);
+    return mensaje;
   }
 }
