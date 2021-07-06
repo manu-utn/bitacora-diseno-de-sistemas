@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<drjava version="drjava-20190813-220051">
+  <project autorefresh="false" root="" work="">
+    <createjar file=""/>
+    <source>
+      <file active="true" name="TelevisorViejo.java" package="" timestamp="06-Jul-2021 03:03:35">
+        <select from="364" to="364"/>
+        <scroll column="60" row="0"/>
+      </file>
+      <file name="Conectable.java" package="" timestamp="06-Jul-2021 02:44:06">
+        <select from="364" to="364"/>
+        <scroll column="60" row="0"/>
+      </file>
+      <file name="ConectableDemo.java" package="" timestamp="06-Jul-2021 03:01:15">
+        <select from="364" to="364"/>
+        <scroll column="60" row="0"/>
+      </file>
+      <file name="TelevisorViejoAdaptador.java" package="" timestamp="06-Jul-2021 03:02:38">
+        <select from="364" to="364"/>
+        <scroll column="60" row="0"/>
+      </file>
+      <file name="TelevisorModerno.java" package="" timestamp="06-Jul-2021 03:02:55">
+        <select from="364" to="364"/>
+        <scroll column="60" row="0"/>
+      </file>
+      <file name="RadioDigital.java" package="" timestamp="06-Jul-2021 03:03:01">
+        <select from="364" to="364"/>
+        <scroll column="60" row="0"/>
+      </file>
+    </source>
+    <included/>
+    <excluded/>
+    <collapsed/>
+    <classpath/>
+    <breakpoints/>
+    <watches/>
+    <bookmarks/>
+    <preferences/>
+  </project>
+</drjava>

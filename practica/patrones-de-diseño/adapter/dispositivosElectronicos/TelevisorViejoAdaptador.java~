@@ -1,0 +1,8 @@
+/**
+ * Adapter
+ */
+public class TelevisorViejoAdaptador implements Conectable{
+  
+  /* ADD YOUR CODE HERE */
+  
+}
