@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<drjava version="drjava-20190813-220051">
+  <project autorefresh="false" main="" root="" work="">
+    <createjar file=""/>
+    <source>
+      <file active="true" name="TestEstadoPantalla.java" package="" timestamp="09-Jul-2021 13:41:11">
+        <select from="580" to="580"/>
+        <scroll column="197" row="0"/>
+      </file>
+      <file name="EstadoPantalla.java" package="" timestamp="09-Jul-2021 13:30:40">
+        <select from="580" to="580"/>
+        <scroll column="197" row="0"/>
+      </file>
+      <file name="EstadoEncendido.java" package="" timestamp="09-Jul-2021 13:30:52">
+        <select from="580" to="580"/>
+        <scroll column="197" row="0"/>
+      </file>
+      <file name="EstadoApagado.java" package="" timestamp="09-Jul-2021 13:31:19">
+        <select from="580" to="580"/>
+        <scroll column="197" row="0"/>
+      </file>
+      <file name="EstadoStandby.java" package="" timestamp="09-Jul-2021 13:33:33">
+        <select from="580" to="580"/>
+        <scroll column="197" row="0"/>
+      </file>
+      <file name="PantallaCelular.java" package="" timestamp="09-Jul-2021 13:38:36">
+        <select from="580" to="580"/>
+        <scroll column="197" row="0"/>
+      </file>
+    </source>
+    <included/>
+    <excluded/>
+    <collapsed/>
+    <classpath/>
+    <breakpoints/>
+    <watches/>
+    <bookmarks/>
+    <preferences/>
+  </project>
+</drjava>

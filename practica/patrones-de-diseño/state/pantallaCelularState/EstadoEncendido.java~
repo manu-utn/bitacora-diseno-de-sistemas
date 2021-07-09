@@ -1,0 +1,14 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class EstadoEncendido implements EstadoPantalla{
+  @Override
+  public void presionarPantalla(){
+    System.out.println("Abriendo alguna aplicación del celular..");
+  }
+  
+  @Override
+  public void presionarBotonEncendido(){
+    System.out.println("Encendiendo celular...");
+  }
+}

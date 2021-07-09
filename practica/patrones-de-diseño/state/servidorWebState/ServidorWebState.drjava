@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<drjava version="drjava-20190813-220051">
+  <project autorefresh="false" main="" root="" work="">
+    <createjar file=""/>
+    <source>
+      <file active="true" name="TestServidor.java" package="" timestamp="09-Jul-2021 15:27:16">
+        <select from="608" to="608"/>
+        <scroll column="144" row="0"/>
+      </file>
+      <file name="Servidor.java" package="" timestamp="09-Jul-2021 15:17:09">
+        <select from="608" to="608"/>
+        <scroll column="144" row="0"/>
+      </file>
+      <file name="EstadoBloqueado.java" package="" timestamp="09-Jul-2021 15:17:47">
+        <select from="608" to="608"/>
+        <scroll column="144" row="0"/>
+      </file>
+      <file name="EstadoApagado.java" package="" timestamp="09-Jul-2021 15:17:51">
+        <select from="608" to="608"/>
+        <scroll column="144" row="0"/>
+      </file>
+      <file name="EstadoEncendido.java" package="" timestamp="09-Jul-2021 15:17:58">
+        <select from="608" to="608"/>
+        <scroll column="144" row="0"/>
+      </file>
+      <file name="EstadoReiniciando.java" package="" timestamp="09-Jul-2021 15:18:04">
+        <select from="608" to="608"/>
+        <scroll column="144" row="0"/>
+      </file>
+      <file name="EstadoServidor.java" package="" timestamp="09-Jul-2021 15:18:10">
+        <select from="608" to="608"/>
+        <scroll column="144" row="0"/>
+      </file>
+    </source>
+    <included/>
+    <excluded/>
+    <collapsed/>
+    <classpath/>
+    <breakpoints/>
+    <watches/>
+    <bookmarks/>
+    <preferences/>
+  </project>
+</drjava>

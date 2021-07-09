@@ -1,0 +1,16 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class PantallaCelular {
+  EstadoPantalla estadoPantalla;
+  
+  public PantallaCelular(){
+    estadoPantalla = new EstadoApagado();
+  }
+  
+  public void presionarPantalla(){
+  }
+  
+  public void imprimirEstado(){
+  }
+}

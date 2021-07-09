@@ -1,0 +1,20 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class Servidor {
+  
+  
+  public void encender(){
+  }
+  
+  public void reiniciar(){
+  }
+  
+  public void bloquear(){
+  }
+  
+  public void apagar(){
+  }
+  
+  public void imprimirEstado();
+}
