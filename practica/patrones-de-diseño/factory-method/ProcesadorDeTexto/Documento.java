@@ -1,13 +1,14 @@
 /**
- * Creator - Documento
+ * 
  */
 public abstract class Documento {
-  public void abrir(){
-  }
+  protected String nombre;
   
-  public void cerrar(){
-  }
+  public abstract void abrir();
+  public abstract void cerrar();
+  public abstract void guardar();
   
-  public void guardar(){
+  public String getNombre(){
+    return nombre;
   }
 }

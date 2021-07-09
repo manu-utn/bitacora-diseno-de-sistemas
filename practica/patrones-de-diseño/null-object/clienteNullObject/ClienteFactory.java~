@@ -1,0 +1,8 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class ClienteFactory {
+  public static Cliente crearCliente(String nombre, String tipo){
+    
+  }
+}

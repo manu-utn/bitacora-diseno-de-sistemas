@@ -1,0 +1,6 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class TransporteFactory {
+  public Transporte getTransporte(String tipo);
+}

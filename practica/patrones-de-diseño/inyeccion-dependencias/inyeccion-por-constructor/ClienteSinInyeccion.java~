@@ -1,0 +1,6 @@
+/**
+ * Cliente - Sin inyección de dependencias
+ */
+public class Cliente {
+  
+}

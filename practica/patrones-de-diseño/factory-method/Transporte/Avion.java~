@@ -1,0 +1,17 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class Avion implements Transporte{
+  @Override
+  public void reparar(){
+    System.out.println("Reparando del avion las alas, las helices, y ruedas de aterrizaje...");
+  }
+  
+  @Override
+  public void conducir(){
+  }
+  
+  @Override
+  public double costoMantenimiento(){
+  }
+}

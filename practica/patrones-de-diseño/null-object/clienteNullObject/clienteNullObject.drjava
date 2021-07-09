@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<drjava version="drjava-20190813-220051">
+  <project autorefresh="false" root="" work="">
+    <createjar file=""/>
+    <source>
+      <file active="true" name="DemoClienteNull.java" package="" timestamp="07-Jul-2021 16:47:52">
+        <select from="1053" to="1053"/>
+        <scroll column="297" row="0"/>
+      </file>
+      <file name="Cliente.java" package="" timestamp="07-Jul-2021 16:11:31">
+        <select from="1053" to="1053"/>
+        <scroll column="297" row="0"/>
+      </file>
+      <file name="ClienteNormal.java" package="" timestamp="07-Jul-2021 16:11:42">
+        <select from="1053" to="1053"/>
+        <scroll column="297" row="0"/>
+      </file>
+      <file name="ClientePremium.java" package="" timestamp="07-Jul-2021 16:11:50">
+        <select from="1053" to="1053"/>
+        <scroll column="297" row="0"/>
+      </file>
+      <file name="NullCliente.java" package="" timestamp="07-Jul-2021 16:12:17">
+        <select from="1053" to="1053"/>
+        <scroll column="297" row="0"/>
+      </file>
+      <file name="ClienteFactory.java" package="" timestamp="07-Jul-2021 18:05:38">
+        <select from="1053" to="1053"/>
+        <scroll column="297" row="0"/>
+      </file>
+    </source>
+    <included/>
+    <excluded/>
+    <collapsed/>
+    <classpath/>
+    <breakpoints/>
+    <watches/>
+    <bookmarks/>
+    <preferences/>
+  </project>
+</drjava>

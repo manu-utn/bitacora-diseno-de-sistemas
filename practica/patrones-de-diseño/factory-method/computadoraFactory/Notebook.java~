@@ -1,0 +1,16 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class Notebook extends Computadora{
+  public abstract String getRAM(){
+    return ram;
+  }
+  
+  public abstract String getCPU(){
+    return cpu;
+  }
+  
+  public abstract String getHDD(){
+    return hdd;
+  }
+}

@@ -1,0 +1,12 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class ClienteNormal extends Cliente{  
+  public String getNombre(){
+    return nombre;
+  }
+  
+  public boolean isNil(){
+    return false;
+  }
+}

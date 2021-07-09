@@ -1,0 +1,7 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class WindowsFactory implements DocumentoFactory{
+  @Override
+  public Documento getDocumento(String tipo, String nombreArchivo);
+}

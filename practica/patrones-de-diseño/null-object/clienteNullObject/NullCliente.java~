@@ -1,0 +1,14 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class NullCliente extends Cliente{  
+  @Override
+  public String getName(){
+    return name;
+  }
+  
+  @Override
+  public boolean isNil(){
+    return true;
+  }
+}

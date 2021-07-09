@@ -1,16 +1,5 @@
 /**
- * Concrete Product - Documento Word
+ * Concrete Creator - Documento Word
  */
-public class DocumentoWord implements Documento{
-  @Override
-  public void abrir(){
-  }
-  
-  @Override
-  public void cerrar(){
-  }
-  
-  @Override
-  public void guardar(){
-  }
+public class DocumentoWord extends Documento{
 }

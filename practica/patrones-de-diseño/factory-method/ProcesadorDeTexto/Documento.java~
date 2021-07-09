@@ -1,8 +1,13 @@
 /**
- * Product - Documento
+ * Creator - Documento
  */
-interface Documento {
-  public void abrir();
-  public void cerrar();
-  public void guardar();
+public abstract class Documento {
+  public void abrir(){
+  }
+  
+  public void cerrar(){
+  }
+  
+  public void guardar(){
+  }
 }

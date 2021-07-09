@@ -1,0 +1,13 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class ClientePremium extends Cliente{  
+  @Override
+  public String getName(){
+    return nombre;
+  }
+  
+  public boolean isNil(){
+    return false;
+  }
+}
