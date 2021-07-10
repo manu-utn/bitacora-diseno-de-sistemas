@@ -1,8 +1,0 @@
-/**
- * Auto Generated Java Class.
- */
-public interface EstadoServidor {
-  public void encender(Servidor servidor);
-  public void apagar(Servidor servidor);
-  public void imprimirEstado();
-}

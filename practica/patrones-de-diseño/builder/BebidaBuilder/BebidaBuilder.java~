@@ -1,9 +1,0 @@
-/**
- * Auto Generated Java Class.
- */
-public interface BebidaBuilder {
-  public void prepararInfusion();
-  public void prepararAgua();
-  public void agregarExtras();
-  public Bebida build();
-}

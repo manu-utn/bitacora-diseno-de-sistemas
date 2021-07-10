@@ -1,6 +1,0 @@
-/**
- * Concrete Command - Encender
- */
-public class CommandEncender implements Command{
-  
-}

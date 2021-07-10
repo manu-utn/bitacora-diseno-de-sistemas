@@ -1,9 +1,0 @@
-/**
- * Context - Luchador
- * - Usaremos 2 strategies para separar el comportamiento de algunos ataques
- */
-public abstract class Luchador {
-  
-  /* ADD YOUR CODE HERE */
-  
-}

@@ -1,6 +1,0 @@
-/**
- * Observer
- */
-public interface EstudianteObserver {
-  public void actualizar(Libro libro);
-}

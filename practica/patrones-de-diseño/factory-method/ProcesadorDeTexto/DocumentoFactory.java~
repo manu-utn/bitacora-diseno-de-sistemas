@@ -1,6 +1,0 @@
-/**
- * Auto Generated Java Class.
- */
-public interface DocumentoFactory {
-  Documento getDocumento(String tipo, String nombreArchivo);
-}

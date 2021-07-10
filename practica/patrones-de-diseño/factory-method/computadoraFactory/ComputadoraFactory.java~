@@ -1,8 +1,0 @@
-/**
- * Auto Generated Java Class.
- */
-public class ComputadoraFactory {
-  public static Computadora getComputadora(String tipo, String ram, String cpu, String hdd){
-  
-  }
-}

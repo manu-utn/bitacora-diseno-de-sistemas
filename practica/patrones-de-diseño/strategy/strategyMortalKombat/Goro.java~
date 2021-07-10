@@ -1,9 +1,0 @@
-/**
- * Auto Generated Java Class.
- */
-public class Goro extends Luchador{
-  @Override
-  public void saltar(){
-    System.out.println("salto a lo goro..");
-  }
-}

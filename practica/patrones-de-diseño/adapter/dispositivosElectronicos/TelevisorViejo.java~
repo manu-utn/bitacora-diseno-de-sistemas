@@ -1,8 +1,0 @@
-/**
- * Adaptee (es la clase que debo adaptar, adecuar al target que es la interfaz "Conectable")
- */
-public class TelevisorViejo {
-  
-  /* ADD YOUR CODE HERE */
-  
-}

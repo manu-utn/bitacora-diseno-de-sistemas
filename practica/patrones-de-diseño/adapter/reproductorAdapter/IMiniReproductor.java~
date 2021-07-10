@@ -1,9 +1,0 @@
-/**
- * Target
- * - Es la interfaz que el adaptador debe implementar, 
- */
-public class IMiniReproductor {
-  
-  /* ADD YOUR CODE HERE */
-  
-}

@@ -1,8 +1,0 @@
-/**
- * Product - Animal
- */
-public interface Animal {
-  public void caminar();
-  public void grunir();
-  public String getTipo();
-}
