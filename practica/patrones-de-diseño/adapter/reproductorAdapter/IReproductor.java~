@@ -1,0 +1,8 @@
+/**
+ * Adaptee
+ * - Interfaz incompatible con "IMiniReproductor" es la que buscamos adaptar, con el Adapter
+ */
+public class IReproductor {
+  public void reproducirMP3();
+  public void reproducirMP4();
+}

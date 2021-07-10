@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<drjava version="drjava-20190813-220051">
+  <project autorefresh="false" root="" work="">
+    <createjar file=""/>
+    <source>
+      <file active="true" name="ReproductorMPG.java" package="" timestamp="09-Jul-2021 20:23:48">
+        <select from="222" to="222"/>
+        <scroll column="0" row="0"/>
+      </file>
+      <file name="ReproductorMP4.java" package="" timestamp="09-Jul-2021 20:19:22">
+        <select from="222" to="222"/>
+        <scroll column="0" row="0"/>
+      </file>
+      <file name="IReproductor.java" package="" timestamp="09-Jul-2021 20:19:46">
+        <select from="222" to="222"/>
+        <scroll column="0" row="0"/>
+      </file>
+      <file name="IMiniReproductor.java" package="" timestamp="09-Jul-2021 20:22:21">
+        <select from="222" to="222"/>
+        <scroll column="0" row="0"/>
+      </file>
+      <file name="TestReproductorAdapter.java" package="" timestamp="09-Jul-2021 20:49:30">
+        <select from="222" to="222"/>
+        <scroll column="0" row="0"/>
+      </file>
+      <file name="ReproductorAdapter.java" package="" timestamp="09-Jul-2021 20:50:11">
+        <select from="222" to="222"/>
+        <scroll column="0" row="0"/>
+      </file>
+      <file name="MiniReproductor.java" package="" timestamp="09-Jul-2021 20:53:22">
+        <select from="222" to="222"/>
+        <scroll column="0" row="0"/>
+      </file>
+    </source>
+    <included/>
+    <excluded/>
+    <collapsed/>
+    <classpath/>
+    <breakpoints/>
+    <watches/>
+    <bookmarks/>
+    <preferences/>
+  </project>
+</drjava>

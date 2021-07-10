@@ -1,0 +1,14 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class ReproductorMPG implements IReproductor{
+  @Override
+  public void reproducirMP3(){
+    // nada 
+  }
+  
+  @Override
+  public void reproducirMPG(){
+    System.out.println("Reproduciendo música en formato mpg");
+  }
+}

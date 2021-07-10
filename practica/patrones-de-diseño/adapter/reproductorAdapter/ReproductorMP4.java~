@@ -1,0 +1,14 @@
+/**
+ * Auto Generated Java Class.
+ */
+public class ReproductorMP4 implements IReproductor{
+  @Override
+  public void reproducirMP3(){
+    // nada 
+  }
+  
+  @Override
+  public void reproducirMP4(){
+    System.out.println("Reproduciendo música en mp4");
+  }
+}
