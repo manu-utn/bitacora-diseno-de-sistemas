@@ -1,33 +1,11 @@
 #+TITLE: Patrones de Diseño 2.0
 #+STARTUP: inlineimages
-* Dudas
+#+BEGIN_COMMENT
+  Dudas
   1. Cada *concrete command* actuaría como un pequeño adapter entre el Invoker y el receptor?
+#+END_COMMENT
 * Diferencias entre Patrones
-** [TODO] Factory Method Vs Strategy
-   https://dzone.com/articles/strategy-vs-factory-design-pattern-in-java
-** Factory Vs Builder
-** Factory Vs Abstract Factory
-** Strategy Vs. Template Method
-  |------------------------------------------------------------+--------------------------------------------------------------------|
-  | STRATEGY (estrategia)                                      | TEMPLATE METHOD (método plantilla)                                 |
-  |------------------------------------------------------------+--------------------------------------------------------------------|
-  | Usa *Composición*                                          | Usa *Herencia*                                                     |
-  |------------------------------------------------------------+--------------------------------------------------------------------|
-  | Encapsula *comportamiento* (delega en c/clase)             | Reparte *comportamiento* (plantilla, que usan todas las subclases) |
-  |------------------------------------------------------------+--------------------------------------------------------------------|
-  |                                                            | Tiene un método que reutiliza lógica de las subclases              |
-  |------------------------------------------------------------+--------------------------------------------------------------------|
-  | Cambia de *estado* de forma dinámica (tiempo de ejecución) |                                                                    |
-  |------------------------------------------------------------+--------------------------------------------------------------------|
-** Template Method Vs. Builder
-   |----------------------------------+--------------------------------------------|
-   | TEMPLATE METHOD                  | BUILDER                                    |
-   |----------------------------------+--------------------------------------------|
-   | no necesita de un orden de pasos | requiere una secuencia de pasos (1,2,3,..) |
-   |----------------------------------+--------------------------------------------|
-   | no tienen porque devolver algo   | cada operacion devuelve algo construido    |
-   |----------------------------------+--------------------------------------------|
-** Facade Vs Adapter
+** Facade Vs. Adapter
    #+BEGIN_QUOTE
    In the adapter pattern, we try to alter an interface so that the clients is able to work with the system.
    Else the system will be difficult to use by the client (even not usable).
@@ -37,14 +15,414 @@
 
    #+NAME: diferencia-facade-adapter
    |-------------------------------------------------------------------+-------------------------------------------------------------------------|
-   | FACADE                                                            | ADAPTER                                                                 |
+   | *FACADE*                                                          | *ADAPTER*                                                               |
    |-------------------------------------------------------------------+-------------------------------------------------------------------------|
    | Agrupa/reduce varios métodos de varios objetos en un único método | Renombra los métodos y parámetros de un objeto (**Adaptee**)            |
    |-------------------------------------------------------------------+-------------------------------------------------------------------------|
-   | Simplifica el uso de varios subsistemas/servicios                 | Adapta los mensajes de un objeto a una interfaz particular (**Target**) |
+   | Simplifica y oculta el uso de varios subsistemas/servicios        | Adapta los mensajes de un objeto a una interfaz particular (**Target**) |
    |-------------------------------------------------------------------+-------------------------------------------------------------------------|
+
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/facade-vs-adapter.png :exports results
+     @startuml
+     Title Patrón Adapter Vs. Patrón Facade
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     package "Patrón Facade (simplicidad - agrupa servicios)"{
+         class Oficina <<Client>>
+    
+         class ServicioImpresionFachada <<Facade>>{
+             -Documento doc
+             -ServicioFirmar servicio1
+             -ServicioValidar servicio2
+             -ServicioImprimir servicio3
+             +void imprimirFirmadoValidado()
+         }
+    
+         class ServicioValidar <<Service>>{
+             +void validar(Documento doc)
+         }
+    
+         class ServicioFirmar <<Service>>{
+             +void firmar(Documento doc)
+         }    
+    
+         class ServicioImprimir <<Service>>{
+             +void imprimir(Documento doc)
+         }    
+    
+         note right of ServicioImpresionFachada
+         La fachada agrupa todos los servicios
+         para que la oficina solo utilice la
+         función **imprimirFirmadoValidado()**
+         ocultando lógica que no necesita conocer
+         end note
+     }
+
+     package "Patrón Adapter (adaptar interfaces incompatibles)"{
+
+         component "Reproductor Estandar"{
+             interface IReproductor <<Adaptee>>{
+                 +void reproducirMP4(String archivo)
+                 +void reproducirMPG(String archivo)
+             }
+        
+             class ReproductorMP4{
+                 +void reproducirMP4(String archivo)
+                 +void reproducirMPG(String archivo)
+             }
+        
+             class ReproductorMPG{
+                 +void reproducirMP4(String archivo)
+                 +void reproducirMPG(String archivo)
+             }
+         }
+    
+         interface IMiniReproductor <<Target>>{
+             +void reproducir(String formato, String archivo)
+         }
+
+         class MiniReproductor {
+             -ReproductorAdapter reproductorAdapter
+             +void reproducir(String formato, String archivo)
+         }
+    
+         class ReproductorAdapter <<Adapter>>{
+             +void reproducir(String formato, String archivo)
+         }
+
+         note top of ReproductorAdapter
+         Se busca que el **MiniReproductor** pueda usar nuevos
+         formatos de audio (MP4 y MPG) además del que tiene
+
+         Se crea un adapter como puente entre las interfaces incompatibles.
+         Para que las interfaz **IReproductor** de los reproductores 
+         de MP4 y MPG sea compatible con la del **MiniReproductor**
+         ya que entienden otros mensajes **reproducirMP4()** y **reproducirMPG()**
+         end note
+
+     }
+
+     ' =====================
+     ' ==== RELACIONES =====
+     ' =====================
+
+     Oficina                     -right-> ServicioImpresionFachada
+     ServicioImpresionFachada    -down-> ServicioValidar
+     ServicioImpresionFachada    -down-> ServicioFirmar
+     ServicioImpresionFachada    -down-> ServicioImprimir
+
+     ReproductorMP4              .up.|> IReproductor : implementa
+     ReproductorMPG              .up.|> IReproductor : implementa
+
+     ReproductorAdapter        -down-> IReproductor
+     ReproductorAdapter        .up.|> IMiniReproductor
+     MiniReproductor             .up.|> IMiniReproductor
+
+     MiniReproductor             -right-> ReproductorAdapter : usa
+
+
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/facade-vs-adapter.png]]
+
+** Factory Method Vs. Builder
+*** Method Factory
+    En el *method factory* se pasa por parámetro tipo de objeto que se quiere, sin tanto nivel de detalle, y se obtiene en un solo paso.
+    Ej. ~transporteFactory.getTransporte('Avion')~
+*** Builder
+    - En el **builder** se describe el paso paso de la construcción de un objeto complejo y se obtiene luego del último paso.
+    - Tiene más nivel de detalle que **factory method**
+    - Permite una **interfáz fluida** con una **encadenamiento de métodos** esto sería si retornamos el mismo tipo de objeto en c/paso ~a().b().c()~
+    
+    Ej. ~new Bebida().setServir("coco").setPrecio(500).withAzucar().crear()~
+*** Diagramas de clases
+    #+BEGIN_SRC plantuml :file diagramas-de-clases/factory-vs-buildery.png :exports results
+      @startuml
+      Title Patrón Builder Vs. Factory Method
+
+      ' ================
+      ' ==== CLASES ====
+      ' ================
+
+      package "Patrón Builder"{
+          abstract class BebidaBuilder{
+              #bebida
+              +{abstract} void servir()
+              +{abstract} void calentarAgua()
+              +{abstract} void agregarExtras()
+              +void preparar()
+              +void crearBebida()
+              +Bebida getBebida()
+          }
+    
+          class CafeBuilder <<Concrete Builder>>{
+              +void servir()
+              +void calentarAgua()
+              +void agregarExtras()
+          }
+    
+          class TeBuilder  <<Concrete Builder>>{
+              +void servir()
+              +void calentarAgua()
+              +void agregarExtras()
+          }
+    
+          class Bebida <<Product>>{
+              -int temperatura
+              -String tipo
+              -TamanioVaso tamanio
+          }
+    
+          note as N1
+          En el **builder** se describe el paso paso
+          de la construcción de un objeto complejo y
+          se obtiene luego del último paso.
+          Tiene más nivel de detalle que **factory method**
+    
+          Permite una **interfáz fluida** con una **encadenamiento de métodos**
+          esto sería si retornamos el mismo tipo de objeto en c/paso a().b().c()
+    
+          Ej. new Bebida().setServir("coco").setPrecio(500).withAzucar().crear()
+          end note
+    
+          N1 .up.  CafeBuilder
+          N1 .up.  TeBuilder
+
+      }
+
+      package "Patrón Method Factory"{
+          interface ITransporteFactory <<Creator>>{
+              +Transporte getTransporte(String tipo)
+          }
+    
+          class TransporteFactory <<Concrete Creator>>{
+          +Transporte getTransporte(String tipo)
+          }
+    
+    
+          interface Transporte <<Product>>{
+              +void reparar()
+              +void conducir()
+              +double costo()
+          }
+    
+          class Avion <<Concrete Product>>{
+              +void reparar()
+              +void conducir()
+              +double costo()
+          }
+    
+          class Tren <<Concrete Product>>{
+              +void reparar()
+              +void conducir()
+              +double costo()
+          }
+    
+          note bottom of TransporteFactory
+          En el **method factory** se pasa por parámetro
+          tipo de objeto que se quiere, sin tanto nivel 
+          de detalle, y se obtiene en un solo paso.
+    
+          Ej. transporteFactory.getTransporte('Avion')
+          end note
+      }
+
+      ' ================
+      ' == RELACIONES ==
+      ' ================
+
+      together {
+      TeBuilder       -u-|> BebidaBuilder
+      CafeBuilder     -u-|> BebidaBuilder
+      BebidaBuilder   -r->  Bebida
+      }
+
+      Avion       .up.|> Transporte
+      Tren        .up.|> Transporte
+      NullTransporte   .left.|> Transporte
+
+      TransporteFactory   .up.|> ITransporteFactory
+      ITransporteFactory .right.> Transporte
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:diagramas-de-clases/factory-vs-buildery.png]]
+** Strategy Vs. Template Method
+*** Template Method
+   - Se basa en la *herencia*
+   - Define una clase con un plantilla de operaciones que usarán las subclases (entienden los mismos mensajes)
+   - La clase-padre reutiliza las operaciones en un método (no es necesario que estén en un orden específico)
+   - Cuando multiples clases tienen igual comportamiento/lógica usamos la herencia evitando tener la misma lógica repartida en varias clases.
+*** Strategy
+    - Se basa en la *composición*
+    - Cada *estrategia concreta* es un algoritmo independiente, y el *contexto* puede intercambiar entre ellas (/en tiempo de ejecución/)
+*** Tabla Comparativa
+   |------------------------------------------------------------+--------------------------------------------------------------------|
+   | *STRATEGY (estrategia)*                                    | *TEMPLATE METHOD (método plantilla)*                               |
+   |------------------------------------------------------------+--------------------------------------------------------------------|
+   | Usa *Composición*                                          | Usa *Herencia*                                                     |
+   |------------------------------------------------------------+--------------------------------------------------------------------|
+   | Encapsula *comportamiento* (delega en c/clase)             | Reparte *comportamiento* (plantilla, que usan todas las subclases) |
+   |------------------------------------------------------------+--------------------------------------------------------------------|
+   |                                                            | Tiene un método que reutiliza lógica de las subclases              |
+   |------------------------------------------------------------+--------------------------------------------------------------------|
+   | Cambia de *estado* de forma dinámica (tiempo de ejecución) |                                                                    |
+   |------------------------------------------------------------+--------------------------------------------------------------------|
+*** Diagrama de clases
+    #+BEGIN_SRC plantuml :file diagramas-de-clases/template-method-vs-strategy.png :exports results
+      @startuml
+      Title Template Method Vs. Strategy
+
+      ' ================
+      ' ==== CLASES ====
+      ' ================
+
+      package "Template Method"{
+          abstract class AccesoWeb{
+              -String usuario
+              -String clave
+              +void validarCuenta()
+              +{abstract} void obtenerDatos()
+              +{abstract} boolean validarPermisos()
+              +{abstract} void mostrarPagina()
+          }
+    
+          class AccesoPremium{
+              +void obtenerDatos()
+              +boolean validarPermisos()
+              +void mostrarPagina()
+          }
+    
+          class AccesoGratuito{
+              +void obtenerDatos()
+              +boolean validarPermisos()
+              +void mostrarPagina()
+          }
+    
+          note as N1
+          Ataca la repetición de código, por tanto las clases 
+          comparten información (por usar **herencia**)
+    
+          El algoritmo necesita de varias operaciones/pasos 
+          (que pueden ya tener comportamiento definido),
+          y delega en las subclases que lo terminen.
+    
+          La superclase reutiliza las operaciones en un método.
+          end note
+    
+          N1 .up. AccesoPremium
+          N1 .up. AccesoGratuito
+
+      }
+
+      rectangle "Context" as A{
+          abstract class Jugador{
+              -String nombre
+              -Tiro tipoTiro
+              +void realizarTiro()
+              +void setTiro(Tiro tipoTiro)
+          }
+
+          class Arquero{
+              +void disparar()
+          }
+
+          class Soldado{
+              +void disparar()
+          }
+    
+      }
+
+      package "Patrón Strategy " as B{
+          interface Tiro <<Strategy>>{
+              +void realizarTiro()
+          }
+
+          class TiroPreciso <<Concrete Strategy>>{
+              +void realizarTiro()
+          }
+          class TiroMortal <<Concrete Strategy>>{
+              +void realizarTiro()
+          }
+    
+          note as N2
+          Cada estrategia concreta (es un algoritmo) NO comparte
+          información, son independientes.
+    
+          El **contexto** puede intercambiar facilmente entre las
+          estrategias en tiempo de ejecución (por usar **composición**)
+          end note
+    
+          N2 .up. TiroPreciso
+          N2 .up. TiroMortal
+      }
+
+
+      Arquero -u-|> Jugador
+      Soldado -u-|> Jugador
+
+      TiroPreciso .u.|> Tiro
+      TiroMortal .u.|> Tiro
+
+
+      Jugador::tipoTiro -r-> Tiro : delega en
+
+      ' ================
+      ' == RELACIONES ==
+      ' ================
+
+      AccesoPremium   -u-|> AccesoWeb
+      AccesoGratuito  -u-|> AccesoWeb
+
+      ' ================
+      ' ==== NOTAS =====
+      ' ================
+
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:diagramas-de-clases/template-method-vs-strategy.png]]
+** State Vs. Strategy
+*** En común
+    - El diagrama de UML es el mismo
+*** Objetivo que persiguen
+   - El *Strategy* define una _familia de algoritmos_ que tienen el mismo objetivo (/Ej. estimar un precio, ordenamiento, .../)
+   - El *State* define _estados completamente DIFERENTES_
+*** Cambio de estado/Transiciones
+   - En el *Stragy* el *Client* solo puede alternar entre ellos _explícitamente_
+   - En el *State* puede alternar _explictamente_ pero también _implícitamente_ porque _un estado puede tener el comportamiento de cambiar a otro estado_
+     porque pueden estar conectados entre ellos (o no) y definir transiciones como una AF _máquina de estados finito_ A->B->A->B->C->...
+** [TODO] Template Method Vs. Builder
+   |----------------------------------+----------------------------------------------|
+   | *TEMPLATE METHOD*                | *BUILDER*                                    |
+   |----------------------------------+----------------------------------------------|
+   | no necesita de un orden de pasos | requiere una secuencia de pasos (1,2,3,..)   |
+   |----------------------------------+----------------------------------------------|
+   | no tienen porque devolver algo   | cada operacion devuelve un objeto construido |
+   |----------------------------------+----------------------------------------------|
+** Factory Method Vs. Strategy
+*** Strategy
+    - Es un patrón de comportamiento
+    - El patrón *Strategy* define una familia de algoritmos que tienen mismo objetivo, pero con una implementación distinta
+      (/Ej. escribir un log en consola/archivo, misma habilidad de dif. personajes de un juego, calcular un precio con o sin IVA, ordenar un conjunto de datos, .../)
+    - La implementación de los algoritmos que define son independientes al contexto/cliente
+    - El contexto/cliente NO saben cual estrategia usar, deben elegir alguna
+*** Factory Method
+    - Es un patrón creacional
+    - Se crean objetos mediante una llamada al método de la clase factory, en vez de una llamada al *constructor*
+    - NO se expone la lógica de creación del objeto al *cliente*
+      (/Ej. creamos un auto del tipo lujoso, y el client sólo sabe que es eso, desconoce que se hizo para crearlo/)
+** [TODO] Factory Vs. Abstract Factory
 * Builder
-** Builder Coche (clase abstracta)
+** Ejemplo 1 - Builder Coche (clase abstracta)
  #+BEGIN_SRC plantuml :file diagramas-de-clases/builder-coche.png :exports results
    @startuml
    Title Patron Builder
@@ -116,7 +494,7 @@
 
  #+RESULTS:
  [[file:diagramas-de-clases/builder-coche.png]]
-** Builder Bebida (clase abstracta)
+** Ejemplo 2 - Builder Bebida (clase abstracta)
  #+BEGIN_SRC plantuml :file diagramas-de-clases/builder-bebida.png :exports results
    @startuml
    Title Patrón Builder
@@ -135,19 +513,19 @@
        +Bebida getBebida()
    }
 
-   class CafeBuilder{
+   class CafeBuilder <<Concrete Builder>>{
        +void servir()
        +void calentarAgua()
        +void agregarExtras()
    }
 
-   class TeBuilder{
+   class TeBuilder  <<Concrete Builder>>{
        +void servir()
        +void calentarAgua()
        +void agregarExtras()
    }
 
-   class Bebida{
+   class Bebida <<Product>>{
        -int temperatura
        -String tipo
        -TamanioVaso tamanioVaso
@@ -212,12 +590,24 @@
    N3 .u. TeBuilder
    N4 .l. Bebida
 
+   note bottom of N1
+   Se pueden preparar las bebidas de la sig. manera:
+
+   BebidaBuilder bebida = new CafeBuilder();
+   bebida.preparar();
+   Bebida cafe = bebida.getBebida();
+
+   BebidaBuilder bebida = new TeBuilder();
+   bebida.preparar();
+   Bebida te = bebida.getBebida();
+   end note
+
    @enduml
  #+END_SRC
 
  #+RESULTS:
  [[file:diagramas-de-clases/builder-bebida.png]]
-** Builder Bebida (con interfaz)
+** Ejemplo 3 - Builder Bebida (con interfaz)
    #+BEGIN_SRC plantuml :file diagramas-de-clases/builder-bebida-interfaz.png :exports results
      @startuml
      Title Patrón Builder (con interfáz)
@@ -329,13 +719,15 @@
    #+RESULTS:
    [[file:diagramas-de-clases/builder-bebida-interfaz.png]]
 * Strategy
+  #+BEGIN_COMMENT
   https://www.journaldev.com/1754/strategy-design-pattern-in-java-example-tutorial
+  #+END_COMMENT
 ** Conceptos
    + Es un patrón de *comportamiento*
    + Predomina la *composición* por sobre la *herencia*
    + Permite intercambiar *comportamiento* en *tiempo de ejecución*
    + Encapsula comportamiento en cada *Strategy*
-** Strategy - Mortal Kombat
+** Ejemplo 1 - Mortal Kombat
 *** Problema
     Supongamos que queremos crear un juego de combate, y modelamos a los luchadores.
     Cada luchador tiene un movimiento de ataque (/darPuñetazo, darPatada, darSalto,.../)
@@ -453,7 +845,7 @@
 
     #+RESULTS:
     [[file:diagramas-de-clases/mortal-kombat-strategy.png]]
-** Strategy - Logger
+** Ejemplo 2 - Logger
    #+BEGIN_SRC plantuml :file diagramas-de-clases/logger-strategy.png :exports results
      @startuml
      Title Strategy - Logger
@@ -517,7 +909,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/logger-strategy.png]]
-** Strategy - Juego FPS
+** Ejemplo 3 - Juego FPS
    #+BEGIN_SRC plantuml :file diagramas-de-clases/juego-fps-strategy.png :exports results
      @startuml
      Title Strategy - Juego FPS
@@ -533,22 +925,22 @@
              +void realizarTiro()
              +void setTiro(Tiro tipoTiro)
          }
-    
+
          class Arquero{
              +void disparar()
          }
-    
+
          class Soldado{
              +void disparar()
          }
-    
+
      }
 
      rectangle "Strategy\nEncapsula comportamiento" as B{
          interface Tiro{
              +void realizarTiro()
          }
-    
+
          class TiroPreciso{
              +void realizarTiro()
          }
@@ -616,12 +1008,15 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/juego-fps-strategy.png]]
-* Template method
+* [TODO] Template method
+  #+BEGIN_COMMENT
+   https://refactoring.guru/es/design-patterns/template-method
+  #+END_COMMENT
 ** Conceptos
    - Se basa en la *herencia*
    - Define una clase con un plantilla de operaciones que usarán las subclases (entienden los mismos mensajes)
    - La clase-padre reutiliza las operaciones en un método (no es necesario que estén en un orden específico)
-** Template - Validar Cuenta Web
+** Ejemplo 1 - Validar Cuenta Web
    #+BEGIN_SRC plantuml :file diagramas-de-clases/validar-cuenta-web-template.png :exports results
      @startuml
      Title Template Method - Aplicación Web
@@ -717,7 +1112,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/validar-cuenta-web-template.png]]
-** Template - Juego de Cartas
+** Ejemplo 2 - Juego de Cartas
    #+BEGIN_SRC plantuml :file diagramas-de-clases/juego-de-cartas-template.png :exports results
      @startuml
      Title Template Method - Juego de Cartas
@@ -807,14 +1202,8 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/juego-de-cartas-template.png]]
-** [TODO] Template - Juego de (?)
-   https://refactoring.guru/es/design-patterns/template-method
-* [DOING] Factory Method (CORREGIR, los actuales tienden al abstract)
-  https://www.tutorialspoint.com/design_pattern/factory_pattern.htm
-  https://stackabuse.com/factory-method-design-pattern-in-java
-  https://examples.javacodegeeks.com/factory-pattern-java-example/
-  https://dzone.com/articles/creational-design-pattern-series-factory-method-pa
-** Computadoras Factory
+* Factory Method
+** Ejemplo 1 - Computadoras Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/computadoas-factory.png :exports results
      @startuml
      Title Patrón Method Factory (Computadoras)
@@ -885,7 +1274,7 @@
    #+RESULTS:
    [[file:diagramas-de-clases/computadoas-factory.png]]
 
-** Transportes Factory
+** Ejemplo 2 - Transportes Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/transportes-factory.png :exports results
      @startuml
      Title Patrón Method Factory (Transportes)
@@ -962,7 +1351,7 @@
          else if("submarino".equalsIgnoreCase(tipo)){
            return new Submarino();
          }
-    
+
          ,**return new NullTransporte();**
        }
      end note
@@ -974,12 +1363,12 @@
        public void reparar(){
          System.out.println("Reparando ruedas");
        }
-  
+
        @Override
        public void conducir(){
          System.out.println("Calentando motores");
        }
-  
+
        @Override
        public double costoMantenimiento(){
          return 250*3+15;
@@ -991,7 +1380,7 @@
    #+RESULTS:
    [[file:diagramas-de-clases/transportes-factory.png]]
 
-** Archivos Factory
+** Ejemplo 3 - Archivos Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/archivo-factory.png :exports results
      @startuml
      Title Patrón Factory-Method
@@ -1087,7 +1476,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/archivo-factory.png]]
-** Videojuego Personajes Factory
+** Ejemplo 4 - Videojuego Personajes Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/personaje-factory.png :exports results
      @startuml
      Title Patrón Factory-Method (Personajes de Videojuegos)
@@ -1191,7 +1580,7 @@
    #+RESULTS:
    [[file:diagramas-de-clases/personaje-factory.png]]
 
-** Agencia Vehiculos Factory
+** Ejemplo 5 - Agencia Vehiculos Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/agencia-vehiculos-factory.png :exports results
      @startuml
      Title Patrón Factory-Method (Agencia de vehículos)
@@ -1251,7 +1640,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/agencia-vehiculos-factory.png]]
-** Servicio Mensajes Factory
+** Ejemplo 6 - Servicio Mensajes Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/servicio-mensajes-factory.png :exports results
      @startuml
      Title Patrón Factory-Method (Servicio de Mensajeria)
@@ -1313,7 +1702,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/servicio-mensajes-factory.png]]
-** [TODO] Multimedia Factory
+** [TODO] Ejemplo 7 - Multimedia Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/multimedia-factory.png :exports results
      @startuml
      Title Patrón Factory-Method
@@ -1363,7 +1752,7 @@
 ** Conceptos
    - Proporciona una interfaz para crear _familias de objetos relacionados_
    - Se requiere un *getter* en la *fabrica abstracta* por cada *producto abstracto* 
-** Panaderia Abstract Factory
+** Ejemplo 1 - Panaderia Abstract Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/panaderia-abstract-factory.png :exports results
      @startuml
      Title Patrón Abstract Factory
@@ -1441,7 +1830,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/panaderia-abstract-factory.png]]
-** GUI Abstract Factory
+** Ejemplo 2 - GUI Abstract Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/gui-abstract-factory.png :exports results
      @startuml
      Title Patrón Abstract Factory - GUI Windows/Linux
@@ -1526,7 +1915,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/gui-abstract-factory.png]]
-** Jugeteria Abstract Factory (con función genérica)
+** Ejemplo 3 - Jugeteria Abstract Factory (con función genérica)
    #+BEGIN_SRC plantuml :file diagramas-de-clases/jugeteria-abstract-factory.png :exports results
      @startuml
      Title Patrón Abstract Factory - Jugeteria
@@ -1618,7 +2007,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/jugeteria-abstract-factory.png]]
-** Laboratorio Abstract Factory
+** Ejemplo 4 - Laboratorio Abstract Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/laboratorio2-abstract-factory.png :exports results
      @startuml
      Title Patrón Abstract Factory - Animales
@@ -1720,7 +2109,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/laboratorio2-abstract-factory.png]]
-** Prestamos Bancarios Abstract Factory
+** Ejemplo 5 - Prestamos Bancarios Abstract Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/prestamos-abstract-factory.png :exports results
      @startuml
      Title Patrón Abstract Factory - Prestamos Bancarios
@@ -1872,7 +2261,7 @@
     Por lo cual, si tenemos nuestro modelo *command* con solo adaptar los *concrete commands*
     podemos llevarlo a distintos plataformas
     (/Ej. linux/windows ó android/iphone, nintendo/playstation, .../)
-** Command - Editor de Texto v1
+** Ejemplo 1 - Editor de Texto v1
    #+BEGIN_SRC plantuml :file diagramas-de-clases/procesador-de-texto-command.png :exports results
      @startuml
      Title Patrón Command (Editor de Texto)
@@ -1979,7 +2368,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/procesador-de-texto-command.png]]
-** Command - Editor de Texto v2 (Con historial)
+** Ejemplo 2 - Editor de Texto v2 (Con historial)
    #+BEGIN_SRC plantuml :file diagramas-de-clases/procesador-de-textov2-command.png :exports results
      @startuml
      Title Patrón Command (Editor de Texto v2)
@@ -2081,7 +2470,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/procesador-de-textov2-command.png]]
-** Command - Editor de Texto v3 (con HashMap)
+** Ejemplo 3 - Editor de Texto v3 (con HashMap)
    #+BEGIN_SRC plantuml :file diagramas-de-clases/procesador-de-textov3-command.png :exports results
      @startuml
      Title Patrón Command (Editor de Texto v2)
@@ -2182,7 +2571,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/procesador-de-textov3-command.png]]
-** Command - Switch de lampara
+** Ejemplo 4 - Switch de lampara
    #+BEGIN_SRC plantuml :file diagramas-de-clases/switch-lampara-command.png :exports results
      @startuml
      Title Patrón Command - Switch de una Lampara
@@ -2255,7 +2644,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/switch-lampara-command.png]]
-** Command - Multiples Dispositivos Electrónicos (agregar una interfaz)
+** Ejemplo 5 - Multiples Dispositivos Electrónicos (agregar una interfaz)
    #+BEGIN_SRC plantuml :file diagramas-de-clases/dispositivos-electronicos-command.png :exports results
      @startuml
      Title Patrón Command - (Dispositivos Electrónicos)
@@ -2350,7 +2739,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/dispositivos-electronicos-command.png]]
-** Command - Juego MMORPG
+** Ejemplo 6 - Juego MMORPG
    #+BEGIN_SRC plantuml :file diagramas-de-clases/juego-mmorpg-command.png :exports results
      @startuml
      Title Patrón Command - (Juego MMORPG)
@@ -2435,7 +2824,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/juego-mmorpg-command.png]]
-** Command - Cajero Automático
+** Ejemplo 7 - Cajero Automático
    #+BEGIN_SRC plantuml :file diagramas-de-clases/cajero-automatico-command.png :exports results
      @startuml
      Title Patrón Command (Cajero Automático)
@@ -2545,7 +2934,7 @@
    [[file:diagramas-de-clases/cajero-automatico-command.png]]
 
 * Observer
-** Observer - Canal de Youtube
+** Ejemplo 1 - Canal de Youtube
   #+BEGIN_SRC plantuml :file diagramas-de-clases/canal-youtube-observer.png :exports results
     @startuml
     Title Patrón Observer (Youtube)
@@ -2632,7 +3021,7 @@
 
   #+RESULTS:
   [[file:diagramas-de-clases/canal-youtube-observer.png]]
-** Observer - Biblioteca Libros
+** Ejemplo 2 - Biblioteca Libros
   #+BEGIN_SRC plantuml :file diagramas-de-clases/biblioteca-observer.png :exports results
     @startuml
     Title Patrón Observer (Biblioteca - Libros)
@@ -2659,7 +3048,7 @@
             +actualizar(Libro libro)
         }
 
-        class Estudiante <<Concrete Observer>>{
+        class EstudianteObserver <<Concrete Observer>>{
             -BibliotecaMedrano subject
             +actualizar(Libro libro)
         }
@@ -2669,6 +3058,25 @@
             -boolean disponible
         }
 
+        note left of EstudianteObserver
+          public EstudianteObserver(String nombre, BibliotecaMedrano biblio){
+            this.nombre = nombre;
+            this.biblioteca = biblioteca;
+        
+            // necesitamos guardar la referencia del observable
+            // para que pueda agregarlo a su lista de observadores
+            // y pueda recibir notificaciones, cuando las actualice
+            ,**biblioteca.agregarObservador(this);**
+          }
+      
+          @Override
+          public void actualizar(Libro libro){
+            this.libro = libro;
+        
+            System.out.println("Hola "+ getNombre()
+                +" ya está disponible "+libro.getTitulo());
+          }
+        end note
 
     }
     ' ================
@@ -2677,10 +3085,10 @@
 
     BibliotecaMedrano    .left.|> BibliotecaObservable
     BibliotecaMedrano    o-right-> Observer
-    Estudiante         .up.|> Observer
-    Estudiante         o-u-> BibliotecaMedrano
+    EstudianteObserver         .up.|> Observer
+    EstudianteObserver         o-u-> BibliotecaMedrano
 
-    Estudiante          .down.> Libro
+    EstudianteObserver          .down.> Libro
     BibliotecaMedrano   .down.> Libro
     Observer            .down.> Libro
 
@@ -2689,14 +3097,13 @@
     ' ==== NOTAS =====
     ' ================
 
-
     @enduml
    #+END_SRC
 
    #+RESULTS:
    [[file:diagramas-de-clases/biblioteca-observer.png]]
 * Null Object
-** Clientes Premium
+** Ejemplo 1 - Clientes Premium
    #+BEGIN_SRC plantuml :file diagramas-de-clases/clientes-nullobject.png :exports results
      @startuml
      Title Patrón Null Object (Crear clientes)
@@ -2794,15 +3201,319 @@
    #+RESULTS:
    [[file:diagramas-de-clases/clientes-nullobject.png]]
 
-** Referencias
-  1. https://sourcemaking.com/design_patterns/null_object
-  2. https://dzone.com/articles/null-object-pattern-in-java
-* [TODO] Publisher (Consumer)
-* [TODO] Singleton
-* [TODO] runnable, callback, donde lo meto xd...?
-* [TODO] Facade
-  hace este otro que me gustò..
-  https://github.com/mitocode21/patrones-diseno/blob/master/Facade/src/main/java/com/mitocode/facade/CheckFacade.java
+* State
+** Objetivo
+   - Aparecen hay muchos condicionales (se tiende a crear una clase por cada rama de condicional como estado)
+   - Si _el comportamiento del objeto depende de su estado_ (/Ej. un semáforo, una conexión cliente_servidor, el estado de una cta bancaria, .../)
+   - Cada cambio de estado interno, hace que cambie el comportamiento del objeto
+** Ejemplo 1 - Pantalla celular
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/pantalla-celular-state.png :exports results
+     @startuml
+     Title Patrón State (Pantalla Celular)
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     class Pantalla <<Context>>{
+         -EstadoPantalla estado
+         +void presionarPantalla()
+         +void presionarBotonEncendido()
+     }
+
+     interface EstadoPantalla <<State>>{
+         +void presionarPantalla(EstadoPantalla estado)
+         +void presionarBotonEncendido(EstadoPantalla estado)
+     }
+
+     class EstadoEncendido <<Concrete State>>{
+         +void presionarPantalla(EstadoPantalla estado)
+         +void presionarBotonEncendido(EstadoPantalla estado)
+     }
+
+     class EstadoApagado <<Concrete State>>{
+         +void presionarPantalla(EstadoPantalla estado)
+         +void presionarBotonEncendido(EstadoPantalla estado)
+     }
+
+     class EstadoStandBy <<Concrete State>>{
+         +void presionarPantalla(EstadoPantalla estado)
+         +void presionarBotonEncendido(EstadoPantalla estado)
+     }
+
+
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     Pantalla    *-right-> EstadoPantalla
+
+     EstadoApagado     .up.|> EstadoPantalla
+     EstadoEncendido    .up.|> EstadoPantalla
+     EstadoStandBy     .up.|> EstadoPantalla
+
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+     note left of Pantalla
+       public PantallaCelular(){ // constructor
+         // le asignamos un estado por defecto
+         estadoPantalla = new EstadoApagado();
+       }
+  
+       public void presionarPantalla(){
+         // delegamos en otro objeto, le pasamos la pelota a él
+         // y le pasamos por parametro el propio objeto "Pantalla"
+         // para que el otro pueda alternar entre estados
+         ,**estadoPantalla.presionarPantalla(this);**
+       }
+  
+       public void presionarBotonEncendido(){
+         ,**estadoPantalla.presionarBotonEncendido(this);**
+       }
+     end note
+
+     note bottom of EstadoEncendido
+       @Override
+       public void presionarPantalla(PantallaCelular pantalla){
+         System.out.println("Abriendo alguna aplicación del celular..");
+       }
+  
+       @Override
+       public void presionarBotonEncendido(PantallaCelular pantalla){
+         System.out.println("Apagando el celular...");
+    
+         // hacemos un cambio de estado (pasamos a otra transición)
+         ,**pantalla.setEstado(new EstadoApagado());**
+       }
+     end note
+
+     note bottom of EstadoApagado
+       @Override
+       public void presionarPantalla(PantallaCelular pantalla){
+         System.out.println("Nada sucederá, la pantalla está apagada");
+       }
+  
+       @Override
+       public void presionarBotonEncendido(PantallaCelular pantalla){
+         System.out.println("Encendiendo celular...");
+    
+         // hacemos un cambio de estado (pasamos a otra transición)
+         ,**pantalla.setEstado(new EstadoEncendido());**
+       }
+     end note
+
+     @enduml
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:diagramas-de-clases/pantalla-celular-state.png]]
+** Ejemplo 2 - Estado Servidor Web
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/estado-servidorweb-state.png :exports results
+     @startuml
+     Title Patrón State (Estado Servidor Web)
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     class Servidor <<Context>>{
+         -EstadoServidor estado
+    
+         +void encender()
+         +void reiniciar()
+         +void bloquear()
+         +void apagar()
+         +void imprimirEstado()
+     }
+
+     interface EstadoServidor <<State>>{
+         +void encender(Servidor servidor)
+         +void reiniciar(Servidor servidor)
+         +void bloquear(Servidor servidor)
+         +void apagar(Servidor servidor)
+         +void imprimirEstado()
+     }
+
+     class EstadoApagado <<Concrete State>>{
+         +void encender(Servidor servidor)
+         +void reiniciar(Servidor servidor)
+         +void bloquear(Servidor servidor)
+         +void apagar(Servidor servidor)
+         +void imprimirEstado()
+     }
+
+     class EstadoEncendido <<Concrete State>>{
+         +void encender(Servidor servidor)
+         +void reiniciar(Servidor servidor)
+         +void bloquear(Servidor servidor)
+         +void apagar(Servidor servidor)
+         +void imprimirEstado()
+     }
+
+     class EstadoBloqueado <<Concrete State>>{
+         +void encender(Servidor servidor)
+         +void reiniciar(Servidor servidor)
+         +void bloquear(Servidor servidor)
+         +void apagar(Servidor servidor)
+         +void imprimirEstado()
+     }
+
+     class EstadoReiniciando <<Concrete State>>{
+         +void encender(Servidor servidor)
+         +void reiniciar(Servidor servidor)
+         +void bloquear(Servidor servidor)
+         +void apagar(Servidor servidor)
+         +void imprimirEstado()
+     }
+
+
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     EstadoEncendido  .up.|> EstadoServidor : implementa
+     EstadoReiniciando    .up.|> EstadoServidor : implementa
+     EstadoBloqueado    .up.|> EstadoServidor : implementa
+     EstadoApagado    .up.|> EstadoServidor : implementa
+
+     Servidor         *-right-> EstadoServidor
+
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+     note left of Servidor
+     El servidor guarda una referencia del estado
+     para que ellos puedan acceder y cambiar a otro
+
+     El objeto servidor delegará la tarea en el Estado
+     y se pasará así mismo por parámetro
+
+     ,**void encender(){ estado.encender(this) ; }**
+     end note
+
+     note as N1
+     Habrá tantas clases como transiciones de estados
+
+     Cada clase tiene su propio comportamiento,
+     por eso sobreescriben los métodos
+
+     Los métodos que reciben de parámetro al Servidor,
+     es para poder alternar a otro estado
+     end note
+
+     N1 .up. EstadoApagado
+     N1 .up. EstadoBloqueado
+     N1 .up. EstadoReiniciando
+     N1 .up. EstadoEncendido
+
+     @enduml
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:diagramas-de-clases/estado-servidorweb-state.png]]
+** Ejemplo 3 - Supermercado atención cliente
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/caja-supermercado-estado-state.png :exports results
+     @startuml
+     Title Patrón State (Supermercado - Atención)
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     class Supermercado{
+         -String nombre
+         -List<Caja> cajas
+     }
+
+     class Cliente{
+         -String nombre
+         -int edad
+         +boolean esMayorDeEdad()
+     }
+
+     package "Patrón State"{
+         class Caja <<Context>>{
+             -EstadoCaja estado
+             -int numeroCaja
+             -String nombreCajero
+        
+             +void atender(Persona p)
+             +void abrir()
+             +void cerrar()
+         }
+    
+         interface EstadoCaja <<State>>{
+             +void atender(Persona p)
+             +void abrir(Caja caja)
+             +void cerrar(Caja caja)
+         }
+    
+         class CajaCerrada <<Concrete State>>{
+             +void atender(Persona p)
+             +void abrir(Caja caja)
+             +void cerrar(Caja caja)
+         }
+    
+         class CajaAbierta <<Concrete State>>{
+             +void atender(Persona p)
+             +void abrir(Caja caja)
+             +void cerrar(Caja caja)
+         }
+    
+     }
+
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     Supermercado o-right-> Caja
+
+     Caja        *-right-> EstadoCaja
+     Caja        -right-> Cliente
+
+     CajaCerrada .up.|> EstadoCaja
+     CajaAbierta .up.|> EstadoCaja
+
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+     note bottom of CajaCerrada
+       @Override
+       public void abrir(Caja caja){
+         System.out.println("Abriendo la caja "+ caja.getNumeroCaja());
+         ,**caja.setEstado(new CajaAbierta());**
+       }
+  
+       @Override
+       public void cerrar(Caja caja){
+         System.out.println("La caja "+caja.getNumeroCaja()+" ya está cerrada");
+       }
+     end note
+
+     note bottom of CajaAbierta
+       @Override
+       public void abrir(Caja caja){
+         System.out.println("La caja "+caja.getNumeroCaja()+" ya está abierta");
+       }
+
+       @Override
+       public void cerrar(Caja caja){
+         System.out.println("Cerrando la caja..");
+         ,**caja.setEstado(new CajaCerrada());**
+       }
+     end note
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/caja-supermercado-estado-state.png]]
+
+* Facade (Envolver servicios/subsistemas)
 ** Conceptos
    - La *fachada* es el nexo/puente entre el *cliente* y los *servicios*
    - La usamos SIEMPRE que usemos una *biblioteca de terceros* (ajena a nuestro sistema)
@@ -2810,7 +3521,7 @@
      - o quizás la biblioteca tiene un nivel de complejidad que el usuario no necesita porque entender
    - Cuando un sistema que tiene varios servicios se hace complejo de usar
      (se evita al usuario el tener que entender como funciona cada servicio)
-** Impresión de Documentos
+** Ejemplo 1 - Impresión de Documentos
    #+BEGIN_SRC plantuml :file diagramas-de-clases/servicio-impresion-facade.png :exports results
      @startuml
      Title Patrón Facade (Impresión de Documentos)
@@ -2918,16 +3629,14 @@
    #+RESULTS:
    [[file:diagramas-de-clases/servicio-impresion-facade.png]]
 
-** Referencias
-   1. https://www.arquitecturajava.com/adapter-vs-facade-y-sus-diferencias/
-* Adapter (Envoltura de un API)
+* Adapter (Envolver una API)
 ** Conceptos
    - Cuando nuestra aplicación hace uso de una *API* de terceros
    - El *adaptador* es nexo/puente de la comunicación entre nuestra aplicación y una *API* de terceros (/google maps, servicio de mail, .../)
 ** Ventajas
    - Si la *API* de terceros llegase a cambiar => solo modificaríamos nuestro *adapter*
      (si no lo tuvieramos, deberíamos buscar/modificar en todo el programa que use métodos de esa API de terceros)
-** Dispositivos Electronicos
+** Ejemplo 1 - Dispositivos Electronicos
    #+BEGIN_SRC plantuml :file diagramas-de-clases/dispositivos-electronicos-adapter.png :exports results
      @startuml
      Title Patrón Adapter (Dispositivos Electrónicos)
@@ -2942,7 +3651,7 @@
              +void encender()
              +void apagar()
          }
-    
+
          class RadioDigital{
              +void encender()
              +void apagar()
@@ -2952,19 +3661,19 @@
              +void encender()
              +void apagar()
          }
-    
+
          class TelevisorViejo <<Adaptee>>{
              +void girarPerillaAIzquierda()
              +void girarPerillaADerecha()
              +void presionarBoton()
          }
-    
+
          class AdaptadorTelevisorViejo <<Adapter>>{
              -TelevisorViejo televisor
              +void encender()
              +void apagar()
          }
-    
+
      }
 
      ' ================
@@ -2987,6 +3696,80 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/dispositivos-electronicos-adapter.png]]
+** Ejemplo 2 - Reproductores de Música
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/reproductor-musica-adapter.png :exports results
+     @startuml
+     Title Patrón Adapter (Reproductores de música)
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     package "Patrón Adapter (adaptar interfaces incompatibles)"{
+
+         component "Reproductor Estandar"{
+             interface IReproductor <<Adaptee>>{
+                 +void reproducirMP4(String archivo)
+                 +void reproducirMPG(String archivo)
+             }
+        
+             class ReproductorMP4{
+                 +void reproducirMP4(String archivo)
+                 +void reproducirMPG(String archivo)
+             }
+        
+             class ReproductorMPG{
+                 +void reproducirMP4(String archivo)
+                 +void reproducirMPG(String archivo)
+             }
+         }
+    
+         interface IMiniReproductor <<Target>>{
+             +void reproducir(String formato, String archivo)
+         }
+
+         class MiniReproductor {
+             -ReproductorAdapter reproductorAdapter
+             +void reproducir(String formato, String archivo)
+         }
+    
+         class ReproductorAdapter <<Adapter>>{
+             +void reproducir(String formato, String archivo)
+         }
+
+         note top of ReproductorAdapter
+         Se busca que el **MiniReproductor** pueda usar nuevos
+         formatos de audio (MP4 y MPG) además del que tiene
+
+         Se crea un adapter como puente entre las interfaces incompatibles.
+         Para que las interfaz **IReproductor** de los reproductores 
+         de MP4 y MPG sea compatible con la del **MiniReproductor**
+         ya que entienden otros mensajes **reproducirMP4()** y **reproducirMPG()**
+         end note
+
+     }
+
+     ' =====================
+     ' ==== RELACIONES =====
+     ' =====================
+
+     ReproductorMP4              .up.|> IReproductor : implementa
+     ReproductorMPG              .up.|> IReproductor : implementa
+
+     ReproductorAdapter        -down-> IReproductor
+     ReproductorAdapter        .up.|> IMiniReproductor
+     MiniReproductor             .up.|> IMiniReproductor
+
+     MiniReproductor             -right-> ReproductorAdapter : usa
+
+
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/reproductor-musica-adapter.png]]
+
 * (DI) Inyeccion de Dependencias Vs. (IoC) Inversión de Control
 ** (DI) Inyección de Dependencias
 *** Conceptos
@@ -3311,16 +4094,10 @@
    2. http://martinfowler.com/bliki/InversionOfControl.html
    3. http://www.manning.com/seemann/
    4. http://www.pluralsight.com/courses/principles-oo-design
+* [TODO] Publisher (Consumer)
+* [TODO] Singleton
 * [TODO] Composite
-* [TODO] State
-** Referencias
-   1. https://www.youtube.com/watch?v=MGEx35FjBuo&ab_channel=DerekBanas
 * [TODO] MVC
-* Extras para probar
-  1. https://www.arquitecturajava.com/java-8-lambda-expressions/
-  2. https://www.arquitecturajava.com/uso-de-java-generics/
-  3. https://www.adictosaltrabajo.com/2015/03/02/optional-java-8/
-  4. https://www.arquitecturajava.com/java-generics-uso-de-wildcard/
 * Referencias
 ** Referencias Web
   1. https://www.fdi.ucm.es/profesor/jpavon/poo/2.14pdoo.pdf
@@ -3335,10 +4112,11 @@
   10. https://www.geeksforgeeks.org/abstract-factory-pattern/
   11. https://informaticapc.com/patrones-de-diseno/
   12. https://aprendeyprogramablog.wordpress.com/2016/07/10/ejemplo-abstract-factory/
-  13. https://jesusramirezguerrero.com/2014/08/26/patrones-de-diseno-en-java/ (mindmap)
-** Referencias Github
+  13. https://jesusramirezguerrero.com/2014/08/26/patrones-de-diseno-en-java/
+** Referencias Repositorios
   1. https://github.com/miw-upm/apaw/tree/develop/src/main/java/es/upm/miw/pd
   2. https://github.com/eugenp/tutorials/tree/master/patterns/design-patterns-creational/src/main/java/com/baeldung
+  3. https://gitlab.com/UAI-TCTD
 ** Referencias Youtube
    1. https://www.youtube.com/watch?v=PZ_fM3qCkc4&list=PLj2IVmcP-_QOuIKgInMyOKQWRbhrV3td6
    2. https://www.youtube.com/playlist?list=PLF206E906175C7E07
@@ -3350,3 +4128,8 @@
   2. https://picodotdev.github.io/blog-bitix/2020/12/para-que-sirve-la-palabra-clave-final-en-el-codigo-fuente-java/
   3. https://stackify.com/specify-handle-exceptions-java/
   4. https://www.seas.es/blog/informatica/agregacion-vs-composicion-en-diagramas-de-clases-uml/
+** Referencias Interesantes
+   1. https://www.arquitecturajava.com/java-8-lambda-expressions/
+   2. https://www.arquitecturajava.com/uso-de-java-generics/
+   3. https://www.adictosaltrabajo.com/2015/03/02/optional-java-8/
+   4. https://www.arquitecturajava.com/java-generics-uso-de-wildcard/
