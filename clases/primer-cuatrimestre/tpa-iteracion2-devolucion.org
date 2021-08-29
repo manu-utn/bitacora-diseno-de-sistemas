@@ -1,0 +1,44 @@
+* Características
+** Correcciones
+  - NO se maneja de manera *flexible* (porque y si hay nuevos requerimientos..?)
+  - Actualmente no la podemos trabajar de forma *polimórfica*
+  - No matchea con voluntarios
+  - NO contemplamos las que vienen por defecto "tranquilo, pacífico, .."
+** Nuevas Features
+  - Posibilidad de que tenga un *arreglo de opciones*
+  - Convertirlo en un
+    1. *array de características* de strings
+    2. ó *darle una entidad* (Clase, que tenga comportamiento)
+* Hogares Service 
+** Correcciones
+   - Referido al ~while~ podríamos tener otro ~getHogares~, que lance una excepción que corte el flujo del ~while~
+     (para gestionar la paginación de los resultados de la request)
+   - Remover el ~getHogares~ actual, no es necesario, podemos reutizar solo el sevicio ~getListadoHogares~
+** Features
+   - Otra alternativa del ~while~ que tenemos, serian request infintas
+   - Tener un *objeto aparte que reciba las request* que utiliza el service hogares
+   - Posibilidad de trabajar como en streams (puede que en java no sea fácil de implementar)
+   - Tener una *api hogares* y hacer llamadas a esta
+* Mail java
+** Correcciones
+   - Evitar el *generics* (clase genérica) porque *agrega complejidad*
+   - Reemplazar el *generics* por una Super Clase de la que hereden el resto (mailer rescatista, ...), 
+** Features
+   - Tener una ~interface Mailer~, que tenga el mensaje que reciba
+   - El mailer lo podríamos pasar por parámetro
+* Publicación
+** Correcciones
+   - No debería estar en el *constructor* (eso se manejará en la UI)
+* Voluntario
+** Correcciones
+   - Remover el método *aprobarPublicacion* no es necesario, es mas de UI
+     (Obs: el *aprobar* estaría ok)
+   - El *aprobarPublicacion* puede servir a futuro, recibiendo al voluntario 
+     y saber quien lo aprobo
+* Rescate
+** Correcciones
+   - Tener en ~Rescate~ un ~getNombreRescatista()~ y evitar la cadena de mensajes ~rescatepupi().getDatosRescate().getRescatista()....~
+   - Reducir el ~data class~ que aparece
+
+
+

@@ -1,0 +1,22 @@
+* Referencias
+** Lambda
+  1. https://es2.slideshare.net/scottleber/java8-8-lambda-expressions
+  2. https://www.baeldung.com/foreach-java
+  3. https://www.arquitecturajava.com/java-8-lambda-y-foreach-ii/
+  4. https://www.arquitecturajava.com/java-stream-foreach-y-colecciones/
+  5. https://www.baeldung.com/java-8-lambda-expressions-tips
+** Bibliotecas
+*** EJemplos
+    #+BEGIN_SRC java
+      import java.util.stream.Stream; // para..
+      import java.util.stream.Collectors; // para..
+      import java.util.List; // para declarar listas
+      import java.util.ArrayList; // para definir listas (?)
+
+      import java.util.HashSet; // para definir una coleccion de elementos que no se repiten (?
+      import java.util.Set; // para declarar una coleccion con elementos que no se repiten
+
+      import java.util.function.Consumer; // es un tipo de función lambda
+    #+END_SRC
+*** Referencias
+    1. https://docs.oracle.com/javase/8/docs/api/?java/util/stream/Stream.html

@@ -1,0 +1,76 @@
+* Motor de DB
+* Claves
+** Claves Alternativas
+** PK - Primary Key
+   - Debe cumplir unicidad && minimalidad
+** FK - Foreign Key
+** Reglas de Integridad
+*** Regla de Integridad Referencial
+    - Se debe respetar la relación con la FK, ésta no debe ser NULL
+** Unicidad
+** Minimalidad
+* [TODO] Normalización
+** Objetivo
+   - Minimizar redundancias
+   - Mejorar la coherencia y abstracción de los datos
+** COnceptos
+   - Heurísticas (reglas prácticas): 
+   - Incrementales (incluyen a la anterior)
+   - Hay unas 5 reglas
+   - En clase se usará hasta la 3FN
+** Forma canónica
+   - NO deberia haber *campos calculados*
+** 1FN - Primera forma normal
+*** Conceptos
+   - NO puede haber *atributos multivaluados* (/Ej. una tupla (dato1, dato2)/)
+*** Ejemplo
+    #+name: tabla-sin-1fn
+    |---------+--------------+-------------+---------------------------+-----------------|
+    | *curso* | *alumno_dni* | docente_dni | docente_nombre_ape        | alumno_apellido |
+    |---------+--------------+-------------+---------------------------+-----------------|
+    | K300    |     35216118 |     3511822 | (Federico,        Carlos) | Ramirez         |
+    |---------+--------------+-------------+---------------------------+-----------------|
+
+    |---------+--------------+-------------+----------------+---------------+-----------------|
+    | *curso* | *alumno_dni* | docente_dni | docente_nombre | alumno_nombre | alumno_apellido |
+    |---------+--------------+-------------+----------------+---------------+-----------------|
+    | K300    |     35216118 |     3511822 | Federico       | Carlos        | Ramirez         |
+    |---------+--------------+-------------+----------------+---------------+-----------------|
+** [TODO] 2FN - Segunda forma normal
+*** Conceptos
+    - Los *atributos NO clave* deben depender completamente de la *clave*
+*** Ejemplo
+    #+name: tabla-sin-2fn
+    |---------+--------------+-------------+----------------+---------------+-----------------|
+    | *curso* | *alumno_dni* | docente_dni | docente_nombre | alumno_nombre | alumno_apellido |
+    |---------+--------------+-------------+----------------+---------------+-----------------|
+    | K300    |     35216118 |     3511822 | Federico       | Carlos        | Ramirez         |
+    |---------+--------------+-------------+----------------+---------------+-----------------|
+
+
+    |---------+-------------+----------------+-----------------|
+    | *curso* | docente_dni | docente_nombre | alumno_apellido |
+    |---------+-------------+----------------+-----------------|
+    | K300    |     3511822 | Federico       | Ramirez         |
+    |---------+-------------+----------------+-----------------|
+
+
+    |--------------+---------------+-----------------|
+    | *alumno_dni* | alumno_nombre | alumno_apellido |
+    |--------------+---------------+-----------------|
+    |     35216118 | Carlos        | Ramirez         |
+    |--------------+---------------+-----------------|
+** 3FN - Tercera forma normal
+*** Conceptos
+    - los atributos no clave, NO deben depender directamente de la 
+*** Ejemplo
+
+** BCFN
+   - permite cambiar la pk
+
+* Desnormalización
+  - Cuando se quiere ganar perfomance
+
+  Ej. Para evitar hacer una query costosa, que necesita operar con miles de registros
+  para contar la cant. de pedidos por cliente.
+  Se podría agregar sólo una columna extra a pedido, diciendo la cant. 

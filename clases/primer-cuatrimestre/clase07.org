@@ -1,0 +1,120 @@
+#+TITLE: Clase 07
+* Repaso clase anteior
+** interfaz
+*** entrante
+    la responsabilidad es de exponer una operacion
+    para que nos llame, nos utilice
+   
+    Ej. A -> B (nuestra responsabilidad)
+
+    *Observación:*
+    (Obs: NO necesariamente debe existir un *facade*,
+    este sirve para exponer solo algunas partes del sistema,
+    osea una fachada que oculta detalles de sistema)
+*** saliente
+    Cuando yo utilizo un componente externo
+    Ej. A->B (nuestra esponsabilidad)
+
+    *Observación:*
+    NO podemos modificar a ese componente externo,
+
+    *Observación:*
+    Se puede llegar a usar un ~adapter~ en caso que el *componente externo*
+    NO sea fácil de utilizar, pero NO siempre. 
+    (Ej. API de fechas de java es externa, y no necesitamos de un adapter,
+    para utilizar)
+    También cuando necesitamos realizar alguna interacción con ese 
+    componente externo, puede quizás necesitar 
+** Sincronismo
+*** sincrónica
+    invoco al componente y me quedo esperando
+*** asincronica
+    invoco al componente, y me olvido
+** componente externo preguntas
+   1. quien hizo este componente?
+   2. podemos modificalo?
+   3. ?
+   4. ?
+** ejemplo de apiweather
+   teniamos una clase *proveedor clima* que servía de ~adapter~
+   para que fuese más facil de utilizar
+   
+   en caso de que llegase a haber varios componentes que
+   queramos *adaptar* y esos *componentes* "ENTIENDEN"
+   los mismos mensajes,
+   podemos crear una ~interfaz~
+   Ej. Si al principio solo teniamos una clase adapter, para el
+   componente de apiweather. Luego nos dicen que hay mas
+   componentes que no son solo de apiweather,
+   podemos crear una ~interfaz~.
+   OJO..! La idea de ~interfaz~ es cuando varios objetos
+   entienden los mismos mensajes.
+
+   en el diagrama
+   el ~target~ era
+
+   el ~adaptee~ era
+** impostores
+   para emular 
+** facade
+* Cosificar
+** Conceptos
+* qmp5
+  Se podria agregar polimorfismo para las *sugerencias*
+** diagrama de clases
+ #+BEGIN_SRC plantuml :file img/
+   @startuml
+   'Estructura
+   package Prenda <<Folder>>{
+           class Guardaropa
+           class Prenda
+   }
+
+   class Usuario
+
+   'Relaciones
+   'bar (l)-- Usuario
+
+   Guardaropa -> "*" Prenda
+   Guardaropa -d-> Usuario : propietario
+
+   Usuario -u-> "*" Guardaropa : tiene
+   @enduml
+ #+END_SRC
+** version 1
+
+  En esta se soluciona el codesmell type test
+  el que no aprovechaba polimorfismo
+
+  #+BEGIN_eXAMPLE
+  s.aplicarGuardaropa(guardaropa)   <<
+
+  interface sugerencia
+    aplicarGuardaropa(guardaropa)
+
+  sugerenciaAgregar>>aplicarGuardaropa(guardaropa)
+    guardaropa.agregar(prenda)
+  
+  sugerenciaQuitar>>aplicarGuardaropa(guardaropa)
+    guardaropa.quitar(prenda)
+  
+  guardaropa>>agregarSugerencia(sugerencia)
+    this.sugerencia.add(sugerencia)
+  #+END_EXAMPLE
+** version 2
+   en este otra si agregan nueas features,
+   se podria *cosificar* usando el ~template method~
+   
+   utilizar una *clase abstracta* en vez de interfaz,
+   para 
+
+   #+BEGIN_EXAMPLE
+   abstract Sugerencia
+     aplicarEnGuardaropas(guardaropa)
+        this.estado = ACEPTADA
+
+   #+END_EXAMPLE
+** patron command
+   *diferir* 
+** conceptos
+

@@ -1,0 +1,81 @@
+#+TITLE: Clase 01
+* Intro
+  - Persistencia
+  - Modelo relacional
+  - Anteriormente veiamos
+    1. Dominio
+    2. 
+* Necesidad de persistir
+  - Una vez que se apaga la PC se pierde lo que había en memoria
+  - Limitación de la RAM
+* Donde persistimos
+  - en archivos (porque es simple)
+  - la lectura NO está sincronizada, puede tener problemas
+    con la concurrencia (al escribir && leer at the same time)
+* Base de Datos
+** conceptos
+  - programas
+** tipos
+*** relacionales
+    - oracle, postgrsql, sqlserver, mysql
+*** no relacionales
+   - NO relacionales (aka NoSQL) -> neoj, redis, mongodb, cassandra,..
+   - de grafos
+   - de clave:valor (similar a un hashmap) Ej. redis
+   - columnares (cassandra)
+   - documentales (mongodb)
+** arquitectura
+   - motor de la db (proceso corriendo en un SO)
+   - interactúa con el disco
+   - appWeb
+   - gestor (ej. mysqlworkbench, dbeaver)
+
+   Los gestores o AppsWeb se conectan al motor mediante *sockets*
+** driver (protocolo de comunicación)
+   - el *driver* es el *protocolo de comunicación*
+   - los gestores de db necesitan saber *protocolo de comunicación* de cada *motor de db*
+   - cada motor de db tiene un protocolo dif.
+** Modelo
+   |----------+----------------------|
+   | término  | equivalente informal |
+   |----------+----------------------|
+   | relación | tabla                |
+   | tupla    | fila o registro      |
+   | atributo | campo ó columna      |
+   |----------+----------------------|
+** Reglas de codd
+   - *independencia* entre
+     - el *motor de db*
+     - los *programas* que acceden a los datos
+   - lenguajes para manipula
+     - DDL -> definición de datos (create, ..)
+     - DML -> Manipulación de datos (update, select, ..)
+** tipos de relaciones
+   - relaciones base o relaciones reales (las tablas)
+   - consultas
+   - vistas
+   - snapshots (son vistas materializadas, ocupan espacio en disco)
+** Claves
+*** Claves naturales
+**** candidatas
+***** minimalidad
+      - el conjunto de campos debe ser minima
+***** unicidad
+      - debe ser unica
+*** Claves Artificales o subrogadas
+** Modalidad-Cardinalidad
+   - Modalidad: opcional/obligatoria
+   - Cardinalidad: uno a muchos, muchos a uno, uno a uno
+** Claves foránea (FK)
+   - Permite combinar datos de distintas relaciones
+   - 
+* Integridad referencial
+  Cuando se borra/actualiza:
+  - restricción <- "recomendada"
+  - propagación (ó cascada) <- borra/actualiza los campos referenciados con FK
+  - anulación <- actualiza los campos a NULL de los campos referenciados
+
+  Observación:
+  La propagación y la anulación tienen efecto
+* Integridad de las relaciones
+
