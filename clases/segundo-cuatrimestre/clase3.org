@@ -1,0 +1,399 @@
+#+TITLE: Clase 3
+* Impedance Mismatch
+  - Es la diferencia entre el *Modelo de Objetos* y el *Modelo de Datos*
+  - Es la diferencia entre como ambos modelos resuelven o no distintos problemas
+
+  |------------------------------+----------------------------------------+--------------------------------------------------------------|
+  |                              | Modelo de Objetos (Diagrama de Clases) | Modelo de Datos (DER Físico)                                 |
+  |------------------------------+----------------------------------------+--------------------------------------------------------------|
+  | Tiene Comportamiento         | SI                                     | NO                                                           |
+  | Tienen estado                | SI                                     | SI                                                           |
+  | Tienen identidad             | SI (/el propio objeto, al definirlo/)  | SI (/pero.. Definiendo la PK/)                               |
+  | Navegación para buscar datos | Más díficil si es una relación de 1..n | Más fácil se guardan referencias de ambos extremos (PK y FK) |
+  | Tipos                        | SI + Se puede referenciar a otros Obj  | Algunos + Las referencias son por FK                         |
+  | Herencia                     | SI (/para reutilizar comportamiento/)  | NO                                                           |
+  |------------------------------+----------------------------------------+--------------------------------------------------------------|
+* Conceptos Básicos (JDBC + Driver + Driver JDBC + JPA + ORM)
+** Driver
+   Es una implementación de un estándar para una DB en particular
+** JDBC (Java Database Connectivity)
+   Es el estándar para la conexión a una DB, la api (/la usará el framework hibernate/)
+** Driver JDBC
+   - Es la implementación del estándar (JDBC) para la conexión
+   - Es el conector de db (ej. mysql) implementa la conexión de JBC
+** JPA (Java Persistanse API)
+   - Estandar que implementan los *Frameworks de ORM* (/Ej. Hibernate/)
+   - Tiene las *interfaces* (/Ej. EntityManager/) y *annotations* (/@Entity, @Table, .../)
+** Frameworks de ORM
+   - Facilitan el Mapeo Relacional/Consultas/Conexión a la DB
+   - Desacopla el *Modelo de objetos* del *Modelo de Datos* (/permite la separación entre ambos/)
+   - El que se utiliza en la materia es *Hibernate*
+   - Implementan al ~EntityManager~ de (JPA) *Java Persistanse API*
+
+   #+BEGIN_QUOTE
+   Los *frameworks* se diferencian de las *bibliotecas*
+   1. Ofrecen *puntos de extensión* para configuraciones específicas
+   2. Definen un marco de trabajo
+   #+END_QUOTE
+* Archivos de Configuración
+** persistance.xml
+*** Conceptos
+   - Se agrega la *conexión a la base de datos* y las *clases que mapea el ORM* (/Ej. entidades/)
+   - Se guarda toda la configuración del *ORM*
+   - Se agrega en dos rutas
+     1. En el main de la app ~main/resources/META-INF~
+     2. En los test de la app ~test/resources/META-INF~
+*** Configuración
+     #+BEGIN_SRC xml
+       <!-- conexión a la db del "entorno de producción" -->
+       <property name="hibernate.connection.driver_class" value="com.myql.jdbc.Driver" />
+       <property name="hibernate.connection.url" value="jdbc:mysql://localhost:3306/jugadores" />
+       <property name="hibernate.connection.username" value="root" />
+       <property name="hibernate.connection.password" value="mysql" />
+
+       <!-- conexión a una db en memoria para el "entorno de testing" -->
+       <property name="hibernate.connection.driver_class" value="org.hsqldb.jdbcDriver" />
+       <property name="hibernate.connection.url" value="jdbc:hsqldb:mem:app-db" />
+       <property name="hibernate.connection.username" value="sa" />
+       <property name="hibernate.connection.password" value="" />
+       <property name="hibernate.dialect" value="org.hibernate.dialect.HSQLDialect" />
+
+       <!-- configuración adicional -->
+       <property name="hibernate.show_sql" value="true" />
+       <property name="hibernate.format_sql" value="true" />
+       <property name="use_sql_comments" value="true" />
+       <!-- si hay cambios en el código fuente => el orm actualizará el esquema de la db -->
+       <property name="hibernate.hbm2ddl.auto" value="auto" />
+     #+END_SRC
+** pom.xml
+   - Para cargar las *dependencias* (/jpa-java8-extras, hsqldb, .../)
+   - Usamos ~jpa-java8-extras~ no directamente *hibernate*
+   - Para NO testear con la db del entono de producción ~hsqldb~ (/es una db que se carga en memoria/)
+* Entity Manager
+** Conceptos
+   - Es el puente para comunicarse con el *framework ORM* (/Ej. Hibernate/)
+   - Actúa como un *facade* (/patrón de diseño/) para con el *framework*
+** Guardar/Borrar de Caché la Identidad de los Objetos
+   - El ORM guarda la identidad de los objetos en caché
+   - Asegura la consistencia de los objetos
+   - Si queremos borrar la caché es mediante ~entityManager.clear()~
+
+   #+BEGIN_SRC java
+     // -> pedimos el jugador con id=2
+     Jugador jugadorA = entityManager.find(Jugador.class, new Long(2));
+
+     Jugador jugadorB = entityManager.find(Jugador.class, new Long(2));
+
+     // -> el resultado será "true"
+     System.out.println(jugadorA == jugadorB);
+   #+END_SRC
+    - Para persistir en la db con ~persist()~
+    - Para ejecutar operaciones transaccionales con ~rollback()~ y ~commit()~
+    - Sirve como caché (siempre y en cuando no hagamos clear)
+    - Es un objeto que nos sirve para interactuar/pedirle cosas al ORM (/a Hibernate/)
+      1. Ejecutar una query
+      2. Borra/Traeme tales objetos
+** Interfaces y Clases
+*** WithGlobalEntityManager
+    - Es una *interfaz* que nos provee al ~entityManager()~ global como *singleton*
+    - Se puede *inyectar* la interfaz
+
+    #+BEGIN_SRC java
+      // Podemos inyectarlo a los tests
+      public class ContextTest extends AbstractPesistanceTest implements WithGlobalEntityManager{
+          @Test
+          public void contextUp(){
+              assertNotNull(entityManager());
+          }
+      }
+
+      // Podemos inyectarlo a una clase normal
+      public class RepositorioJugadores implements WithGlobalEntityManager{
+          public void registrar(Jugador jugador){
+              entityManager().persist(jugador);
+          }
+      }
+    #+END_SRC
+*** PerThreadEntityManagers
+    - Es una clase que nos provee el método ~getEntityManager()~ a nivel global como un *singleton*
+
+    #+BEGIN_SRC java
+      public class Runner{
+          public static void(String[] args){
+              final EntityManager entityManager = PerThreadEntityManagers.getEntity.manager();
+
+              // -> pedimos el jugador con id=2
+              Jugador jugador = entityManager.find(Jugador.class, new Long(2));
+              System.out.printLn(jugador.getId());
+              System.out.printLn(jugador.getNombre());
+
+              // -> creamos una consulta con notación sql
+              Jugador otroJugador = (Jugador) entityManager
+                  .createQuery("FROM Jugador WHERE nombre= 'pepito'")
+                  .getSingleResult();
+          }
+      }
+    #+END_SRC
+** Métodos
+*** find
+*** getSingleResult
+* Repositorio
+  - *Es un objeto* que *conoce las instancias de TODOS los objetos*
+  - Consultan a una *base de datos* partir del *entityManager* 
+* Annotations
+** Conceptos
+   Definen el "como" se van a guardar las clases en la DB
+** En las Clases
+*** @Table
+    - con ~@Table nombre~ usá la tabla *nombre*, no cambia el nombre a nivel de DB
+    
+    *Observación:*
+    Si queremos cambiar el nombre de la DB, debemos hacer un ~rename~ directo en la DB
+*** @Entity
+    - Se agrega previo a definir una *clase*
+    - Le dice a *hibernate* que esa clase es una entidad, y la debe *persistir*
+    - Deben aparecer en el ~resources/META-INF/persistance.xml~
+
+    #+BEGIN_SRC xml
+      <property name="hibernate.show_sql" value="true" />
+      <property name="hibernate.format_sql" value="true" />
+      <property name="use_sql_comments" value="true" />
+      <!-- si hay cambios en el código fuente => el orm actualizará el esquema de la db -->
+      <property name="hibernate.hbm2ddl.auto" value="auto" />
+    #+END_SRC
+** En los atributos - Constraints
+*** @Id
+    - Se agrega previo a definir un atributo
+    - Le indica a *hibernate* que ese atributo será la *Clave primaria* de la *entidad*
+*** @GeneratedValue
+    - Se agrega previo a definir un atributo
+    - Le dice a *hibernate* que ese atributo será *autonumérico* (/en sql-server es el constraint IDENTITY/)
+** Tipo de Relación - Cardinalidad
+*** @ManyToMany
+    - Genera la tabla intermedia entre las tablas con la PK y FK
+    - El ORM hace automaticamente el mapeo de las clases 
+*** @ManyToOne
+* Estrategias de fetch/traer datos de la Relación
+** Conceptos
+   El ORM utiliza dos estrategias traer los datos
+   1. Lazy  (ó perozosa)
+   2. Eager (ó anciosa)
+
+   #+BEGIN_QUOTE 
+   Por default
+   - ~@ManyToOne~ usa la estrategia *eager*
+   - ~@OneToMany~ y ~@ManyToMany~ usan la estrategia *lazy*
+   #+END_QUOTE
+** Estrategia Lazy
+   - Utilizar cuando una entidad de la relación no se utiliza tanto
+   - Evita realizar consultas a tablas de la db que no necesitamos por el momento
+
+   #+BEGIN_QUOTE
+   Si en una relación entre dos entidades A y B,
+   cuando pedimos (A), se queda esperando a que pidamos (B)
+
+   Por ejemplo, si tenemos una relación *Alumno-Materia*,
+   si nos traemos al alumno => entonces esperará a que le pidamos la materia con un ~SELECT~
+   #+END_QUOTE
+** Estrategia Eager
+   - Utilizar cuando una entidad de la relación se utiliza muy seguido
+   - Nos evita el escribir las consultas ~SELECT~ de una tabla de la db
+
+   #+BEGIN_QUOTE
+   Si en una relación entre dos entidades A y B,
+   cuando pedimos (A) también nos trae (B) sin siquiera pedirlo
+
+   Supongamos que tenemos una relación *Alumno-Materia*,
+   si nos traemos al alumno => nos trae directamente la relación Materia
+   #+END_QUOTE
+** Cambiar de estrategia
+   Podemos cambiar la estrategia colocando seguido a la relación entre paréntesis ~fech= FetchType.Tipo~
+
+   #+BEGIN_SRC java
+     @Entity
+     public class Formacion{
+         @Id
+         @GeneratedValue
+         private Long id;
+
+         // por default el ManyToMany usa la estrategia Lazy, pero se puede cambiar a Eager
+         @ManyToMany(fetch = FetchType.EAGER)
+         private List<Jugador> jugadores = new ArrayList<Jugador>();
+
+         // por default el ManyToOne usa Eager, pero se puede cambiar a Lazy
+         //
+         // -> cada vez que traiga la formación, traiga también el equipo => lo dejamos Eager
+         // -> si la formación no usa siempre el equipo => lo cambiamos Lazy
+         @ManyToOne(fetch = FetchType.LAZY)
+         private Equipo equipo;
+     }
+   #+END_SRC
+* Transacciones 
+** Conceptos
+   - El ~commit()~ de una *transacción* confirma el conjunto las operaciones que contiene (/después NO se puede hacer rollback/)
+   - El ~rollback()~ de una *transacción* deshace las operaciones que se ejecutaron a nivel *base de datos*
+   - Hacer ~rollback()~ NO cambia el estado de un objeto, para eso se debe borrar la caché con ~entityManager.clear()~
+** Implementación en Java
+   #+BEGIN_SRC java
+     final EntityTransaction transaction = entityManager.getTransaction();
+     transaction.begin();
+     formacion.setGoles(new Long(11));
+     transaction.commit();
+
+     transaction.begin();
+     formacion.setGoles(new Long(15));
+     transaction.rollback(); // deshacemos la operación anterior (en la db)
+   #+END_SRC
+* Testing
+** Convenciones
+   - La clase que se ejecuta antes de los tests, utiliza ~@Before~ se lo suele llamar ~setup()~
+   - La clase que se ejecuta después de los tests, utiliza ~@After~ se lo suele llamar ~tearDown()~
+** Clases + Interfaces
+*** AbstractPersistenceTest
+    - Está incluida en la dependencia ~jpa-extra-tools~
+** Ejemplo en Java
+  #+BEGIN_SRC java
+    // La clase "AbstractPersistenceTest" viene de la dependencia "jpa-extra-tool"
+    public RepositorioJugadorTest extends AbstractPersistenceTest implements TransactionalOps, EntityManager{
+        public AbstractPersistence(){
+        }
+
+        @Before
+        public void setup(){
+            // - se ejecuta antes de los tests
+            // - iniciamos la transacción de sql, todas las operaciones serán considerados como una única operación
+            this.beginTransaction();
+        }
+
+        @After
+        public void tearDown(){
+            // - se ejecuta después de los tests
+            // - deshacemos los cambios que hayan hecho en la DB y la llevamos a un estado previo, evita generar efecto en la DB
+            this.rollbackTransaction();
+        }
+    }
+  #+END_SRC
+* Ejemplos en Java
+** Persistir Atributos LocalDate
+   - Según la versión de ORM de hibernate puede no tener esta opción
+   - El jpa-extra-tools provee ~@Convert(convertor=tipo.class)~
+
+   #+BEGIN_SRC java
+     @Entity
+     public class Libro extends PersistentEntity{
+         protected Libro(){ }
+
+         @Convert(converter = LocalDateConverter.class) // <--
+         private LocalDate fechaEdicion;
+
+         @Convert(converter = LocalDatetimeConverter.class) // <--
+         private LocalDateTime fechaHoraDestruccion;
+     }
+   #+END_SRC
+** Crear una entidad con PK Autonumérica
+  #+BEGIN_SRC java
+    @Entity
+    public class Persona{
+        @Id
+        @GeneratedValue
+        private Long id;
+
+        private String nombre;
+    }
+  #+END_SRC
+** Definir la Cardinalidad de una Relación
+  #+BEGIN_SRC java
+    @Entity
+    public class Formacion{
+        @Id
+        @GeneratedValue
+        private Long id;
+
+        private String nombre;
+
+        // manera práctica de no confundirse al armar la cardinalidad de la relación
+        //
+        // 1. Partimos la relación desde el tipo del atributo
+        //  - por tanto "@...ToOne" porque el atributo "equipo" no es una lista
+        //
+        // 2. Leemos la relación desde el atributo a la clase, de derecha a izq.
+        // - Equipo: @...ToOne     -> Una "formación" puede tener un "equipo"
+        // - Formacion: @ManyTo... -> Un equipo puede estar en varias "formaciones" de varios "partidos"
+        //
+        //  concluimos ManyToOne
+        @ManyToOne
+        private Equipo equipo;
+
+        // 1. Partimos retomando la misma idea, como el tipo del atributo es una colección sera "@...ToMany"
+        //  - Sabemos que es @...ToMany
+        //
+        // 2. Leemos la relación desde el atributo al nombre la clase
+        //  - Jugador: @...ToMany   -> un jugador puede estar en muchas formaciones de varios partidos
+        //  - Formacion: @ManyTo... -> una formación puede tener varios jugadores
+        //
+        // concluimos ManyToMany
+        @ManyToMany
+        private List<Jugador> jugadores = new ArrayList<>();
+    }
+  #+END_SRC
+** Persistir información
+   #+BEGIN_SRC java
+     // le pedimos formación con id=1
+     final Formacion formacion = entityManager.find(Formacion.class, new Long(1));
+     // declaramos la transacción
+     final EntityTransaction transaction = entityManager.getTransaction();
+
+     transaction.begin(); // <- iniciamos la transacción
+
+     formacion.setGoles(new Long(11));
+     Jugador jugador = new Jugador();
+     jugador.setNombre("pepito");
+
+     entityManager.persist(jugador); // <- lo persiste en la db
+
+     System.out.pintln(jugador.getId()); // <- imprimimos el ID del jugador que persiste en la db
+
+     transaction.commit(); // <- confirmamos la transacción
+   #+END_SRC
+** Ejecutar Consultas
+   #+BEGIN_SRC java
+     public class Runner{
+         public static void(String[] args){
+             final EntityManager entityManager = PerThreadEntityManagers.getEntity.manager();
+
+             // -> pedimos el jugador con id=2
+             Jugador jugador = entityManager.find(Jugador.class, new Long(2));
+             System.out.printLn(jugador.getId());
+             System.out.printLn(jugador.getNombre());
+
+             // -> creamos una consulta con notación sql
+             Jugador otroJugador = (Jugador) entityManager
+                 .createQuery("FROM Jugador WHERE nombre= 'pepito'")
+                 .getSingleResult();
+         }
+     }
+   #+END_SRC
+** Pasar Parámetros a las Consultas
+   - A la query le agregamos al valor como ~:nombreParametro~ y usamos el método ~setParameter("nombreParametro", nombreParametro)~
+   - Se recomienda "NO CONCATENAR" los strings (/para evitar sql inject/)
+
+   #+BEGIN_SRC java
+     //
+     public List<Jugador> filtrarPorNombre(String nombre){
+         // -> creamos una consulta con notación sql
+         return (Jugador) entityManager
+             .createQuery("FROM Jugador WHERE nombre= :nombre")
+             .setParameter("nombre", nombre)
+             .getSingleResult();
+     }
+   #+END_SRC
+** Cambiar la referencia a una tabla
+   Usamos el *annotation* ~Table(name="nombreTabla")~  (/pero no renombra el nombre en la db/)
+
+   #+BEGIN_SRC java
+     @Entity
+     @Table(name= "jugadores") // <-- buscará en esta tabla en vez de la tabla "Jugador"
+     public class Jugador{
+         //...
+     }
+   #+END_SRC
