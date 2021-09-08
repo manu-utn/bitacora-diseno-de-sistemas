@@ -164,7 +164,7 @@
   #+END_COMMENT
 ** Intención
    - Que una superclase tiene un método (conocido como template-method) que reutiliza 
-   un conjunto de *pasos* (hook methods) que entienden (tienen en común) todas las subclases
+   un conjunto de *operaciones* (hook methods) que entienden (tienen en común) todas las subclases
 
    *Observación:*
    - Podriamos decir es un template-method el que tiene la superclase, porque es una plantilla que usarán las subclases
@@ -327,3 +327,8 @@
 * Patrón Observer
 * Patrón Command
 * Patrón State
+* Glosary
+** Pointless
+   Inútil, sin sentido
+** Track
+   rastear, seguir la pista, seguir, monitorear 

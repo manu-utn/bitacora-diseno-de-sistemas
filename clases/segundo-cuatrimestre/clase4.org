@@ -1,0 +1,410 @@
+#+TITLE: Clase 04
+* Clasificación de los objetos
+* Consultas polimórficas
+   - Por una *asociación* (/Ej. Una clase abstracta "Materia" con "MateriaElectiva" y "MateriaObligatoria"/)
+   - Por una *consulta* específica (/Ej. traer todas las Materias a través del entityManager/)
+
+   #+BEGIN_QUOTE
+   Una consulta polimorfica sería si pedimos todas las Materias al ~entityManager~ 
+   sin importar si es una *MateriaElectiva* ó una *MateriaObligatoria*
+
+   a nivel código hariamos ~entityManager.createQuery("from Materia").getResultList()~
+   #+END_QUOTE
+* Mapeo de herencia
+** Con Polimorfismo
+*** [DONE] Single Table Vs Joined Vs Table per class
+    CLOSED: [2021-09-08 mié 17:31]
+    El *Joined* sería mas en los casos que
+    1. Las subclases sean disjuntas, no tengan mucha relación entre si, no tiene sentido traer datos de la otra
+    
+    El *Single table* sería mas en los casos que
+    1. Cuando las subclases comparten campos en común
+    
+    |--------------------------------+--------------+--------------------------|
+    |                                | Single Table | Joined                   |
+    |--------------------------------+--------------+--------------------------|
+    | Tablas que genera              | 1            | Muchas (una por c/clase) |
+    | Permite consultas polimorficas | SI           | NO                       |
+    | Costoso hacer ~SELECT~         | NO           | SI                       |
+    | ~INSERTs~ que hace             | 1            | El doble                 |
+    | Normaliza los datos            | NO           | SI                       |
+    |--------------------------------+--------------+--------------------------|
+
+    El *single table:*
+    1. Agrupa todos los campos de todas las tablas (/quedan columnas con valor NULL/)
+    2. Desnormaliza los datos (/queda todo junto/)
+    3. Permite hacer consultas polimorficas (/trae datos de las tablas de la superclase y todas las subclases/)
+
+    El *joined*:
+    1. Normaliza los datos (/los separa por dominio..../) <---
+    2. Hace el doble de inserts (/uno en la tabla de la superclase, y luego otro en la tabla de la subclase/)
+    3. Hacer un SELECT implica muchos JOIN por cada tabla
+*** [DONE] Alternativa 2 - Single Table
+    CLOSED: [2021-09-08 mié 17:31]
+**** Conceptos
+     - Es la que más se suele utilizar
+     - Pemite hacer *consultas polimorficas*
+     - El *ORM* al mapear genera en la DB
+       1. Una tabla con todos los campos (/la superclase, y las subclases que extienden/)
+       2. Agrega una columna para el *discriminador* (/El nombre se puede definir o no en la superclase, y el valor en la subclases/)
+     - En la superclase se agrega ~@Inheritance(nombre=InheritanceType.SINGLE_TABLE)~
+
+     #+BEGIN_QUOTE
+     Podemos ó no definir el nombre de la columna de *discriminador* en la superclase
+     con  ~@DiscriminatorColumn(name = "elegiNombreDiscriminador")~
+     Si no le definimos un nombre, le agrega por default ~DTYPE~
+
+     Podemos ó no definir el valor que tendrá la columna del *discriminador* según que subclase se instancie
+     con ~@DiscriminatorValue("elegiValorDiscriminador")~
+     Si no le definimos un nombre, le agrega por default el nombre de la subclase
+     #+END_QUOTE
+**** Ejemplo
+     Si tenemos las clase abstracta ~Materia~ de la que extienden ~MateriaObligatoria~ y ~MateriaElectiva~
+     - Agregamos el ~@DiscriminatorColumn~ a la superclase, con el nombre de columna que el ORM mapeará a la DB
+     - Agregamos (/opcionalmente/) el ~DiscriminatorValue~ en las subclases que extiendan
+
+     Si emulamos como quedarían los registros en la db, la tabla *Materias* quedaría algo asi,
+     suponiendo que ya habiamos ingresado dos registros
+
+     #+name: tabla-materias
+     |--------+----+---------|
+     | ~tipo~ | id | nombre  |
+     |--------+----+---------|
+     | O      |  1 | ayed    |
+     | E      |  2 | quimica |
+     |--------+----+---------|
+
+     #+BEGIN_SRC java
+         @Entity
+         @Table(name="materias")
+         @Inheritance(strategy = SINGLE_TABLE) // <--- definimos la estrategia (es opcional agregarlo, por default es SINGLE_TABLE)
+         @DiscriminatorColumn(name = "tipo")  // <--- este será el nombre de la columna del discriminador en la DB
+         public abstract class Materia extends PersistentEntity{
+             @Column(nullable=false)
+             protected String nombre;
+             // ...
+         }
+
+         @Entity
+         @DiscriminatorValue("O") // <-- Podemos definirle otro valor al persistir en la DB, si no usará el nombre de la clase por default
+         public class MateriaObligatoria extends Materia{
+             // ...
+         }
+
+         @Entity
+         @DiscriminatorValue("E")  // <-- Podemos definirle otro valor al persistir en la DB, si no usará el nombre de la clase por default
+         public class MateriaElectiva extends Materia{
+             // ...
+         }
+
+
+       //-------------------------------------------------------------------------------------------------
+       // el sig. código extra es innecesario para la estrategia
+       public class Runner{
+           public static void(String[] args){
+               final EntityManager entityManager = PerThreadEntityManagers.getEntity.manager();
+           }
+
+           // probamos de buscar por la superclase "Materia"
+           // y nos traerá tanto las "obligatorias" como "electivas"
+           // (también podríamos buscar por las subclases, el ORM agregará un WHERE a la query)
+           private void buscarMateria(){
+               Materia materia = entityManager()
+                   .createQuery("from Materia", Materia.class)
+                   .setMaxResults(1)
+                   .getResultList().get(0);
+
+               System.out.println(materia.getClass());
+           }
+       }
+     #+END_SRC
+**** Ventajas
+    1. Es muy rápido
+    2. Fácil para buscar, porque trae TODOS los datos Superclase+Subclases
+**** Desventajas
+    1. podemos tener columnas con valor ~NULL~ (/pero, se puede salvar en el modelo de objetos con ValidationNotNull/)
+*** [DONE] Joined (tabla por clase)
+    CLOSED: [2021-09-08 mié 17:31]
+**** Conceptos
+    - El *ORM* al mapear las clases, hace *una tabla por cada clase*
+    - Hace 2 ~inserts~ (/ambos tienen mismo id/)
+      - 1 en la tabla de la superclase (/el id es autonumérico/)
+      - 1 en la tabla de la subclase correspondiente (/el id lo saca de la superclase y no es autonumérico/)
+**** Ventajas
+    - Aplica *Normalización* de los datos, porque los separa
+    - para subclases es un tanto eficiente, arma relaciones
+**** Desventajas
+    - Es costoso hacer los ~SELECT~ porque hace muchos ~JOINs~ para asociar cada tabla
+    - Es costoso si hace *inserciones masivas*, porque hace el doble de ~INSERTs~
+      1. Uno en la tabla de la superclase
+      2. Otro en la tabla de la subclase
+**** Ejemplo
+     #+name: tabla-materias
+     |----+---------|
+     | id | nombre  |
+     |----+---------|
+     |  1 | ayed    |
+     |  2 | quimica |
+     |----+---------|
+
+     #+name: tabla-materias-obligatorias
+     |----+---------|
+     | id | nombre  |
+     |----+---------|
+     |  1 | ayed    |
+     |----+---------|
+
+     #+name: tabla-materias-electivas
+     |----+---------|
+     | id | nombre  |
+     |----+---------|
+     |  2 | quimica |
+     |----+---------|
+
+     #+BEGIN_SRC java
+       @Entity
+       @Table(name="materias")
+       @Inheritance(strategy = JOINED)
+       public abstract class Materia extends PersistentEntity{
+           @Column(nullable=false)
+           protected String nombre;
+           // ...
+       }
+
+       @Entity
+       public class MateriaObligatoria extends Materia{
+           // ...
+       }
+
+       @Entity
+       public class MateriaElectiva extends Materia{
+           // ...
+       }
+     #+END_SRC
+*** [DONE] Table per class (tabla por clase concreta)
+    CLOSED: [2021-09-08 mié 18:29]
+**** Conceptos
+    - El *ORM* crea 1 tabla por cada *clase concreta* (/es decir NO se crea una tabla para la Superclase/)
+    - Definir estrategia de generación de IDs
+      - Utilizando ~GenerationType.TABLE~ en ~@GeneratedValue~ que genera ID únicos, valores al azar
+      - El *ORM* crea una tabla extra de la superclase para generar las secuencias (/concepto de DB/)
+    - Es la PEOR ante *consultas polimorficas* hace queries muy costosas al tratar de llevarlo a un esquema de *SINGLE_TABLE*
+
+    #+BEGIN_QUOTE
+    El definir estrategia de generacion de ids, por tanto NO se puede usar sólo el ~GeneratedValue~ para ID autonumericos
+    porque si no, las tablas de las clases concretas repetirían ID
+
+    La solución es que al ~@GeneratedValue~ de la *superclase* se le debe pasar la *estrategia* ~GenerationType.TABLE~ para generar ID
+    este nos genera ID únicos, son valores al azar
+    #+END_QUOTE
+
+    _Ventajas:_
+    1. Te evitas usar where, joins, ...
+**** Ejemplo - Con GenerationType.TABLE
+     #+BEGIN_SRC java
+       @Entity
+       @Table(name="materias")
+       @Inheritance(strategy = TABLE_PER_CLASS)
+       public abstract class Materia extends PersistentEntity{
+           @Id
+           @GeneratedValue(strategy = GenerationType.TABLE)
+           private Long id;
+
+           @Column(nullable=false)
+           protected String nombre;
+           // ...
+       }
+
+       @Entity
+       public class MateriaObligatoria extends Materia{
+           // ...
+       }
+
+       @Entity
+       public class MateriaElectiva extends Materia{
+           // ...
+       }
+     #+END_SRC
+**** Ejemplo - Con UUID
+     #+BEGIN_SRC java
+       @Entity
+       @Table(name="materias")
+       @Inheritance(strategy = TABLE_PER_CLASS)
+       public abstract class Materia extends PersistentEntity{
+           @Id
+           @GeneratedValue(generator = "uuid2") // <- se cambia "strategy" por "generator"
+           @GenericGenerator(name="uuid2", strategy="uuid2") // <- y luego agregamos esto
+           private Long id;
+
+           @Column(nullable=false)
+           protected String nombre;
+           // ...
+       }
+     #+END_SRC
+**** Ventajas
+     - Similar al Joined
+     - Es eficiente ante consultas *no polimorficas* (/preguntar por las clases concretas, osea las subclases/)
+**** Desventajas
+     - Tener una estructura auxiliar para guardar los id únicos
+     - El hacer *consultas polimorficas* hace queries no muy eficientes
+     - Se pierde la (FK) que tenia la referencia entre la subclases con la superclase
+     - Se pierde la *regla de integridad referencial* por lo anterior,
+       pudiendo borrar registros...
+** [DONE] Mapear Interfaces
+   CLOSED: [2021-09-08 mié 18:58]
+*** Problema
+    - Las *interfaces* no se pueden mapear para *persistir* (/NO tienen estado interno que guardar/)
+    - Este es un problema del *ORM*
+*** Solucion 1 - Clases abstractas
+    - Si tienen estado => Convertirlas a *clases abstractas*
+*** Solucion 2 - Enum
+    - Para *casos en que las subclases NO tienen estado* (/NO tienen atributos, estado interno/)
+    - Se convierte la interfáz en un ~Enum~ con comportamiento que tiene como opción las subclases
+    - Agregamos el annotation ~@Enum~
+    - No es necesario poner ~@Entity~
+    - Se puede instanciar a otras clases, para no tener un Enum con mucho comportamiento
+
+    #+BEGIN_QUOTE
+    Suponiendo que elegimos esta alternativa de convertir la *interfaz* en un *enum*
+    en vez de una *clase abstracta*, porque las subclases NO tenian estado...
+
+    Evita que el ORM haga ~JOINs~ a las tablas de las subclases que NO tienen estado
+    #+END_QUOTE
+*** Ejemplo
+    #+BEGIN_SRC java
+      // -----------------------------------------------
+      // Problema -> Interfaz que NO puede persistir el ORM
+      public interface Materia{
+          public boolean aprobada();
+      }
+
+      public class MateriaObligatoria implements Materia{
+          @Override
+          public boolean aprobada(){
+              // ..
+          }
+      }
+
+      public class MateriaElectiva implements Materia{
+          @Override
+          public boolean aprobada(){
+              // ..
+          }
+      }
+
+
+      // -----------------------------------------------
+      // Solución (2) -> Interfaz a Enum con comportamiento
+      //
+      // -> suponiendo que las subclases NO tienen estado
+      public enum Materia{
+          // estas dos eran las subclases
+          OBLIGATORIA, ELECTIVA;
+
+          // esto indica que es un Enum con comportamiento
+          public boolean aprobada(){
+              return true;
+          }
+      }
+
+      @Entity
+      public class Alumno extends PersistentEntity{
+          private String nombre;
+
+          @Enumerated
+          private Materia materiaPreferida;
+      }
+
+      // -----------------------------------------------
+      // Solución (1) - Interfaz a Clase Abstracta
+      //
+      // -> suponiendo que la subclases tienen estado
+      public abstract class Materia{
+          //
+      }
+
+      public class MateriaObligatoria extends Materia{
+      }
+
+      public class MateriaElectiva extends Materia{
+      }
+    #+END_SRC
+** [DONE] Sin polimorfismo
+   CLOSED: [2021-09-08 mié 01:23]
+*** Conceptos
+   - Consiste en *reutilizar mapeos*
+   - En la superclase se agrega ~@MappedSuperclass~ y esto le dice al *ORM* que *las subclases hereden ese mapeo*
+   - Sería como reutilizar la clase ~Object~ que es de la que heredan todas las clases
+   
+   #+BEGIN_QUOTE
+   Consiste en *herencia* para *reutilizar los atributos* (/estado interno/)
+   que es lo que NO se recomienda, si no que sólo *heredar por comportamiento*
+
+   pero *esta es una excepción a la regla de heredar por atributos*,
+   porque en este caso lo atributos es lo que reutilizará el framework de ORM Hibernate,
+   para agregarle un id autonumérico a las clases que extiendan de esa superclase.
+
+   Si no lo hicieramos.. deberiamos agregar los *annotations* en cada clase,
+   para el identificador autonumérico
+   #+END_QUOTE
+*** Ejemplo
+    Si llegasemos a consultar por la clase ~PersistentEntity~ nos devolvería datos
+    de todas las entidades que extiendan de esta. (/que NO es la idea/)
+
+    #+BEGIN_SRC java
+      @MappedSuperclass
+      public abstract class PersistentEntity{
+          @Id
+          @GeneratedValue
+          private Long id;
+      }
+
+      // - Esta subclase hereda el mapeo de la superclase de la que extiende
+      // - Nos evita tener que agregar los annotations @Id y @GeneratedValue
+      public abstract class Materia extends PersistentEntity{
+          // ..
+      }
+
+      // - Esta subclase hereda el mapeo de la superclase de la que extiende
+      // - Nos evita tener que agregar los annotations @Id y @GeneratedValue
+      public abstract class Alumno extends PersistentEntity{
+          // ..
+      }
+    #+END_SRC
+* Orden de los Datos
+** Conceptos
+   - Para mantener el orden de una *LISTA* se utiliza ~@OrderColumn(name="elegirNombreColumna")~
+   - Para asegurar un orden en el Modeo de Datos, agregamos una columna en la DB
+   - El ORM hará un ~ORDER BY~ del atributo en el que agregamos ~OrderColumn~ para mantener un orden
+   
+   *Observación:*
+   Solo las LISTAS tienen un orden, las colecciones NO
+** Ejemplo
+   #+BEGIN_SRC java
+     @Entity
+     @Table(name="cursadas")
+     public class Cursada extends PersistentEntity{
+         @ManyToOne(cascade=CascadeType.PERSIST, fetch=FetchType.EAGER)
+         private Materia materia;
+
+         @OneToMany
+         @OrderColumn(name="posicion") // <-- aseguramos un orden al pedirle al ORM las notas
+         private List<Nota> notas = new ArrayList<>();
+
+         public Materia getMateria(){
+             return materia;
+         }
+
+         // ...
+     }
+   #+END_SRC
+** Colección Vs Listas
+   - Las colecciones NO aseguran un orden
+   - Las listas tienen un orden, son *indexadas*
+
+   |---------------------------------+-----------+--------|
+   |                                 | Colección | Listas |
+   |---------------------------------+-----------+--------|
+   | Tienen orden                    | NO        | SI     |
+   | Se pueden repetir los elementos | NO        | SI     |
+   |---------------------------------+-----------+--------|

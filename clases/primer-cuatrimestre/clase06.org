@@ -1,0 +1,181 @@
+#+TITLE: Clase 06
+
+* rpaso clase anterior
+** Biblioteca
+**** Control directo
+** Framework
+*** Estructura
+*** Puntos de extensión
+*** Control inverso
+    Porque el framework nos usa
+** Testing
+*** Partes de una prueba
+    1. Inicializar contexto
+    2. a
+    3. 3
+*** TIpos
+    - unitarios
+    - integracion
+      - ej. para probar una api (xq depende que esté levantada)
+    - regresion
+      - que lo nuevo no rompa lo anterior
+    - stress
+      - que evalua la carga (soporta cant. de usuarios)
+    - aceptación
+      - que el usuarip
+** Manejo del cambio/refactor
+*** Conceptos
+   - concepto de *entropía*
+*** manejo del cambio
+    restricciones
+    - tiempo, dinero
+    - conocimiento del
+      - problema
+      - tecnologia
+    - prioridades
+*** refactoring
+    - tener tests unitarios
+      - para evaluar que está ok, y no se rompio
+    - no agregar funcionalidad
+** API
+   + *API* son las siglas de *Application programming interface*
+* Interfaz entre componentes
+** Interfaz entrante
+   A -> B (nuestra responsabilidad)
+
+   - Es *nuestra responsabilidad* 
+** Interfaz saliente
+   (nuestra responsabilidad) A -> b
+
+   Utilizamos B
+** INterfaces en el mismo ambiente
+   #+BEGIN_eXAMPLE
+   A -> B
+   
+   var dolaHoy = cotizador.obtenerCotizador()
+
+   Es una interfaz saliente,
+   Usamos la interfaz de (B), y no la podemos cambiar nosotros
+   el mensaje obtenerCotizador() viene de B
+
+   desde el punto de vista de (B) es una "interfaz entrante"
+   #+END_EXAMPLE
+** interfaces en ambientes distintos
+   #+BEGIN_EXAMPLE
+   A -> T -> B
+   #+END_EXAMPLE
+** sincronismo
+   1. invoco el componente
+   2. espero
+   3. 
+  
+   nos bloqueamos, hasta esperar su respuesta
+** Asincronico
+*** conceptos
+   1. invoco componente
+   2. me  olvido
+
+   similar a hilos de sisop
+   
+   #+BEGIN_EXAMPLE
+   A -> B
+   
+   A: cotizador.obtenerCotizacion() << solicitamos y esperamos resultado
+   (pero podemos hacer otras cosas mientras)
+   
+   B: cotizador.setCotizacion() << ocurre en un componente externo
+   (en el lado de ellos usan this.setCotizacion() )
+
+   A: cotizador.ultimaCotizacion()
+   #+END_EXAMPLE
+
+   nosotros (A) pedimos la cotización, y (B) cuando pueda lo hará
+   nostros (A) haremos otras cosas, y cuando queramos 
+   volvemos a preguntar en algun lado lo que hizo (B) (Ej. en un buffer)
+   como si hubiea quedado guardado
+
+   la idea es no quedarse escuchando,
+   pero podemos preguntar varias veces
+
+   Obs: quizas podemos relacionarlo con sisop, diciendo que "no tiene espera activa"
+*** ventajas
+*** desventajas
+    - y si quiero el resultado?
+** Acoplamiento
+*** implicito
+    se recomienda documentar, para saber a quienes afecta
+*** explicito
+    mas facil
+** patron facade (fachada)
+   - para ocultar complejidad
+   - publicar algunos mensajes de subsistemas, enmascarar
+   - ocultar comportamiento interno, darle otros nombres
+   - evitar llegar a ser un [[middle man]]
+     
+   #+BEGIN_EXAMPLE
+   el hecho de usar clases abstractas, o interfaces
+   ya implican un facade?
+
+   NO, no implica que oculte comportamiento
+   #+END_EXAMPLE
+** dependencias
+*** conceptos
+    todos los componentes q necesita un objeto para funcionar
+*** conocimiento directo
+*** service locator
+    - global, pero intercambiable
+    - es un singleton, pero lo que tiene dentro puede varia
+    - encapsula 
+** inyección de dependencias
+   - conocimiento indirecta (ó inyectado)
+   - lo hace alguien externo (alguien inyecta desde afuera una instancia
+     de Algo que podemos trabajar con polimorfismo)
+   - aparece en polimorfismo
+
+
+* tp qmp4
+** componente externo
+   La *AccuWeatherAPI* que nos usamos lo hizo un 3ro
+** interfaz saliente o entrante
+   la interfaz que modelamos es la *interfaz saliente* 
+   (porque nosotros le pedimos a la API, a algo externo
+   por lo general cuando le pedimos a un 3ro)
+** interfaz comoda
+   NO era comoda la interfaz, 
+   la idea es crear un *Adapter* ej. una clase ~ProveedorClima~
+   que "conoce" a la API, y lo hace mas entendible
+   para tener que tocar en todas las partes que
+   teniamos q hacer 
+   condiconCliatica.get(0).get("Temperature").get("Value").toDgrees();
+** Patron Adapter 
+    #+BEGIN_EXAMPLE
+    class ProveedorClima
+      int getTemperatura()
+          AccuWeatherAPI apiClima = ...
+          return 
+     #+END_EXAMPLE
+  
+     tmb se podria tener una interfaz ~ProveedorClima~
+     que implemente una clase ~ProveedorClimaAccuWEatherAPI~
+     y conozca a la api extena ~AccuWeatherAPI~
+     aparece las cualidades
+     - cohesión (xq delegamos en el adapter)
+     - extensible (por si hay nuevos proveedores)
+     - simplicidad (mas facil de usar)
+    
+     se podria usar lo del ejemplo de ~mailer~
+     pero NO acoplarnos a la API
+
+    
+
+
+* Patrón adapter
+  - cliente:
+  - target: 
+  - adapter: 
+  - adptee: acuweather
+* Impostor
+  En el ejemplo del TP
+  seria una ProveedorClimaImpostor
+
+

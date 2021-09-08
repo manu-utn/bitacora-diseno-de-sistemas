@@ -2,7 +2,7 @@ import junit.framework.TestCase;
 
 public class BebidaTest extends TestCase {  
   public void testElCafeSeSirveEnVasoChico() {
-    CafeBuilder bebida = new CafeBuilder();
+    BebidaBuilder bebida = new CafeBuilder();
     bebida.preparar();
     Bebida cafe = bebida.getBebida();
     
@@ -10,7 +10,7 @@ public class BebidaTest extends TestCase {
   }
   
   public void testElTeSeSirveEnVasoMediano() {
-    TeBuilder bebida = new TeBuilder();
+    BebidaBuilder bebida = new TeBuilder();
     bebida.preparar();
     Bebida te = bebida.getBebida();
     
@@ -18,7 +18,7 @@ public class BebidaTest extends TestCase {
   }
   
   public void testElCafeNoLlegaAHervor(){
-    CafeBuilder bebida = new CafeBuilder();
+    BebidaBuilder bebida = new CafeBuilder();
     bebida.preparar();
     Bebida cafe = bebida.getBebida();
     
@@ -26,7 +26,7 @@ public class BebidaTest extends TestCase {
   }
   
   public void testElTeLlegaAlos65(){
-    TeBuilder bebida = new TeBuilder();
+    BebidaBuilder bebida = new TeBuilder();
     bebida.preparar();
     Bebida te = bebida.getBebida();
     

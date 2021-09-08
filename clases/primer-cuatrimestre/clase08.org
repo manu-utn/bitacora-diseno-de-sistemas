@@ -1,0 +1,72 @@
+#+TITLE: Clase 08
+* Lambdas Vs. Objetos (comportamiento)
+  Las *lambdas*
+  + está pensada solo para aplicarse, cuando no quiero *reificar*
+  + son objetos genericos
+  + se pueden pensar "quizas" como un *command*
+  + NO son fácil de persistir en una base de datos
+
+  Los objetos me dan más flexibilidad, porque la lambdas solo entienden
+  el mensaje ~apply()~ y NO se puede agregarle mas mensajes, los limita
+  los mensajes que entiende, etc..
+    
+  #+BEGIN_EXAMPLE
+  este estaria usando lambdas:
+
+  metodo postergarAgregado(guardarropa, prenda)
+    return {() => guardarropa.agregar(prenda) }
+
+  -------------------------------------------------------------
+
+  este otro sería con objetos:
+
+  Consumer objeto = postergarAgregado(guardarropa, prenda)
+  objeto.accept()
+
+  Consumer<Integer> display = a -> System.out.println(a);
+  display.accept(10)
+  #+END_EXAMPLE
+
+  #+BEGIN_EXAMPLE
+  forEach(Consumer
+  #+END_EXAMPLE
+* [TODO] Patrón Command
+  - El cliente es el que difiere la operación
+  - el invocker es el que decide..
+* qmp6
+  - el ~serviceLocator~ era como un mapa d muchas dependencias,
+    relacionado a interfaces externas, y singleton
+  - los *repositorios*
+    - es normal tener varios repositorios
+    - tienen la responsabilidad
+    - no tiende a modificar sus instancias
+    - deben retornar
+
+  por lo general el que tiene los datos, es el responsable de manipularlos...
+  (Ej. el usuario )
+
+  #+BEGIN_eXAMPLE
+  void enviarSugerenciaDiaria(){
+    usuarios.forEach(usuario ->{
+      usuario.actualizarSugerenciaDiario()
+    })
+  }
+
+  
+  #+END_EXAMPLE
+* Patron observer
+** sujeto
+** observador
+   - el nombre de ~notify()~ puede variar
+     (/Ej. darAlerta, darAviso, etc../)
+   - no deberia importar el orden de los observadores
+** flujo de ejecución
+   - Es conveniente que NO aborten el flujo de ejecución
+** conceptos
+   - las notificaciones deberian ser ~void~ 
+     no deberian retornar un algo
+
+   #+BEGIN_eXAMPLE
+   #+END_eXAMPLE
+* Conceptos anteriores
+** Cosificar

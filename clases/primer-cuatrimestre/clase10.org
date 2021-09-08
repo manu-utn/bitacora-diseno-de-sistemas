@@ -1,0 +1,117 @@
+#+TITLE: CLase 10
+* Patrón State
+  - NO todo lo que diga "estado" sea un state, podria ser un 
+    1. un strategy
+* Patrón Composite
+  - Aparece la recursividad (Ej. tareaSimple, tareaCompuesta que tiene uno o mas tareasSimples)
+  - componentes dentro de otros componentes
+* Patrones de Comunicacion
+** Call and return
+** Share memory
+   - pueden ser a nivel
+     - objetos
+     - a nivel sistemas
+
+* Socrative
+** Shared memory
+   - existe un *acoplamiento implicito* porque usan un mismo recurso
+** adapter
+   - es estructural
+   - expone la funcionalidad de un componente con otra interfaz
+** objetos observables
+   - el observado es el que va a producir el evento
+   - el obersevador es el que espera el evento
+   - esta acoplado el observado con el observador
+     - NO fuertemente xq no necesita saber de que tipo es
+       (lo llamo y me desentiendo)
+     - pero necesita un poco 
+       (porque espero su mensaje)
+** codigo 1
+   - code smell long parameter list
+     - una funcion con muchos parámetros
+     - tiende a ser en constructores
+** CPS ó Continuation
+  - si o si se modifica la firma porque ...
+** plantillas/templates
+   - se basan en el uso de *herencia*
+   - la idea NO es cambiar entre plantillas dinamicamente
+** strategies
+** unit test
+   - *repetibilidad* de las pruebas
+     (que se puedan ejecutar tantas veces, y sigan funcionando)
+   - q sean independientes
+** refactor
+   - es IMPORTANTE que exista una bateria de tests
+     (para saber que no va rompiendo)
+   - es necesario una herramiento de versionado
+** mocking
+   - NO es necesario de un framework
+   - si son faciles de construir se tiende a usar un impostor/stub
+     en vez de mockup
+** comand
+   - Permite separar la configuracion de acciones
+** patron de comunicacion de continuaciones
+   A -> B
+   (seria B el q debe responder)
+** wko en java
+   - Enum, los atributos son unstateless
+   - un singleton
+* PResentacion (de escritorio)
+** mostrar/ejecutar operaciones
+** mostra/actualizar datos
+   formularios (Ej. crear contacto)
+** Definir navegacion
+   navbar, 
+** acoplamiento a tecnologia
+** componentes
+   + para ingresa datos
+     - checkbox/radiobutton/textbox/dropdown/..
+   + para visualización
+     - un componente de un articulo que tiene titulo+foto+descripcion
+** contenedores
+   - para agrupar varios componentes
+   - tienen su propio layout
+** layouts
+   como se van a mostrar los componentes, la posicion
+   - en vertical
+   - en horizontal
+   - en grilla
+   (en uno encima el otro, uno al lado del otro, en grilla..)
+* construir una aplicacion
+  ej. pasar millas a km
+** conceptos
+   - elegir si será una app web o de escritorio
+** wireframe
+   - bosquejo a nivel web
+** frameworks UI
+*** swing (framework)
+    - es el mas basico, no genera tantos componentes
+    - 
+*** arena (framwork)
+    - es mas completo, usa mvc
+    - nosotros: invoca al dominio
+    - nosotros: actualizamos el modelo de la vista
+    - actualiza la vista
+* Binding
+  - enlace/enlazar
+  Ej.en la vista cuando agrega enlaces a textbox
+* patrón mvc
+** conceptos
+   + los botones tienden a esperar eventos 
+     (Ej. onclick, ..)
+** (C)ontroller
+   se acopla a la view
+** (M)odel
+   tiende a tener una relacion 1 a 1 con el controller
+   modelo -> vista
+** (V)iew
+   vista -> modelo
+* patron mvvm
+** conceptos
+  la comunicacion es automatica
+** simila al mvc
+   no tiene controller, el framework se encarga de eso
+  - model
+  - viewmodel
+  - view
+

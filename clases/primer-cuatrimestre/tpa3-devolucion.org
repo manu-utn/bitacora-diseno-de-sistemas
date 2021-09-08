@@ -1,0 +1,8 @@
+* Agregar Polimorfismo entre Builders
+  - Entre ~SolicitudAdopcionBuilder~ y ~DarEnAdopcion~
+* Refactor entre Matcher y Publicación
+  - El ~Matcher~ estaría de más
+  - Esta lógica deberia estar en *Publicación*
+* Manejo de Errores
+  - 
+
