@@ -1,8 +1,9 @@
 # dds
 
 #+BEGIN_COMMENT
-Links a revisar
-https://informaticapc.com/patrones-de-diseno/builder.php
-https://gustavopeiretti.com/patron-de-diseno-builder-en-java/
-https://programacionymas.com/series/patrones-de-diseno-en-java/patron-de-diseno-builder
+ Links a revisar
+ 
+ https://informaticapc.com/patrones-de-diseno/builder.php
+ https://gustavopeiretti.com/patron-de-diseno-builder-en-java/
+ https://programacionymas.com/series/patrones-de-diseno-en-java/patron-de-diseno-builder
 #+END_COMMENT
