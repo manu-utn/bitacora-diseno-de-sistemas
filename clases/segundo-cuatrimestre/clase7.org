@@ -1,0 +1,353 @@
+#+TITLE: Clase 07 - Rutas REST + Spark Java + Motor de Templates + Cookies
+* Protocolo DNS (Domain Name System)
+  - Para darle un alias a una ip
+  - Traduce nombres/alias a IP
+* Petición (Request)
+** Conceptos
+   Suelen contener
+   1) Accion, representa la acción
+   2) Ruta
+   3) Protocolo
+   4) Cabecera
+   5) Cuerpo
+
+   #+BEGIN_QUOTE
+   http://www.mascotasnuevas.com/mascotas/1 <- protocolo:dns_dominio/ruta
+
+   1) La petición se forma así:
+   GET /publicaciones.html HTTP/1.1 <- acción,  ruta,  protocolo
+
+   2) Cabecera
+   User-Agent: Chrome/12.0 <- empieza cabecera
+   Host: www.mascotasnuevas.com
+   Content-Type: application
+   Content-Length: 15
+   Accept-Language: en-us
+   Accept-Encoding: gzip, deflate
+   Connection: Keep-Alive <- termina cabecera
+
+   3) Cuerpo
+   say=hello-world 
+   #+END_QUOTE
+   
+   |-----------+--------------------------------------------------------------------------------------------|
+   |           | Descripción                                                                                |
+   |-----------+--------------------------------------------------------------------------------------------|
+   | ACCION    | GET, PUT, DELETE, ..                                                                       |
+   |-----------+--------------------------------------------------------------------------------------------|
+   | RUTA      | ~/categoria/1~ ó ~publicacion/9~, ...                                                      |
+   |-----------+--------------------------------------------------------------------------------------------|
+   | PROTOCOLO | HTTP/1.1, ...                                                                              |
+   |-----------+--------------------------------------------------------------------------------------------|
+   | CABECERA  | agente (navegador), host, codificación, idioma, estado de la conexión (closed, keep-alive) |
+   |-----------+--------------------------------------------------------------------------------------------|
+   | CUERPO    | Es el texto plano html                                                                     |
+   |-----------+--------------------------------------------------------------------------------------------|
+** GET
+   - NO suelen tener *body*
+   - Se le pasa la *ruta* lo que va seguido al *host* ó *dominio*
+     - Ej. el host/dominio sería www.mascotasnuevas.com
+** Metodos/Acciones
+   |----------+----------------------------------------|
+   | ACCION   | Descripción                            |
+   |----------+----------------------------------------|
+   | ~GET~    | Para *obtener* un recurso              |
+   |----------+----------------------------------------|
+   | ~POST~   | Para *crear* un recurso                |
+   |----------+----------------------------------------|
+   | ~PUT~    | Para *actualizar* un recurso existente |
+   |----------+----------------------------------------|
+   | ~DELETE~ |                                        |
+   |----------+----------------------------------------|
+* Respuesta (Response)
+  - Obtiene un *status code* que dice si fue exitosa o no la petición
+
+  |---------------------+-------------------------------------------------------------------------------------------------------|
+  | Código de Respuesta | Descripción                                                                                           |
+  |---------------------+-------------------------------------------------------------------------------------------------------|
+  | ~2xx~               | La *operación fue exitosa* (Ej. 201, 202, ...)                                                        |
+  |---------------------+-------------------------------------------------------------------------------------------------------|
+  | ~3xx~               | Indica una *redirección* (temporal, permanente, ...)                                                  |
+  |---------------------+-------------------------------------------------------------------------------------------------------|
+  | ~4xx~               | - El servidor detecta un *error del lado del cliente* (401 ,403 forbidden, 404 error)                 |
+  |                     | - La petición falló porque no es válida (la ruta no es válida, faltó agregar un campo al cuerpo, ...) |
+  |---------------------+-------------------------------------------------------------------------------------------------------|
+  | ~5xx~               | - Ocurrió un *error del lado del servidor* (un error interno)                                         |
+  |                     | - Ej. Un servicio no disponible, una petición del cliente que no se supo como manejar, ...            |
+  |---------------------+-------------------------------------------------------------------------------------------------------|
+* Tipos de Peticiones
+** Orientadas a recursos (REST)
+*** Conceptos
+    - Devuelve un objeto
+    - *La acción* representa que vamos a hacer sobre la *ruta*
+      1) Ej. ~GET /productos/45~ la acción GET indica que necesitamos los datos del recurso
+      2) Ej. ~DELETE /productos/45~ la acción DELETE indica que borraremos al recurso
+*** Ejemplo de Peticiones
+    #+BEGIN_QUOTE
+    GET /productos/20
+    DELETE /productos/20
+
+    GET /productos
+    GET /productos/20/ventasRecientes
+    #+END_QUOTE
+*** GET con QueryParams Vs GET sin QueryParams
+    #+BEGIN_QUOTE
+    Si sólo hacemos esto
+    ~GET /productos/32~ devuelve un objeto
+
+    Si le pasamos un *queryParams* ~?id=32~ éste aplica un filtro a la lista de objetos, y devuelve ésta lista pero filtrada
+    ~GET /productos~ [objeto1, objeto2, ..] (?id=32) [objeto(id=32)]
+    #+END_QUOTE
+*** Ejemplo en HTML
+    #+BEGIN_SRC html
+      <form action="/usuarios" method="GET">
+        <label for="searchNombre">Nombre de usuario</label>
+        <input type="text" id="searchNombre" name="usuario" required>
+        
+        <input type="submit">Buscar
+      </form>
+    #+END_SRC
+** Orientadas a procedimientos (QueryString)
+*** Conceptos
+    - *La ruta* representa que vamos a hacer
+      1) Ej. ~comprar?idProducto=20~ la ruta indica que compraremos ese producto
+      2) Ej. ~buscar?idProducto=20~ la ruta indica que buscamos tal producto
+*** Desventajas
+    - No podemos generalizar el GET/DELETE/PUT en la misma petición ~/productos/45~
+*** Ejemplo
+     #+BEGIN_QUOTE
+     /comprar.php?idProducto=20&idZona=31
+   
+     /buscar.php?idProducto=20
+     #+END_QUOTE
+** QueryParams
+*** Conceptos
+    - Aplica sobre las peticiones *orientadas a recursos* (REST)
+    - Se aplica sobre la *Request* (petición)
+    - Aplica un filtro, devuelve otra lista de objetos con ese filtro aplicado
+    - Es similar a la "orientada a procedimientos" pero aplica sobre la "orientada a recursos" (REST)
+*** Ejemplo (1) en Spark Java
+    #+BEGIN_SRC java
+      public class UsuarioController{
+          public ModelAndView index(Request req, Response res){
+              String usuario = req.queryParams("nombre");
+              String password = req.queryParams("password");
+      
+              Usuario usuarioEncontrado = UsuarioRepositorio.get().findByUsername(usuario);
+      
+              if(usuarioEncontrado == null || !usuarioEncontrado.getPassword().equals(password)){
+                  return new ModelAndView(null, "registrarse.hbs");
+              }
+      
+              res.redirect("/pokemones");
+              return null;
+          }
+      }
+    #+END_SRC
+*** Ejemplo (2) en Spark Java
+    #+BEGIN_SRC java
+      public class UsuarioController{
+          public ModelAndView index(Request req, Response res){
+              // - el queryParams, siempre se aplica sobre el Request/Petición que se va a mandar al servidor http
+              //
+              String filtroParametro = req.queryParams("nombre");
+      
+              Usuario usuario = UsuarioRepositorio.get().findAny();
+              Map<String, Object> model = new HashMap<>();
+      
+              // > Alternativa #1
+              // List<Pokemon> pokemonesCapturados = filtroParametro == null ? usuario.getCapturas() : usuario.filtarPorNombre(filtroParametro);
+      
+              // > Alternativa #2
+              // - Con el Optional, si resultado es NULL devuelve una Lista vacía y no sigue con el map
+              List<Pokemon> pokemonesCapturados = Optional.ofNullable(filtroParametro)
+                  .map(filtro -> usuario.filtrarPorNombre(filtro))
+                  .orElseGet(()-> usuario.getCapturas() );
+      
+              model.put("usuario", usuario);
+              model.put("pokemones", pokemones);
+      
+              return new ModelAndView(model, "usuario.hbs");
+          }
+      }
+    #+END_SRC
+* Contenido Estático/Dinámico
+* Framework Java Spark (Web)
+** Conceptos
+  - Alternativa a *Spark* puede ser *Spring MVC*
+  - Actúa como *Enrutador*, éste le pide al *Servidor HTTP* y la respuesta la enruta al *Controller* (?)
+  - Usa una *fachada* para mandarle mensajes
+    (Ej. ~Spark.port(9000)~, ~Spark.init()~, ...)
+** Ejemplo
+   #+BEGIN_SRC java
+     import spark.Spark;
+     
+     public class Server{
+         public static void main(String[] args){
+             Spark.port(9000);
+     
+             /**
+              ,* > 1er parámetro la ruta
+              ,* > 2do parámetro una lambda
+              ,*
+              ,* > Los dos parámetros de la lambda, son los que devuelve Spark
+              ,* > y deben estar en ese orden, pero su uso es opcional.
+              ,*
+              ,* > request: datos particulares que podemos pedir (Ej. campos del header, ..)
+              ,* > response: datos que queremos devolver (un header, una redirección, ..)
+              ,*/
+             Spark.get("/usuarios", (request, response)->{
+                     Usuario usuario = UsuarioRepositorio.get().findAny();
+                     return usuario.toString();
+                 });
+     
+             Spark.init();
+         }
+     }
+   #+END_SRC
+* Otros
+** Gson
+*** Conceptos
+    - Para formatear un *objeto* a formato *json*
+*** Ejemplo
+    #+BEGIN_SRC java
+      Spark.get("/usuarios", (request, response)->{
+              response.header("content-type", "application/json");
+              Usuario usuario = UsuarioRepositorio.get().findAny();
+              return new Gson().toJson(usuario);
+              // return usuario.toString();
+          });
+    #+END_SRC
+** Servidor Java Web - Jetty Vs Tomcat
+   - Jetty y Tomcat son aplicaciones para levantar *servidores HTTP* (web) en Java
+   - Tomcat es una alternativa a *Jetty*
+   - Jetty está embebido en *Spark* (pero se puede reemplazar por tomcat)
+   - Jetty entiende las peticiones *HTTP*, las traduce y se lo pasa a *Spark*
+** Express + NodeJs
+   - *Node.js* hace de *servidor http*
+   - *Express* actúa como *enrutador*
+** Motor de Template/Plantillas
+*** Conceptos
+    - Para renderizar el HTML
+    - Algunos son Mustache, Handlebars, Jade, ...
+*** Ejemplo ModelAndView de Handlebars en SparkJava
+    #+BEGIN_SRC java
+      public class ModelAndView{
+          private Object model;
+          private String viewName;
+      
+          public ModelAndView(Object model, String viewName){
+              this.model = model;
+              this.viewName = viewName;
+          }
+      
+          public Object getModel(){ return this.model; }
+          public String getViewName(){ return this.viewName; }
+      }
+    #+END_SRC
+* Herramientas
+** Código Pom.xml
+  #+BEGIN_SRC xml
+    <dependency>
+      <groupId>com.sparkjava</groupId>
+      <artifactId>spark-template-handlebars</artifactId>
+      <version>2.3</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>com.sparkjava</groupId>
+      <artifactId>spark-debug-tools</artifactId>
+      <version>0.5</version>
+    </dependency>
+  #+END_SRC
+** Spark-Debug-Tools
+   - Renderiza en el html en que parte del proyecto ocurrió un error
+   - En el proyecto se debe agregar ~DebugScreen.enableDebugScreen()~
+* Layout && Template
+** Layout
+   - Es como se estructura una página (Ej. en donde irá el Header, Footer, Sidebar, ...)
+** Template
+   - Para evitar repetir código
+   - Un *Template* es una página que podemos reutilizar, que usa un *layouts* específico
+** Con Handlebars
+   #+BEGIN_SRC html
+     <!-- Archivo: usuarios.hbs -->
+     {{#partial "contenido"}}
+     <h1>1) Partial: Definimos el bloque con partial</h1>
+     
+     <p>Con PARTIAL definimos un bloque con contenido (al menos en handlebars)</p>
+     <p>Lo usamos cuando queramos reciclar este bloque en otros layout</p>
+     <br />
+     <p>En este caso cuando vayamos a la ruta donde el View tiene asociado a <b>usuarios.hbs</b>
+       éste cargará el archivo <b>home.hbs</b> y además va a incluir este bloque,
+       en donde usemos {{#block "contenido"}}{{/block}} en ese archivo <b>home.hbs</b>
+     </p>
+     {{/partial}}
+     
+     {{>home.hbs}}
+     
+     
+     <!-- Archivo: productos.hbs -->
+     {{#partial "contenido"}}
+     <p>texto que vamos a repetir muchas veces en el mismo layout</p>
+     {{/partial}}
+     
+     Aparecerá ese texto
+     {{#block "contenido"}}{{/block}}
+     
+     Y aparecerá de nuevo
+     {{#block "contenido"}}{{/block}}
+     
+     y otra vez...
+     {{#block "contenido"}}{{/block}}
+     
+     <!-- Archivo: productos.hbs -->
+     <html>
+       <head>
+       </head>
+       <body>
+         <h1>2) Block: Usamos el bloque ya definido con block</h1>
+     
+         Usamos el bloque que ya habiamos definido en otro layout
+         Dentro del bloque de abajo aparecerá lo que tiene los archivos usuarios.hbs y productos.hbs
+     
+         suponiendo que en el path definido en el Route retorna el ModelView con esos template
+     
+         {{#block "contenido}}{{/block}}
+     </body>
+     </html>
+     
+   #+END_SRC
+* Cookies
+** Conceptos
+   - Se guarda del lado del cliente (/en el navegador/)
+   - Aparece en el *Request Header* (el cliente la crea y la manda al servidor http)
+   - Aparece en el *Response Headers* (la respuesta del servidor)
+
+   #+BEGIN_QUOTE
+   Como el *Servidor HTTP* es *STATELESS* porque luego que recibe una *REQUEST* de un *cliente HTTP*
+   el servidor se olvida de quien se la mandó..
+
+   Con las cookies permiten recordar cosas de quien la mandó
+   - Por ejemplo la sesión de login usuario+clave por que se guarde por un período de tiempo
+   - Otro ejemplo sería el idioma que tenía configurado para que no vuelva a setearlo
+   #+END_QUOTE
+** Flujo de peticiones
+   #+BEGIN_QUOTE
+   1) Cliente HTTP  --REQUEST-->  Servidor HTTP
+      (/le manda los Headers, dentro estaría la cookie/)
+   
+   2) Cliente HTTP  <--RESPONSE--  Servidor HTTP
+      (/le manda los Headers, dentro tendría un set-cookie/)
+    
+   3) Cliente HTTP  --REQUEST-->  Servidor HTTP
+      (/en cada nueva request el cliente HTTP va a recordar la cookie y la mandará/)
+   #+END_QUOTE
+** Que se persiste
+   - Estado de la sesión (/Ej. el login, .../)
+   - Personalización (/Ej. el idioma, el color de la página, .../)
+   - Tracking
+** Ejemplo en Spark Java
+   #+BEGIN_SRC java
+     response.cookie("usuario_logeado", usuario);
+   #+END_SRC

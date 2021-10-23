@@ -1,6 +1,9 @@
-#+TITLE: Clase 04
+#+TITLE: Clase 04 - ORM
+* Dudas
+consulta, sólo en SINGLE_TABLE era eficiente usar consultas polimorficas+consultas no polimorficas, no? mientras que en las otras 2 solo era eficiente usar consultas no polimorficas para que el ORM no genere tantos joins?
 * Clasificación de los objetos
 * Consultas polimórficas
+** Conceptos
    - Por una *asociación* (/Ej. Una clase abstracta "Materia" con "MateriaElectiva" y "MateriaObligatoria"/)
    - Por una *consulta* específica (/Ej. traer todas las Materias a través del entityManager/)
 
@@ -10,10 +13,21 @@
 
    a nivel código hariamos ~entityManager.createQuery("from Materia").getResultList()~
    #+END_QUOTE
+** Ejemplo
+* [WAITING] Consultas NO polimórficas
+** Ejemplo
+   #+BEGIN_SRC java
+     @Entity
+     class Region extends PersistentEntity{
+         castillos(){
+             entityManager.createQuery("from Castillo castillo WHERE castillo.region.id=" + this.id);
+         }
+     }
+   #+END_SRC
 * Mapeo de herencia
+** Conceptos
 ** Con Polimorfismo
-*** [DONE] Single Table Vs Joined Vs Table per class
-    CLOSED: [2021-09-08 mié 17:31]
+*** Single Table Vs Joined Vs Table per class
     El *Joined* sería mas en los casos que
     1. Las subclases sean disjuntas, no tengan mucha relación entre si, no tiene sentido traer datos de la otra
     
@@ -39,8 +53,7 @@
     1. Normaliza los datos (/los separa por dominio..../) <---
     2. Hace el doble de inserts (/uno en la tabla de la superclase, y luego otro en la tabla de la subclase/)
     3. Hacer un SELECT implica muchos JOIN por cada tabla
-*** [DONE] Alternativa 2 - Single Table
-    CLOSED: [2021-09-08 mié 17:31]
+*** Single Table
 **** Conceptos
      - Es la que más se suele utilizar
      - Pemite hacer *consultas polimorficas*
@@ -50,6 +63,13 @@
      - En la superclase se agrega ~@Inheritance(nombre=InheritanceType.SINGLE_TABLE)~
 
      #+BEGIN_QUOTE
+     El campo *discriminador* sólo aparece en el modelo de Datos (/aparece como atributo de alguna tabla/)
+     
+     El campo *discriminador* NO aparece en el modelo de Objetos (/NO puede aparecer en el Diagrama de Clases como atributo de alguna clase/),
+     pero es necesario agregarlo a nivel código en las clases con los *annotations* para que el framework de ORM Hibernate sepa como mapearla
+     #+END_QUOTE
+     
+     #+BEGIN_QUOTE     
      Podemos ó no definir el nombre de la columna de *discriminador* en la superclase
      con  ~@DiscriminatorColumn(name = "elegiNombreDiscriminador")~
      Si no le definimos un nombre, le agrega por default ~DTYPE~
@@ -119,20 +139,27 @@
        }
      #+END_SRC
 **** Ventajas
-    1. Es muy rápido
+    1. Es muy rápido (/no tiene que hacer muchos JOINs/)
     2. Fácil para buscar, porque trae TODOS los datos Superclase+Subclases
 **** Desventajas
-    1. podemos tener columnas con valor ~NULL~ (/pero, se puede salvar en el modelo de objetos con ValidationNotNull/)
-*** [DONE] Joined (tabla por clase)
-    CLOSED: [2021-09-08 mié 17:31]
+    1. Podemos tener columnas con valor ~NULL~ (/pero, se puede salvar en el modelo de objetos con ValidationNotNull/)
+    2. Nos queda una tabla grande, con todos los datos en una clase y quizás no se entienden (/se puede resolver documentando/)
+*** Joined (tabla por clase)
 **** Conceptos
-    - El *ORM* al mapear las clases, hace *una tabla por cada clase*
-    - Hace 2 ~inserts~ (/ambos tienen mismo id/)
-      - 1 en la tabla de la superclase (/el id es autonumérico/)
-      - 1 en la tabla de la subclase correspondiente (/el id lo saca de la superclase y no es autonumérico/)
+     - El *ORM* al mapear las clases, hace *una tabla por cada clase*
+     - Hace 2 ~inserts~ (/ambos tienen mismo id/)
+       1. Primero en la tabla de la superclase (/el id es autonumérico/)
+       2. Otro en la tabla de cada subclase correspondiente (/el id lo saca de la superclase y no es autonumérico/)
+**** Cuando NO conviene aplicar
+     - NO conviene, si las subclases difieren de la superclase sólo por un atributo (/haría un JOIN sólo por un atributo/)
+     - NO conviene, si el estado interno es idéntico entre las subclases y la superclase (/haría un JOIN sólo por el ID/)
+     - Cuando la diferencia de atributos entre las subclases y superclase es mínimo, hace run JOIN por eso es costoso
 **** Ventajas
-    - Aplica *Normalización* de los datos, porque los separa
-    - para subclases es un tanto eficiente, arma relaciones
+    - Podemos consultar directo desde la subclase/subtipo, consulta menos datos que una *Single Table*
+      (/la contra es que aunque consulta menos datos, debe hacer un JOIN y eso hace costosa la operación/)
+    - Aplica *Normalización* de los datos, porque los separa por *dominio*
+    - Estructuralmente queda más representativo, más entendible
+    - Para subclases es un tanto eficiente, arma relaciones
 **** Desventajas
     - Es costoso hacer los ~SELECT~ porque hace muchos ~JOINs~ para asociar cada tabla
     - Es costoso si hace *inserciones masivas*, porque hace el doble de ~INSERTs~
@@ -181,17 +208,17 @@
            // ...
        }
      #+END_SRC
-*** [DONE] Table per class (tabla por clase concreta)
-    CLOSED: [2021-09-08 mié 18:29]
+*** Table per class (tabla por clase concreta)
 **** Conceptos
     - El *ORM* crea 1 tabla por cada *clase concreta* (/es decir NO se crea una tabla para la Superclase/)
     - Definir estrategia de generación de IDs
+      - Es FUNDAMENTAL para la consistencia, que no se repitan IDs ya que se generan varias tablas (cada clase concreta) y no tienen relación entre ellas
       - Utilizando ~GenerationType.TABLE~ en ~@GeneratedValue~ que genera ID únicos, valores al azar
-      - El *ORM* crea una tabla extra de la superclase para generar las secuencias (/concepto de DB/)
-    - Es la PEOR ante *consultas polimorficas* hace queries muy costosas al tratar de llevarlo a un esquema de *SINGLE_TABLE*
+      - El *ORM* crea una tabla extra de la superclase para generar las *SECUENCIAS* (/concepto de DB/)
+    - Es la PEOR ante *consultas polimórficas* hace queries muy costosas al tratar de llevarlo a un esquema de *SINGLE_TABLE*
 
     #+BEGIN_QUOTE
-    El definir estrategia de generacion de ids, por tanto NO se puede usar sólo el ~GeneratedValue~ para ID autonumericos
+    El definir estrategia de generación de ids, por tanto NO se puede usar sólo el ~GeneratedValue~ para ID autonuméricos
     porque si no, las tablas de las clases concretas repetirían ID
 
     La solución es que al ~@GeneratedValue~ de la *superclase* se le debe pasar la *estrategia* ~GenerationType.TABLE~ para generar ID
@@ -242,35 +269,68 @@
        }
      #+END_SRC
 **** Ventajas
-     - Similar al Joined
+     - Similar al *JOINED*
      - Es eficiente ante consultas *no polimorficas* (/preguntar por las clases concretas, osea las subclases/)
 **** Desventajas
      - Tener una estructura auxiliar para guardar los id únicos
      - El hacer *consultas polimorficas* hace queries no muy eficientes
+       (/porque hace UNIONs de las tablas concretas + JOINs/)
      - Se pierde la (FK) que tenia la referencia entre la subclases con la superclase
      - Se pierde la *regla de integridad referencial* por lo anterior,
        pudiendo borrar registros...
-** [DONE] Mapear Interfaces
-   CLOSED: [2021-09-08 mié 18:58]
+** Mapear Interfaces
 *** Problema
     - Las *interfaces* no se pueden mapear para *persistir* (/NO tienen estado interno que guardar/)
     - Este es un problema del *ORM*
+
+    #+BEGIN_COMMENT
+    En un *Strategy Stateless* se puede pasar a *Enum con comportamiento*
+
+    y un *Statefull* lo pasas a una clase abstracta
+    #+END_COMMENT
 *** Solucion 1 - Clases abstractas
-    - Si tienen estado => Convertirlas a *clases abstractas*
+    - Si tienen estado interno (/atributos/) => Convertirlas a *clases abstractas*
 *** Solucion 2 - Enum
     - Para *casos en que las subclases NO tienen estado* (/NO tienen atributos, estado interno/)
-    - Se convierte la interfáz en un ~Enum~ con comportamiento que tiene como opción las subclases
-    - Agregamos el annotation ~@Enum~
+    - Se convierte la interfáz en un ~Enum~ *con comportamiento* que tiene como opción las subclases
+    - Agregamos el annotation ~@Enumerated~
     - No es necesario poner ~@Entity~
     - Se puede instanciar a otras clases, para no tener un Enum con mucho comportamiento
 
+    #+BEGIN_QUOTE
+    Seguido del ~@Enumerated~ podemos pasar por parámetro el tipo de dato a guardar del ENUM
+    Ej. ~Enumerated(EnumType.STRING)~ ó ~Enumerated(EnumType.Int)~
+
+    Puede ser un problema persistir como *String* el valor de Enum,
+    porque si alguno de los valores del Enum cambiase (Ej. CHOMBA por BUZO)
+    quedaría persistido un dato que ya no existe.
+
+    En cambio, si guardamos el Enum como un valor numérico.. NO habría problemas.
+    Podriamos asignarle el valor numérico al declarar el Enum ~BUZO(1), REMERA(2), ...~
+    para evitar inconsistencia en el *modelo de datos*, en caso que se borrase alguno del medio
+    en el *modelo de objetos*
+    #+END_QUOTE
+    
     #+BEGIN_QUOTE
     Suponiendo que elegimos esta alternativa de convertir la *interfaz* en un *enum*
     en vez de una *clase abstracta*, porque las subclases NO tenian estado...
 
     Evita que el ORM haga ~JOINs~ a las tablas de las subclases que NO tienen estado
     #+END_QUOTE
-*** Ejemplo
+*** Ejemplo 1
+    #+BEGIN_SRC java
+      enum TipoPrenda{
+          // especificamos el valor, en caso que se borrara alguno del medio
+          // y no haya inconsistencia en el modelo de datos
+          BUZO(1), REMERA(2), CAMISA(3)
+      };
+      
+      class Prenda{
+          @Enumerated(EnumType.ORDINAL)
+          private TipoPrenda tipo;
+      }
+    #+END_SRC
+*** Ejemplo 2
     #+BEGIN_SRC java
       // -----------------------------------------------
       // Problema -> Interfaz que NO puede persistir el ORM
@@ -329,10 +389,10 @@
       public class MateriaElectiva extends Materia{
       }
     #+END_SRC
-** [DONE] Sin polimorfismo
-   CLOSED: [2021-09-08 mié 01:23]
+** Sin polimorfismo
 *** Conceptos
    - Consiste en *reutilizar mapeos*
+   - Genera el mismo esquema que el de *tabla por clase concreta* pero NO se puede hacer consultas polimórficas
    - En la superclase se agrega ~@MappedSuperclass~ y esto le dice al *ORM* que *las subclases hereden ese mapeo*
    - Sería como reutilizar la clase ~Object~ que es de la que heredan todas las clases
    
@@ -374,11 +434,18 @@
 * Orden de los Datos
 ** Conceptos
    - Para mantener el orden de una *LISTA* se utiliza ~@OrderColumn(name="elegirNombreColumna")~
-   - Para asegurar un orden en el Modeo de Datos, agregamos una columna en la DB
+   - Para asegurar un orden en el Modelo de Datos, agregamos una columna en la DB
    - El ORM hará un ~ORDER BY~ del atributo en el que agregamos ~OrderColumn~ para mantener un orden
+  
+   #+BEGIN_COMMENT
+   La columna "posicion" de la tabla de la ppt, 
    
+   el orderColumn seria para un orden arbitrario,
+   pero no para cuando tiene un algoritmo de ordenamiento (Ej. ordenar por nombre, por edad ,...)
+   #+END_COMMENT
+
    *Observación:*
-   Solo las LISTAS tienen un orden, las colecciones NO
+   Solo las *Listas* tienen un orden, las *Colecciones* NO TIENEN UN ORDEN
 ** Ejemplo
    #+BEGIN_SRC java
      @Entity
@@ -408,3 +475,46 @@
    | Tienen orden                    | NO        | SI     |
    | Se pueden repetir los elementos | NO        | SI     |
    |---------------------------------+-----------+--------|
+* Parcial Juego de Tronos
+** Interfaz FuerzaMilitar
+*** Cambios
+    - Para persistir las clases que la implementan debemos pasar la *Interfaz* a *Clase Abstracta*
+    - NO puede ser un *Enum* porque las subclases tienen *estado interno* (atributos)
+*** Posible Mapeo (1)
+    #+BEGIN_SRC java
+      // - Esta clase debería ser "clase abstracta" para poder mapear
+      // las clases "Naval" y "Terrestre" (suponiendo que ahora estas extienden de esa clase)
+      public interface FuerzaMilitar{
+          void atacarA(Lugar lugar);
+      }
+      
+      class Naval implements FuerzaMilitar{
+          private int cantidadBarcos;
+      }
+      
+      class Terrestre implements FuerzaMilitar{
+          private int cantidadSoldados;
+      }
+    #+END_SRC
+*** Posible Mapeo (2)
+    - Mapear los atributos *cantidadAlgo* de cada clase con un único nombre ~cantidadUnidades~
+    
+    #+BEGIN_SRC java
+      class Naval implements FuerzaMilitar{
+          @Column(name= "cantidadUnidades") // <---
+          private int cantidadBarcos;
+      }
+      
+      class Terrestre implements FuerzaMilitar{
+          @Column(name= "cantidadUnidades") // <---
+          private int cantidadSoldados;
+      }
+    #+END_SRC
+** Segunda parte
+*** Optimización 1
+    - En ~metodo casasImportantes()~ evitar el mensaje ~poblacionTotal~ del ~filter~ porque por c/región hace la *query* que contiene
+    - En ~clase Region~
+      1. en ~metodo poblacionTotal~ quitar el ~sum()~ (osea sacarlo de memoria) y hacerlo dentro de la query
+      2. tener los datos *precalculados* (desnormalizados) en el atributo, para evitar calcularlo en memoria
+    - En ~clase Casa~
+      2. tener los datos *precalculados* (desnormalizados) en vez de hacer ~esRica~ tener un campo con la información

@@ -1,0 +1,348 @@
+#+TITLE: Clase 06 - Arquitectura MVC Web - HTTP + Diseño de Rutas
+* Recursos
+  1. https://docs.google.com/document/d/1LBqAhXPzn-aeN5BIRZBmIrU5RKiYvySyWH-2Jkn-kJw/edit#heading=h.jii8bn1f6qx1
+  2. https://github.com/flbulgarelli/http-tutorial/tree/master/tutorial/es
+  3. https://docs.google.com/presentation/d/1O0v4Xf-O_9RwegSMS2mvRXan0n1A_I0KNbDoxb0m4lI/edit#slide=id.g94d66de747_0_33
+* MVC Web
+** Conceptos
+   - Se separa en Modelo, Vista, Controlador para _lograr flexibilidad_
+** View
+*** Conceptos
+   - Para el uso de usuarios
+   - No siempre es para el uso de usuarios, porque pueden exponer para otro sistema como una API (/application programming interface/)
+   - Convierte los datos de salida en elementos visuales
+   - Soluciona el problema de la *presentación* de la aplicación
+     (/Ej. ofrecer una interfaz amigable al usuario, como podría ser la interfaz de VIM/)
+   - Envía acciones (/al Controlador/)
+** Model
+*** Conceptos
+    - Procesa/genera cambios en el dominio
+    - Notifica los cambios (/la Vista observa/) a través de algún *Modelo de Eventos* (/Ej. patrón observer/)
+
+    #+BEGIN_COMMENT
+    Puede trabajar con varias Vistas
+    #+END_COMMENT
+** Controller
+*** Conceptos
+    - Recibe acciones (/de la Vista/)
+    - Genera la *Vista* (/en base al resultado de la interactuar con el Modelo/)
+    - Actúa como nexo/puente entre el *Modelo* y la *Vista*
+    - Interactúa con el *Modelo* (/éste se actualiza/)
+*** Ejemplo (1) en Spark Java
+    #+BEGIN_SRC java
+      public class UsuarioController{
+          public String me(Request request, Response response){
+              // 1. interactúa con el Modelo para obtener el Objeto
+              Usuario usuario = UsuarioRepositorio.get().findAny();
+              response.header("content-type", "application/json");
+      
+              // 2. genera una Vista
+              // (la vista no necesariamente debe ser html, puede ser sólo una Respuesta a una Petición)
+              return Gson().toJson(usuario);
+          }
+      }
+      
+      public class Router{
+          public static Router INSTANCE = new Router();
+      
+          public void init(){      
+              // > Alternativa #1 (con syntax sugar ó azucar sintáctico)
+              Spark.get("/profile", UsuarioController::profile);
+      
+              // > Alternativa #2
+              UsuarioController controller = new UsuarioController();
+              
+              Spark.get("/profile", (request, response)->{
+                      return controller.profile(request,controller);
+                  });
+          }
+      }
+    #+END_SRC
+*** Ejemplo (2) en Spark Java + Motor de Template Handlebars
+    #+BEGIN_QUOTE
+    Los archivos de los *templates* deben ir en ~main/src/RESOURCES~
+    porque son *archivos estáticos* como el ~persistense.xml~
+    #+END_QUOTE
+    
+    #+BEGIN_SRC java
+      public class UsuarioController{
+          /*
+           ,* ModelAndView
+           ,* > es una clase de HandlebarsTemplateEngine
+           ,* > su constructor recibe como parámetros (Object modelo, String nombreVista)
+           ,*
+           ,* modelo: son los datos que necesitamos para generar la Vista
+           ,*
+           ,* nombreVista: nombre del archivo que representa el template de la Vista
+           ,*/
+          public static ModelAndView perfil(Request req, Response res){
+              Usuario modelo = UsuarioRepositorio.get().findAny();
+      
+              return new ModelAndView(model, "profile.hbs");
+          }
+      
+      }
+      
+      public class Router{
+          public static Router INSTANCE = new Router();
+      
+          public void init(){
+              // Este "Motor de Plantilla" Handlebars,
+              // permite que tengamos el html que se va a renderizar en un archivo .hbs separado
+              HandlebarsTemplateEngine engineTemplate = new HandlebarsTemplateEngine();
+      
+              // Forma acortada, con syntax sugar ó azúcar sintáctico
+              Spark.get("/profile", UsuarioController::profile, engineTemplate, engineTemplate);
+      
+              // > Alternativa #2
+              UsuarioController controller = new UsuarioController();
+              Spark.get("/profile", (request, response)->{
+                      UsuarioController.perfil(request, response);
+                  },
+                  engineTemplate);
+          }
+      }
+    #+END_SRC
+* Arquitectura y estilos
+** Más Centralizado
+*** Conceptos
+    - Llamados también *Monolíticos* (Ej. Sistemas operativos como Linux)
+    - Todos los componentes están en la misma máquina virtual/física
+    - Pueden tener sistemas embebidos como Base de datos (Ej. HSQLDB, SQLitle, ...)
+*** Ejemplos
+    #+BEGIN_QUOTE
+    Una aplicación de escritorio que corre en java y tiene embebido la base de datos como HSQLDB
+    #+END_QUOTE
+** Mas Distribuido
+*** Conceptos
+    - No todos los programas son 100% centralizados, sólo herramientas básicas (/Ej. notepad, calculadora, .../)
+    - Herramientas como VSCode, Sublime, .. usan algún *Sistema Distribuido* para los *Plugins*
+    - Se enfoca separar/distribuir
+*** Ejemplos
+    #+BEGIN_QUOTE
+    Una aplicación web que puede tener varias base de datos en distintos servidores
+    #+END_QUOTE
+* Web
+** Conceptos
+  - _Servicio de transferencia de archivos de texto plano_ para compartir información
+  - Es un *sistema distribuido* porque la información puede estar en distintos lugares
+
+  #+BEGIN_QUOTE
+  El *FTP* tambien es un servicio de transferencia de archivos que puede correr en la red
+  enfocada a listar/descargar/subir de archivos
+  #+END_QUOTE
+** Hypertext
+   - Es un concepto de que la Web en realidad NO sólo es *texto plano*, si no *texto enriquecido*
+   - El *texto plano* es enriquecido con *hipervinculos* con la etiqueta anchor/ancla ~<a href=''></a>~
+   - La información es vinculada con enlaces que conectan al mismo sitio web ó con sitios web externos
+** Hyper Text Markup Language (HTML)
+   - HTML significa *Lenguaje de etiquetas de hipertexto*
+   - El *texto plano* es enriquecido con *etiquetas* (/Ej. p, ul, ol, li, h1,h2,h3, div, span, ../)
+   - Las etiquetas/tags dan un significado semántico al texto, pero también puede tener una interpretación visual (/por el browser/)
+* Protocolo HTTP (Hypertext Transfer Protocol)
+  - Su traducción es *Protocolo de transferencia de hipertexto*
+* Arquitectura Cliente-Servidor
+** Conceptos
+  - NO siempre tiene que ser *Protocolo HTTP* puede ser otros
+  - Cliente-Servidor se da sólo si existe el flujo *Pedido(Request) <--> Respuesta(Response)*
+  - _Los SERVIDORES_: *centralizan la información* (/tienen más información que el cliente/) y sólo pueden *responder Pedidos* (Response)
+  - _Los CLIENTES_: sólo pueden hacer *Pedidos de recursos* (Requests)
+
+  #+BEGIN_QUOTE
+  El flujo de comunicación Cliente-Servidor es
+  
+  Cliente (pedido/request) --> Servidor,  Cliente <-- (respuesta/response) Servidor
+  #+END_QUOTE
+** Aplicaciones web
+   - Para _saber en donde está ubicada la lógica_, se piensa _en donde se ejecuta_
+   - MVC del lado servidor se lo conoce como "liviano"
+   - En un Cliente-Servidor puede tener repartido entre ambos
+     1. Datos
+     2. Lógica de Vista (/su mayoría suele estar en el lado del Cliente, ej. es el Browser quien ejecuta la lógica y renderiza/)
+     3. Lógica de Dominio (/en su mayoría suele estar en el Servidor, por seguridad/)
+* Arquitectura Clásica Web - MVC Web
+** Modelo que NO es correcto
+  Este modelo NO es correcto porque _el Servidor no puede notificar cambios en cualquier momento_
+  1. ~(Cliente -> Servidor)~ *Vista* envía acciones al *Controlador*
+  2. ~(Servidor)~ El *Controlador* ejecuta los pasos e interactúa con el *Modelo*
+  3. ~(Servidor)~ El *Modelo* representa dominio+persistencia
+  4. ~(Cliente <- Servidor)~ El servidor notifica cambios y la Vista observa <-- acá está el PROBLEMA
+** Modelo correcto
+  1. ~(CLIENTE -pedido-> SERVIDOR)~ la *Vista* envía acciones al *Controlador*
+  2. El *Controlador* ejecuta los pasos e interactúa con el *Modelo*
+  3. El *Modelo* realiza los cambios (/si se necesita/) y notifica los cambios al *Controlador* como respuesta (Response)
+  4. ~(CLIENTE <-respuesta- SERVIDOR)~ el *Controlador* envía los datos de la *Vista* nueva (si hubiese cambios hechos por el Modelo)
+
+  #+BEGIN_QUOTE
+  El modelo *MVC Web clásico* es menos interactivo que el *MVC de Escritorio*
+  para que el Cliente vea los cambios debe refrescar la página para peticionar los cambios al Servidor
+  ó..  algún script que fuerza el refresco de la página (/Ej. con javascript/)
+  #+END_QUOTE
+* REST (Representational State Transfer)
+  - Son convenciones
+  - Es una *interfaz para conectar varios sistemas* basados en el *protocolo HTTP*
+    (/para obtener datos ó generar operaciones esos datos/)
+  - Usa los métodos básicos de HTTP (POST, GET, PUT, PATCH, DELETE)
+
+  |----------+-------------------------------------|
+  | Método   | Descripción                         |
+  |----------+-------------------------------------|
+  | ~POST~   | Para *crear* un recurso nuevo       |
+  |----------+-------------------------------------|
+  | ~GET~    | Para *obtener* un recurso existente |
+  |----------+-------------------------------------|
+  | ~PUT~    | Para *modificar* un recurso         |
+  |----------+-------------------------------------|
+  | ~DELETE~ | Para *borrar* un recurso            |
+  |----------+-------------------------------------|
+* MIME TYPE (Multipurpose Internet Mail Extension)
+  - Es el estandar de mandar contenido a través de la red
+  - Indíca el como se debe transferir la información, en que formato (/Ej. text/html, application/json, ../)
+  - Figura en los Headers/Cabecera de respuesta del Servidor
+* CURL
+** Conceptos
+  - Es un *cliente HTTP* de lineas de comandos (/que se usa en una terminal/)
+  - Cuando usamos el comando ~CURL~ en una terminal
+
+  *Observación:*
+  - El navegador web es *Cliente HTTP* con interfaz más común
+** Estados
+   - 200 si todo está ok (una lista vacia podria dar un 200, depende de la implementaciòn)
+   - 404 si hay un error
+** Cuerpo
+  - ~content-length:~ es la cant. de caracteres que nos devuelve el servidor en el Body/Cuerpo
+** Metodos
+   |-----------+----------------------------------------------------------------------------|
+   | Método    | Descripción                                                                |
+   |-----------+----------------------------------------------------------------------------|
+   | ~XGET~    | Para peticionar uno o varios recursos (/Es el método por default en CURL/) |
+   |-----------+----------------------------------------------------------------------------|
+   | ~XPOST~   | Para crear un recurso                                                      |
+   |-----------+----------------------------------------------------------------------------|
+   | ~XDELETE~ | Para borrar un recurso                                                     |
+   |-----------+----------------------------------------------------------------------------|
+
+  *Observación:*
+  - Si usamos el parámetro ~-i~ nos da información de las cabeceras/headers
+** QueryParams
+   - Es una *convención de REST* para filtrar una *colección de recursos* (/hay que desarrollarla/)
+   - Aplica sobre las peticiones *orientadas a recursos* (REST)
+   - Se aplica sobre la *Request* (petición)
+   - Aplica un filtro, devuelve otra lista de objetos con ese filtro aplicado
+   - Es similar a la "orientada a procedimientos" pero aplica sobre la "orientada a recursos" (REST)
+
+   #+BEGIN_QUOTE
+   Un ejemplo general sería el dominio (Ej. www.google.com)
+   seguido de la ruta (Ej. /ventas)
+   seguido de parámetros, concatenados con el &
+   
+   1. domino/ruta?param1=value1&param2=value
+   2. unmercado.com.ar/ventas?productoId=50
+   3. unmercado.com.ar/ventas?categoriaId=12&productoId=50
+
+   Si hicieramos las peticiones con las convenciones *REST* sería lo mismo,
+   excepto que no necesitamos incluir el dominio
+   #+END_QUOTE
+** Ejemplos con CURL
+*** XGET - Pedir Headers/Cabeceras
+    #+BEGIN_SRC shell :results raw
+      # sabemos que este recurso con id=500 no existe
+      # con -i obtenemos información de las cabeceras
+      curl -i -XGET 'http://macowins-server.herokuapp.com/prendas/500'
+    #+END_SRC
+
+    #+RESULTS:
+    HTTP/1.1 404 Not Found
+    Server: Cowboy
+    Connection: keep-alive
+    X-Powered-By: Express
+    Expires: -1
+    Content-Type: text/html; charset=utf-8
+    Content-Length: 0
+    Etag: W/"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk"
+    Vary: Accept-Encoding
+    Date: Sat, 23 Oct 2021 04:58:11 GMT
+    Via: 1.1 vegur
+*** XGET - Pedir un recurso (un object)
+    #+BEGIN_SRC shell :results raw
+      # - En la respuesta del servidor dentro del Body aparece el object en formato JSON
+      # - En el Body debería aparecer sólo un objeto
+      curl  -XGET 'http://macowins-server.herokuapp.com/prendas/2'
+    #+END_SRC
+
+    #+RESULTS:
+    {
+      "id": 2,
+      "tipo": "pantalon",
+      "talle": 36
+    }
+*** XDELETE - Borrar un recurso
+    #+BEGIN_SRC shell :results raw
+      curl  -XDELETE 'http://macowins-server.herokuapp.com/prendas/2'
+    #+END_SRC
+
+    #+RESULTS:
+    {}
+*** XGET - Pedir una Colección de recursos
+    #+BEGIN_SRC shell :results raw
+      # - En la respuesta del servidor dentro del Body aparece una colección de objects [ob1, ob2, ...] pero en formato JSON
+      curl  -XGET 'http://macowins-server.herokuapp.com/prendas'
+    #+END_SRC
+
+    #+RESULTS:
+    [
+      {
+        "id": 1,
+        "tipo": "pantalon",
+        "talle": 35
+      },
+      {
+        "id": 3,
+        "tipo": "pantalon",
+        "talle": 37
+      },
+      {
+        "id": 4,
+        "tipo": "pantalon",
+        "talle": 38
+      }
+    ]
+*** XGET - Pedir una Colección de recursos filtrada con QueryParams
+    #+BEGIN_SRC shell :results raw
+      # - En la respuesta del servidor dentro del Body aparece una colección de objects [ob1, ob2, ...] pero en formato JSON
+      # - Al pasarle un queryString estamos filtrando la colección, pero sigue devolviendo un colección
+      # - Si pasamos /prendas?id=50 y ésta no existe, nos dará una colección vacía
+      # - Si pasamos /prendas?id=5 y existe, nos dará una colección con 1 objeto
+      curl  -XGET 'http://macowins-server.herokuapp.com/prendas?tipo=saco'
+    #+END_SRC
+
+    #+RESULTS:
+    [
+      {
+        "id": 16,
+        "tipo": "saco",
+        "talle": "XS"
+      },
+      {
+        "id": 17,
+        "tipo": "saco",
+        "talle": "S"
+      },
+      {
+        "id": 18,
+        "tipo": "saco",
+        "talle": "M",
+        "enStock": false
+      },
+      {
+        "id": 19,
+        "tipo": "saco",
+        "talle": "L"
+      },
+      {
+        "id": 20,
+        "tipo": "saco",
+        "talle": "XL"
+      }
+    ]
+

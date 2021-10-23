@@ -1,0 +1,109 @@
+#+TITLE: Clase 05
+* Estrategia para Embeber objetos
+** Problema
+   #+BEGIN_QUOTE
+   Si tenemos dos entidades ~Auto~, ~Posicion~ en el *modelo de objetos* que están relacionadas
+   y en el *modelo de datos* se debe persistir la información de ambas en una sola tabla
+   pero sin perder la abstracción de ~Posicion~ en el *modelo de objetos*.
+   
+   Perderiamos esa abstracción ~Posicion~ si en el modelo de objetos, trataramos de forzarlo
+   para tener sólo una clase que contenga ambos.
+
+   Una solución para NO perder esa abstracción ~Posicion~ sería..
+   *Embeber* ~Posicion~ dentro de ~Auto~ (/suponiendo que el ORM provee la herramienta para hacerlo/)
+   #+END_QUOTE
+** Solución (1) - Si no existe @Embedded en el ORM
+   Podemos crear la abstracción de un getter
+   
+  #+BEGIN_SRC java
+    class Auto{
+        Posicion getPosicion();
+    }
+    
+    Posicion getPosicion(){
+        return newPosicion(){
+            this.latitud;
+            this.longitud;
+        }
+    }
+  #+END_SRC
+** Solución (2) - Si existe @Embedded en el ORM
+*** Conceptos
+   - Sólo sirve para relaciones 1 a 1 ~@OneToOne~
+   - Solo se pueden embeber *Clases Concretas*
+   - Se agrega ~@Embedded~ al atributo que es una Entidad, y se quiere persistir los atributos de esa clase
+   - Se agrega ~@Embeddable~ a la entidad que será embebida dentro de otra entidad
+
+   #+BEGIN_QUOTE
+   Las entidades que tengan ~@Embeddable~ que serán embebidas dentro de otra entidad,
+   NO DEBEN TENER UN CAMPO *ID* (identificador),
+   se lo dará la entidad donde se incluya
+   #+END_QUOTE
+*** Ventajas
+   - NO se crea una tabla de la clase que tiene ~@Embeddable~, sus atributos se guardan en la tabla de la clase en donde se embebe
+*** Desventajas
+   - NO se puede usar para casos en los que hay *Jerarquía de Herencia* (/por más que tenga pocos atributos/)
+     (Ej. si usabamos SINGLE_TABLE no se puede..!)
+*** Ejemplo
+  #+BEGIN_SRC java
+    class Auto{
+        @Embedded
+        Posicion posicion; // <- al crear la tabla, le agrega los atributos de la clase Posicion
+    }
+
+    @Embeddable
+    class Posicion{ // <- esta clase no persiste, NO se crea una tabla
+    }
+  #+END_SRC
+* Identidad vs Equivalencia
+** Conceptos
+  - Dos Strings podrían ser equivalentes (/porque tienen el mismo valor/), pero no tener misma identidad (/características diferentes/)
+  - Cuando hacemos ~@Entity~ estamos diciendo que cada objeto tiene su propia identidad/entidad
+
+  #+BEGIN_QUOTE
+   Si hacemos ~new String("a") === new String("a")~ debería de volver 
+   no tienen la misma identidad, pero pueden ser equivalentes porque tienen el mismo valor,
+   el caracter ~a~
+
+   En cambio ~new String("a") == new String("a")~ podría devolver
+  #+END_QUOTE
+** Equivalencia
+   - Cuando dos objetos tienen el mismo valor (/Ej. ambos tienen el mismo número, cadena de caracteres, .../)
+   - Se refiere al valor
+** Identidad
+  - Cada objeto tiene su propia identidad (/al momento de hacer el new/)
+  - Dos objetos pueden tener mismas características pero NO ser idénticos (/son nuevas instancias/)
+* Clasificación de los Objetos
+** Value Objects
+   - Representan valores
+   - Lo mas importante es su *Estado*
+   - Su identidad no es importante (Ej. si fuese el objeto Dinero, nos interesaría solo su valor)
+   - Emmbebable, ...
+** Entities
+   - Tienen identidad, estado, comportamiento pero lo más importante es la *identidad*
+   - Son independientes entre si
+** Services
+   - Lo más importante es la *funcionalidad/operaciones* que exponen (Ej. Repositorios)
+   - NO interesa tanto la *Identidad* ni el *Estado*
+   - No se persisten
+** @ElementCollection
+   - para listas de objects
+   - genera una tabla similar al de @OneToMany
+   - en el DER no se nota la diferencia,
+   - Si le ponemos @embbebled se puede usar como @elementCollection
+
+   #+BEGIN_COMMENT
+   Para lista de enums,numeros,strings,emmbebable,... estos representan valores
+   y se puede usar @ElementCollection
+
+   sirve para @OneToOne, pero NO para @OneToMany ó @ManyToOne
+   
+   Si le ponemos @entity sólo se puede usar @ManyToOne @OneToOne @OneToOne
+   #+END_COMMENT
+* Ejemplo de clase
+  Habian dos tablas Auto y Posicion, con una relacion 1 a 1
+  y tenerlas separadas implicaba hacer un join, que no es eficiente
+  ya que podrian estar en una sola
+
+  si estuvieran en una sola tabla, se pierde la semantica
+  si estan separadas se pierde performance (por el join)

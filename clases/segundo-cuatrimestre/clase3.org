@@ -161,6 +161,19 @@
       <!-- si hay cambios en el código fuente => el orm actualizará el esquema de la db -->
       <property name="hibernate.hbm2ddl.auto" value="auto" />
     #+END_SRC
+*** [#A] @JoinColumn
+    - Soluciona el problema del ORM Hibernate con ~@OneToMany~
+    - Evita que se genere la tabla intermedia
+    - Se le debe pasar como parámetro el nombre de la (FK)
+
+    #+BEGIN_SRC java
+      class Alumno{
+          @OneToMany
+          @JoinColumn("alumno_id") // <-- soluciona el problema de que NO genere una tabla intermedia
+          List<Nota> notas;
+          // ...
+      }
+    #+END_SRC
 ** En los atributos - Constraints
 *** @Id
     - Se agrega previo a definir un atributo
@@ -171,8 +184,18 @@
 ** Tipo de Relación - Cardinalidad
 *** @ManyToMany
     - Genera la tabla intermedia entre las tablas con la PK y FK
-    - El ORM hace automaticamente el mapeo de las clases 
+    - El ORM hace automáticamente el mapeo de las clases
+
+    #+BEGIN_QUOTE
+    La tabla intermedia que genera el ORM, es sólo a nivel DB, el modelo de objetos no lo posee.
+    Si se quiere en el modelo de objetos, se debe cambiar el @ManyToMany por la que corresponda
+    y generar la nueva Entidad
+    
+    En el parcial el *diagrama del DER Físico* _debe figurar la tabla intermedia_ entre las dos entidades
+    #+END_QUOTE
 *** @ManyToOne
+*** @OneToMany
+    - (problema) El ORM Hibernate genera una tabla intermedia como si fuese un ~@ManyToMany~
 * Estrategias de fetch/traer datos de la Relación
 ** Conceptos
    El ORM utiliza dos estrategias traer los datos
@@ -291,6 +314,51 @@
      }
    #+END_SRC
 ** Crear una entidad con PK Autonumérica
+*** Cuando y Porque
+    #+BEGIN_QUOTE
+    *Problema:*
+    Si tenemos 3 relaciones que tienen como identificador único
+    - jugador_id
+    - partido_id
+    - paleta_id
+
+    *Solución incorrecta:*
+    - Estaría MAL, si creamos una tabla *Participación* que tenga como PK compuesta a los tres campos
+      porque no lo representan
+    - Si creamos una PK con los tres, forzamos el persistir en el *modelo de datos* una entidad
+      que NO existe en el *modelo de objetos*
+
+    *Tips:*
+    - Validar si lo que queremos persistir en el *modelo de datos* exista en el *modelo de objetos*    
+    #+END_QUOTE
+
+    #+BEGIN_SRC java
+      // Solución mal encaminada
+      class Participacion{
+          partido_id;
+          paleta_id;
+          jugador_id;
+      }
+      
+      // Solución bien encaminada: (al menos para el ORM Hibernate)
+      class Partido{
+          @OneToMany
+          List<Participacion> participaciones;
+          // ...
+      }
+      
+      class Participacion{
+          @Id
+          private Long id;
+      
+          @ManyToOne
+          Paleta paleta;
+      
+          @ManyToOne
+          Jugador jugador;
+      }
+    #+END_SRC
+*** Ejemplo
   #+BEGIN_SRC java
     @Entity
     public class Persona{
@@ -354,6 +422,26 @@
      System.out.pintln(jugador.getId()); // <- imprimimos el ID del jugador que persiste en la db
 
      transaction.commit(); // <- confirmamos la transacción
+   #+END_SRC
+** [#A] Persistir de forma consistente
+   - El ~withTransaction~ se agrega en el *controller*
+   - En el ~withTransaction~ se agregan las operaciones que generan efecto
+   - El *controller* relaciona el Dominio(Modelo) con la Presentación (UI), es quien _dirige los Casos de Uso_
+   
+   #+BEGIN_SRC java
+     alumno = new Alumno("Marcos");
+     nota = new Nota(10);
+     em.persist(alumno);
+     em.persist(nota);
+     // - Sin el withTransaction esta operación funciona, pero no es consistente
+     // - Si persistimos fuera del withTransaction, es posible que el ORM Hibernate
+     // nos comitee/confirme una transacción pendiente que no queríamos
+     // alumno.getNotas().add(nota);
+     
+     // - Si agregamos las operaciones que tienen efecto en el withTransaction
+     withTransaction(()->{
+             alumno.getNotas().add(nota);
+         });
    #+END_SRC
 ** Ejecutar Consultas
    #+BEGIN_SRC java
