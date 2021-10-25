@@ -1,4 +1,4 @@
-#+TITLE: Clase 3
+#+TITLE: Clase 3 - ORM
 * Impedance Mismatch
   - Es la diferencia entre el *Modelo de Objetos* y el *Modelo de Datos*
   - Es la diferencia entre como ambos modelos resuelven o no distintos problemas
@@ -8,7 +8,7 @@
   |------------------------------+----------------------------------------+--------------------------------------------------------------|
   | Tiene Comportamiento         | SI                                     | NO                                                           |
   | Tienen estado                | SI                                     | SI                                                           |
-  | Tienen identidad             | SI (/el propio objeto, al definirlo/)  | SI (/pero.. Definiendo la PK/)                               |
+  | Tienen identidad             | SI (/el propio objeto, al definirlo/)  | SI (/pero.. Definiendo la PK el identificador unívoco/)      |
   | Navegación para buscar datos | Más díficil si es una relación de 1..n | Más fácil se guardan referencias de ambos extremos (PK y FK) |
   | Tipos                        | SI + Se puede referenciar a otros Obj  | Algunos + Las referencias son por FK                         |
   | Herencia                     | SI (/para reutilizar comportamiento/)  | NO                                                           |
@@ -21,28 +21,53 @@
 ** Driver JDBC
    - Es la implementación del estándar (JDBC) para la conexión
    - Es el conector de db (ej. mysql) implementa la conexión de JBC
-** JPA (Java Persistanse API)
-   - Estandar que implementan los *Frameworks de ORM* (/Ej. Hibernate/)
-   - Tiene las *interfaces* (/Ej. EntityManager/) y *annotations* (/@Entity, @Table, .../)
+** JPA (Java Persistence API)
+   - Es el estandar que implementan los *Frameworks de ORM* (/Ej. Hibernate/)
+   - Tiene las *Interfaces* (/Ej. EntityManager/) y *Annotations* (/@Entity, @Table, .../)
 ** Frameworks de ORM
    - Facilitan el Mapeo Relacional/Consultas/Conexión a la DB
    - Desacopla el *Modelo de objetos* del *Modelo de Datos* (/permite la separación entre ambos/)
-   - El que se utiliza en la materia es *Hibernate*
-   - Implementan al ~EntityManager~ de (JPA) *Java Persistanse API*
+   - El ORM que se utiliza en la materia es *Hibernate*
+   - Implementan un ~EntityManager~ de (JPA) *Java Persistanse API*
 
-   #+BEGIN_QUOTE
+   #+BEGIN_COMMENT
+   Cuando usamos frameworks, estos inyectan las dependencias que necesitamos en los objetos
+   por general se hace con una notación del tipo @nombreNotación
+   En Hibernate sería ~@Entity~, las relaciones ~@ManyToMany~, ~@ManyToOne~, ~@OneToMany~
+ 
+   Los frameworks también proveen hacer inyección directo en los atributos.
+   En hibernate sería ~@Id~, ~@GeneratedValue~, ...
+
+   Aparece el concepto de *Inversión de Control* (IoC) porque delegamos/cedemos el control al ORM Hibernate.
+   Este se encarga de la conexión con la base de datos (/sólo agregamos los datos de conexión en el archivo de config/),
+   también nos desentendemos de la creación de tablas el propio framework lo hace por nosotros.
+   #+END_COMMENT
+
+   #+BEGIN_COMMENT
    Los *frameworks* se diferencian de las *bibliotecas*
-   1. Ofrecen *puntos de extensión* para configuraciones específicas
-   2. Definen un marco de trabajo
-   #+END_QUOTE
+   1. Ofrecen *puntos de extensión* para configuraciones específicas (???)
+   2. Definen un marco de trabajo (???)
+   #+END_COMMENT
 * Archivos de Configuración
-** persistance.xml
+** persistence.xml
 *** Conceptos
    - Se agrega la *conexión a la base de datos* y las *clases que mapea el ORM* (/Ej. entidades/)
    - Se guarda toda la configuración del *ORM*
    - Se agrega en dos rutas
      1. En el main de la app ~main/resources/META-INF~
      2. En los test de la app ~test/resources/META-INF~
+
+   #+BEGIN_QUOTE
+   *¿Cómo persistir clases?*
+   1. En el archivo java donde tengamos la clases, agregamos el annotation ~@Entity~ previo a definir la clase
+   2. En el ~persistence.xml~ le decimos al *JPA* donde buscar esos *annotations*
+
+  Por ejemplo si en la clase ~Jugador~ habíamos agregado el ~@Entity~ entonces en el ~persistence.xml~ agregamos
+  ~<class>utn.dds.persistencia.futbol.persistence.Jugador</class>~
+   #+END_QUOTE
+   
+   *Observación:*
+   - Es común confundir el nombre del archivo, recordar que es ~persistence.xml~
 *** Configuración
      #+BEGIN_SRC xml
        <!-- conexión a la db del "entorno de producción" -->
@@ -68,31 +93,95 @@
 ** pom.xml
    - Para cargar las *dependencias* (/jpa-java8-extras, hsqldb, .../)
    - Usamos ~jpa-java8-extras~ no directamente *hibernate*
-   - Para NO testear con la db del entono de producción ~hsqldb~ (/es una db que se carga en memoria/)
+   - Para NO testear con la DB del entono de producción, usamos ~hsqldb~ que es una db que se carga en memoria
 * Entity Manager
 ** Conceptos
    - Es el puente para comunicarse con el *framework ORM* (/Ej. Hibernate/)
    - Actúa como un *facade* (/patrón de diseño/) para con el *framework*
 ** Guardar/Borrar de Caché la Identidad de los Objetos
-   - El ORM guarda la identidad de los objetos en caché
-   - Asegura la consistencia de los objetos
-   - Si queremos borrar la caché es mediante ~entityManager.clear()~
-
-   #+BEGIN_SRC java
-     // -> pedimos el jugador con id=2
-     Jugador jugadorA = entityManager.find(Jugador.class, new Long(2));
-
-     Jugador jugadorB = entityManager.find(Jugador.class, new Long(2));
-
-     // -> el resultado será "true"
-     System.out.println(jugadorA == jugadorB);
-   #+END_SRC
-    - Para persistir en la db con ~persist()~
-    - Para ejecutar operaciones transaccionales con ~rollback()~ y ~commit()~
-    - Sirve como caché (siempre y en cuando no hagamos clear)
+*** Conceptos
+    - El *ORM guarda la identidad de los objetos en caché*
     - Es un objeto que nos sirve para interactuar/pedirle cosas al ORM (/a Hibernate/)
       1. Ejecutar una query
       2. Borra/Traeme tales objetos
+
+    #+BEGIN_QUOTE
+    Asegura la *consistencia de los objetos*, porque al buscar dos veces el mismo objeto
+    reutiliza el que tiene en caché evitando crear una nueva instancia
+    siempre y en cuando no hagamos ~entityManager.clear()~
+      
+    Si a nivel código con el *entityManager* creamos un objeto, lo persistimos y luego lo buscamos
+    entonces el ORM (hibernate) no hará una query con un ~SELECT~ porque recuerda haberlo persistido
+    
+    Si a nivel código con el *entityManager* buscamos dos ó más veces el mismo objeto,
+    entonces el ORM (hibernate) hará sólo 1 vez el ~SELECT~ en la DB,
+    porque en la caché recuerda haber buscado ese objeto
+
+    El ORM reconoce la identidad del objeto por la (PK) por la que se lo buscó en la DB
+    #+END_QUOTE
+   
+    |---------------------------------+---------------------------------------------------------------|
+    | Método                          | Descripción                                                   |
+    |---------------------------------+---------------------------------------------------------------|
+    | ~entityManager.clear()~         | Si queremos borrar la caché del entityManager                 |
+    | ~entityManager.persist(objeto)~ | Para persistir un object en la db                             |
+    |---------------------------------+---------------------------------------------------------------|
+    | ~entityManager.rollback()~      | Operación transaccional - Vuelve a un estado anterior         |
+    | ~entityManager.commit()~        | Operación transaccional - Confirma un conjunto de operaciones |
+    |---------------------------------+---------------------------------------------------------------|
+*** Ejemplo 1
+    #+BEGIN_SRC java
+      // -> pedimos el jugador con id=2
+      // -> por tanto el ORM Hibernate hará una query con un SELECT
+      Jugador jugadorA = entityManager.find(Jugador.class, new Long(2));
+      
+      // -> pedimos al mismo jugador con id=2
+      // -> el ORM recordará haber buscado esa entidad que tiene id=2,
+      // -> y no hará un segunda query con SELECT para buscarlo, usará el que tiene en la caché
+      Jugador jugadorB = entityManager.find(Jugador.class, new Long(2));
+      
+      // -> el resultado será "true"
+      System.out.println(jugadorA == jugadorB);
+      
+      // si hicieramos clear() borraría la caché,
+      // por tanto si hacemos otro entityManager.find(), no recordará haberlo buscado y hará otra query con SELECT
+      entityManager.clear(); //
+      Jugador jugadorC = entityManager.find(Jugador.class, new Long(2));
+      
+      // -> el resultado será "false"
+      System.out.println(jugadorA == jugadorB);
+    #+END_SRC
+*** Ejemplo 2
+    #+BEGIN_SRC java
+      public class Main{
+          public static void main(String[] args){
+              final EntityManager entityManager = PerThreadEntityManagers.getEntityManager();
+              EntityTransaction transaction = entityManager.getTransaction();
+      
+              Jugador fofito = new Jugador();
+              fofito.setNombre("fofito");
+              transaction.begin();
+              entityManager.persist(fofito);
+              transaction.commit();
+      
+              // el ORM no hará una query con SELECT,
+              // porque recuerda tener en la caché a este objeto
+              Jugador fofito2 = entityManager.find(Jugador.class, fofito.getId());
+              System.out.println(fofito.equals(fofito2)); // true
+      
+              // idem, el ORM no hará una query con SELECT,
+              Jugador fofito3 = entityManager.find(Jugador.class, fofito.getId());
+              System.out.println(fofito.equals(fofito3)); // true
+      
+              // obligamos al ORM Hibernate que se olvide de las entidades que guardó en la caché
+              entityManager.clear();
+              // el ORM hará otra query,
+              // porque no tiene en la caché la identidad del object fofito
+              Jugador fofito4 = entityManager.find(Jugador.class, fofito.getId());
+              System.out.println(fofito.equals(fofito4)); // false
+          }
+      }
+    #+END_SRC
 ** Interfaces y Clases
 *** WithGlobalEntityManager
     - Es una *interfaz* que nos provee al ~entityManager()~ global como *singleton*
@@ -116,6 +205,7 @@
     #+END_SRC
 *** PerThreadEntityManagers
     - Es una clase que nos provee el método ~getEntityManager()~ a nivel global como un *singleton*
+    - NO necesitamos inyectar ninguna interfaz, sólo creamos una instancia a la clase ~PerThreadEntityManagers~
 
     #+BEGIN_SRC java
       public class Runner{
@@ -136,31 +226,35 @@
     #+END_SRC
 ** Métodos
 *** find
+    - El ORM hará una query con un ~SELECT~ con la clausula ~WHERE~
+*** persist
+    - El ORM hará una query con ~INSERT~
 *** getSingleResult
 * Repositorio
   - *Es un objeto* que *conoce las instancias de TODOS los objetos*
   - Consultan a una *base de datos* partir del *entityManager* 
 * Annotations
 ** Conceptos
-   Definen el "como" se van a guardar las clases en la DB
+   Definen el _"como" se van a persistir/guardar las clases_ en la DB
 ** En las Clases
+*** Actualizar Esquema
+     #+BEGIN_SRC xml
+       <property name="hibernate.show_sql" value="true" />
+       <property name="hibernate.format_sql" value="true" />
+       <property name="use_sql_comments" value="true" />
+       <!-- si hay cambios en el código fuente => el orm actualizará el esquema de la db -->
+       <property name="hibernate.hbm2ddl.auto" value="update" />
+     #+END_SRC
 *** @Table
-    - con ~@Table nombre~ usá la tabla *nombre*, no cambia el nombre a nivel de DB
+    - Al agregar ~@Table(name="nuevoNombre")~ al mapear usará la tabla *nuevoNombre*, la creará si no existe
     
     *Observación:*
-    Si queremos cambiar el nombre de la DB, debemos hacer un ~rename~ directo en la DB
+    - Si existe otra tabla que hace referencia al nombre de tabla anterior, se sugiere cambia el nombre
+      de la tabla directo desde la base de datos
 *** @Entity
     - Se agrega previo a definir una *clase*
-    - Le dice a *hibernate* que esa clase es una entidad, y la debe *persistir*
-    - Deben aparecer en el ~resources/META-INF/persistance.xml~
-
-    #+BEGIN_SRC xml
-      <property name="hibernate.show_sql" value="true" />
-      <property name="hibernate.format_sql" value="true" />
-      <property name="use_sql_comments" value="true" />
-      <!-- si hay cambios en el código fuente => el orm actualizará el esquema de la db -->
-      <property name="hibernate.hbm2ddl.auto" value="auto" />
-    #+END_SRC
+    - Le dice al ORM *Hibernate* que esa clase es una entidad, y al mapear la debe *persistir* en la DB
+    - Las clases que le agregemos esto, deben aparecer en el ~resources/META-INF/persistence.xml~
 *** [#A] @JoinColumn
     - Soluciona el problema del ORM Hibernate con ~@OneToMany~
     - Evita que se genere la tabla intermedia
@@ -177,37 +271,39 @@
 ** En los atributos - Constraints
 *** @Id
     - Se agrega previo a definir un atributo
-    - Le indica a *hibernate* que ese atributo será la *Clave primaria* de la *entidad*
+    - Le indica al ORM *Hibernate* que ese atributo será la *Clave Primaria* (PK) de la *Entidad*
 *** @GeneratedValue
     - Se agrega previo a definir un atributo
-    - Le dice a *hibernate* que ese atributo será *autonumérico* (/en sql-server es el constraint IDENTITY/)
+    - Le dice al ORM *Hibernate* que ese atributo será *autonumérico* (/en sql-server es el constraint IDENTITY/)
 ** Tipo de Relación - Cardinalidad
 *** @ManyToMany
-    - Genera la tabla intermedia entre las tablas con la PK y FK
+    - Genera una tabla intermedia entre dos tablas con la PK y FK
     - El ORM hace automáticamente el mapeo de las clases
 
     #+BEGIN_QUOTE
-    La tabla intermedia que genera el ORM, es sólo a nivel DB, el modelo de objetos no lo posee.
+    La tabla intermedia que genera el ORM, es sólo a nivel DB osea sólo aparece en el *modelo de datos* (en el DER Físico),
+    en el *modelo de objetos* (diagrama de clases) no debería aparecer.
+    
     Si se quiere en el modelo de objetos, se debe cambiar el @ManyToMany por la que corresponda
     y generar la nueva Entidad
     
-    En el parcial el *diagrama del DER Físico* _debe figurar la tabla intermedia_ entre las dos entidades
+    En el parcial el *Diagrama del DER Físico* _debe figurar la tabla intermedia_ entre las dos entidades
     #+END_QUOTE
 *** @ManyToOne
 *** @OneToMany
     - (problema) El ORM Hibernate genera una tabla intermedia como si fuese un ~@ManyToMany~
 * Estrategias de fetch/traer datos de la Relación
 ** Conceptos
-   El ORM utiliza dos estrategias traer los datos
+   El ORM utiliza dos estrategias para traer los datos
    1. Lazy  (ó perozosa)
    2. Eager (ó anciosa)
 
    #+BEGIN_QUOTE 
    Por default
-   - ~@ManyToOne~ usa la estrategia *eager*
-   - ~@OneToMany~ y ~@ManyToMany~ usan la estrategia *lazy*
+   - ~@ManyToOne~ usa la estrategia *Eager* (anciosa)
+   - ~@OneToMany~ y ~@ManyToMany~ usan la estrategia *Lazy* (perezosa)
    #+END_QUOTE
-** Estrategia Lazy
+** Estrategia Lazy (Perezosa)
    - Utilizar cuando una entidad de la relación no se utiliza tanto
    - Evita realizar consultas a tablas de la db que no necesitamos por el momento
 
@@ -218,7 +314,7 @@
    Por ejemplo, si tenemos una relación *Alumno-Materia*,
    si nos traemos al alumno => entonces esperará a que le pidamos la materia con un ~SELECT~
    #+END_QUOTE
-** Estrategia Eager
+** Estrategia Eager (Anciosa)
    - Utilizar cuando una entidad de la relación se utiliza muy seguido
    - Nos evita el escribir las consultas ~SELECT~ de una tabla de la db
 
@@ -227,7 +323,7 @@
    cuando pedimos (A) también nos trae (B) sin siquiera pedirlo
 
    Supongamos que tenemos una relación *Alumno-Materia*,
-   si nos traemos al alumno => nos trae directamente la relación Materia
+   si nos traemos al alumno => nos trae también los registros de Materia
    #+END_QUOTE
 ** Cambiar de estrategia
    Podemos cambiar la estrategia colocando seguido a la relación entre paréntesis ~fech= FetchType.Tipo~
@@ -254,18 +350,26 @@
 * Transacciones 
 ** Conceptos
    - El ~commit()~ de una *transacción* confirma el conjunto las operaciones que contiene (/después NO se puede hacer rollback/)
-   - El ~rollback()~ de una *transacción* deshace las operaciones que se ejecutaron a nivel *base de datos*
+   - El ~rollback()~ de una *transacción* deshace las operaciones que se ejecutaron SOLO a nivel *base de datos*
    - Hacer ~rollback()~ NO cambia el estado de un objeto, para eso se debe borrar la caché con ~entityManager.clear()~
 ** Implementación en Java
    #+BEGIN_SRC java
      final EntityTransaction transaction = entityManager.getTransaction();
+     // el ORM hará una query con un SELECT, buscando por el id=10
+     Formacion formacion = entityManager.find(Formacion.class, new Long(10));
      transaction.begin();
+     // los cambios que estén a nivel de objetos,
+     // el ORM luego al mapear persistirá el modelo de objetos
+     // (suponiendo que confirmamos la transacción)
      formacion.setGoles(new Long(11));
      transaction.commit();
-
+     
      transaction.begin();
      formacion.setGoles(new Long(15));
-     transaction.rollback(); // deshacemos la operación anterior (en la db)
+     // - Deshacemos la operación anterior, pero sólo en la base de datos
+     // - Si hacemos un print de la formación mostrará 15
+     // - Si hacemos un entityManager.find() de éste objeto, entonces mostrará 11
+     transaction.rollback();
    #+END_SRC
 * Testing
 ** Convenciones
@@ -274,28 +378,107 @@
 ** Clases + Interfaces
 *** AbstractPersistenceTest
     - Está incluida en la dependencia ~jpa-extra-tools~
+    - Incorpora el iniciar una transacción en el ~@Before~ para que considere todos los tests como una única operación
+    - Integra rollback en el ~@After~ para que no se modifique la base de datos luego de ejecutarse los tests
+
+    #+BEGIN_SRC java
+      public abstract class AbstractPersistenceTest implements TransactionalOps, EntityManager{
+          public AbstractPersistenceTest(){
+          }
+      
+          @Before
+          public void setup(){ this.beginTransaction(); }
+      
+          @After
+          public void tearDown(){ this.rollbackTransaction(); }
+      }
+    #+END_SRC
 ** Ejemplo en Java
-  #+BEGIN_SRC java
-    // La clase "AbstractPersistenceTest" viene de la dependencia "jpa-extra-tool"
-    public RepositorioJugadorTest extends AbstractPersistenceTest implements TransactionalOps, EntityManager{
-        public AbstractPersistence(){
-        }
+*** Clases a Testear
+    #+BEGIN_QUOTE
+    Podemos hacer que las clases que vamos a testear, implementen la interfaz ~WithGlobalEntityManager~
+    y nos evitamos tener que crear la instancia a la clase ~PerThreadEntityManagers~ que también
+    nos daba el ~entityManager~
 
-        @Before
-        public void setup(){
-            // - se ejecuta antes de los tests
-            // - iniciamos la transacción de sql, todas las operaciones serán considerados como una única operación
-            this.beginTransaction();
-        }
-
-        @After
-        public void tearDown(){
-            // - se ejecuta después de los tests
-            // - deshacemos los cambios que hayan hecho en la DB y la llevamos a un estado previo, evita generar efecto en la DB
-            this.rollbackTransaction();
-        }
-    }
-  #+END_SRC
+    Si vamos a testear el modelo de objetos con hibernate, la idea sería que las clases
+    utilicen el ~entityManager~ para persistir información con ~entityManager.persist(objeto)~
+    ó hacer consultas como ~entityManager.find(NombreDeLaClase.class, valorDelId)~
+    ó también usar el ~entityManager().createQuery()~ para consultas más específicas seguido de algún método
+    del ORM para obtener el resultado Ej. ~getResultList()~
+    #+END_QUOTE
+      
+    #+BEGIN_SRC java
+      /*
+       ,* Archivo: RepositorioJugadores.java
+       ,*/
+      import java.util.List;
+      import org.uqbarproject.jpa.java8.extras.WithGlobalEntityManager;
+      
+      // Podemos hacer que implementen esta interfaz "WithGlobalEntityManager "
+      public class RepositorioJugadores implements WithGlobalEntityManager {
+          public void registrar(Jugador jugador) {
+              entityManager().persist(jugador);
+          }
+      
+          public List<Jugador> todos() {
+              return entityManager()
+                  .createQuery("from Jugador")
+                  .getResultList();
+          }
+      
+          public List<Jugador> filtrarPorNombre(String nombre) {
+              return entityManager()
+                  .createQuery("from Jugador where nombre = :nombre")
+                  .setParameter("nombre", nombre)
+                  .getResultList();
+          }
+      }
+    #+END_SRC
+*** Modulo de tests + FIXTURE
+   #+BEGIN_SRC java
+     // - La clase "AbstractPersistenceTest" viene de la dependencia "jpa-extra-tool"
+     // - Inyectamos la dependencia entityManager() por Interfaz, al implementar WithGlobalEntityManager
+     public RepositorioJugadorTest extends AbstractPersistenceTest implements WithGlobalEntityManager{
+         @Before
+         public void init(){
+             // armamos el fixture
+             entityManager().persist(crearJugador("carlitos"));
+             entityManager().persist(crearJugador("pedrito"));
+             entityManager().persist(crearJugador("sebas"));
+         }
+     
+         @Test
+         public void testFiltrarPorNombre(){
+             RepositorioJugadores repositorioJugadores = new RepositorioJugadores();
+             final List<Jugador> jugadores = repositorioJugadores.filtrarPorNombre("marcos");
+             Assert.assertEquals(2, jugadores.size());
+     
+             Assert.assertEquals("marcos", jugadores.get(0).getNombre());
+             Assert.assertEquals("marcos", jugadores.get(1).getNombre());
+         }
+     
+         private Jugador crearJugador(String nombre){
+             Jugador jugador = new Jugador();
+             jugador.setNombre(nombre);
+             return jugador;
+         }
+     
+     
+         /**
+          ,* - En la clase de jpa-extra-tools llamada AbstractPersistenceTest, viene por defecto lo siguiente
+          ,* - Si las clases de nuestros tests la extienden, ya incorpora el iniciar la transacción en el @Before
+          ,* y luego hacer el rollback en el @After para que los cambios NO persistan en la base de datos
+          ,* (porque la idea de los tests, no es generar efecto en la base de datos)
+          ,*/
+         /*
+         @Before
+         public void setup(){ this.beginTransaction(); }
+     
+         @After
+         public void tearDown(){ this.rollbackTransaction(); }
+         ,*/
+     }
+   #+END_SRC
 * Ejemplos en Java
 ** Persistir Atributos LocalDate
    - Según la versión de ORM de hibernate puede no tener esta opción
@@ -417,7 +600,7 @@
      Jugador jugador = new Jugador();
      jugador.setNombre("pepito");
 
-     entityManager.persist(jugador); // <- lo persiste en la db
+     entityManager.persist(jugador); // <- lo persiste en la db, hará una query con INSERT
 
      System.out.pintln(jugador.getId()); // <- imprimimos el ID del jugador que persiste en la db
 
@@ -476,7 +659,13 @@
      }
    #+END_SRC
 ** Cambiar la referencia a una tabla
-   Usamos el *annotation* ~Table(name="nombreTabla")~  (/pero no renombra el nombre en la db/)
+   #+BEGIN_QUOTE
+   Usamos el *annotation* ~@Table(name="nuevoNombreDeTabla")~ donde el ORM Hibernate al mapear el *modelo de objetos*
+   si ve que NO existe en el *modelo de datos* entonces crea esa tabla.
+
+   Pero.. Si existe otra tabla que hace referencia al nombre de tabla anterior, osea previo a que usaramos ese *annotation*,
+   se sugiere cambiar el nombre directo desde la base de datos para evitar errores/inconsistencias con el ORM.
+   #+END_QUOTE
 
    #+BEGIN_SRC java
      @Entity
@@ -485,3 +674,75 @@
          //...
      }
    #+END_SRC
+** Main
+   #+BEGIN_SRC java
+     import java.util.List;
+     
+     import javax.persistence.EntityManager;
+     import javax.persistence.EntityTransaction;
+     
+     import org.uqbarproject.jpa.java8.extras.PerThreadEntityManagers;
+     import utn.dds.persistencia.futbol.persistence.Jugador;
+     
+     public class Main{
+         public static void main(String[] args){
+             final EntityManager entityManager = PerThreadEntityManagers.getEntityManager();
+             EntityTransaction transaction = entityManager.getTransaction();
+     
+             /**
+              ,* 1. Creamos una instancia de jugador, le asignamos los datos
+              ,* 2. Persistimos al jugador dentro de una transacción
+              ,* 3. Confirmamos la transacción
+              ,*/
+             // Jugador jugador = new Jugador();
+             // jugador.setNombre("jorgito");
+             // jugador.setPosicion("delantero");
+     
+             // transaction.begin();
+             // entityManager.persist(jugador);
+             // transaction.commit();
+     
+             /**
+              ,* 1. Buscamos al objeto con id=3, y lo imprimimos
+              ,* 2. Cambiamos sus datos y lo volvemos a imprimir
+              ,* 3. Lo borramos de la base de datos (si estuviese relacionado con una FK, fallaría el DELETE)
+              ,*/
+             Jugador jugador = entityManager.find(Jugador.class, new Long(3));
+             System.out.println(jugador.getNombre() + " " + jugador.getPosicion() + " " + jugador.getId());
+     
+             transaction.begin();
+             jugador.setNombre("killme");
+             transaction.commit();
+     
+             System.out.println(jugador.getNombre() + " " + jugador.getPosicion() + " " + jugador.getId());
+     
+             // Removemos el registro del objeto que se persistió
+             transaction.begin();
+             entityManager.remove(jugador);
+             transaction.commit();
+     
+             /**
+              ,* Imprimimos una lista de objetos
+              ,*/
+             final List<Jugador> jugadores = entityManager.createQuery("from Jugador").getResultList();
+             for(Jugador jug : jugadores){
+                 System.out.println(jug.getNombre() + "" + jug.getPosicion() + " " + jug.getId());
+             }
+         }
+     }
+   #+END_SRC
+* Recursos
+** Documentación de la Materia
+   1. [[https://docs.google.com/document/d/1jWtehhVCFYECKvpdcCxnEgWZFCv2fR2WPyUJSoiX3II/edit#heading=h.n0vkh0jgorqn][Guia de ANotaciones de JPA]]
+   2. [[https://github.com/dds-utn/jpa-proof-of-concept-template][Proyecto base de JPA (github)]]
+   3. [[https://docs.google.com/document/d/1dYvrVLRbFE9qwuKj5biz9oRBaRzj-K6ujIKOXNan02s/edit#][Incorporar Hibernate a nuestro proyecto]]
+   4. [[https://docs.google.com/document/d/1YLmp9vMnSzKg2emt3Bx564Tf1CLalShPc98Z8nCoi7s/edit][Mapeo Objetos Relacional]]
+** Parciales Sugeridos
+   1. [[https://docs.google.com/document/d/15ifQWQqfzbwwHIiiuoZiE4eyhd_DpmaQ5OGPvD9x2Wc/edit#heading=h.uyku9mnteh0t][(2018) Que Me Pongo]]
+** Referencias Sugeridas en Clase
+   1. https://github.com/jonybuzz/demo-hibernate
+   2. [[https://www.objectdb.com/java/jpa/persistence/managed][Ciclo de vida de un objeto dentro del Entity Manager]]
+   3. [[https://github.com/uqbar-project/jpa-java8-extras#schema-generation][Generar el schema.sql de JPA - github.com, UqbarProject]]
+** Referencias externas
+   1. [[https://maven.apache.org/guides/getting-started/maven-in-five-minutes.html][Maven in five minutes - apache.org, Maven]]
+   2. [[https://github.com/emacs-lsp/lsp-java/issues/98][Spacemacs run main class - github.com, Issue]]
