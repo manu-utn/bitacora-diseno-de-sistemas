@@ -351,3 +351,11 @@
    #+BEGIN_SRC java
      response.cookie("usuario_logeado", usuario);
    #+END_SRC
+* Recursos
+** Documentación de la Cursada UTN
+   1. 
+** Sugeridos por la Cursada UTN
+   1. 
+** Referencias externas
+   1. https://www.oscarblancarteblog.com/2019/01/03/java-query-param/
+   2. https://sparkjava.com/documentation

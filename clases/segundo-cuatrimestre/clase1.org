@@ -13,25 +13,25 @@
   - la lectura NO está sincronizada, puede tener problemas
     con la concurrencia (al escribir && leer at the same time)
 * Base de Datos
-** conceptos
+** Conceptos
   - programas
-** tipos
-*** relacionales
+** Tipos
+*** Relacionales
     - oracle, postgrsql, sqlserver, mysql
-*** no relacionales
+*** No relacionales
    - NO relacionales (aka NoSQL) -> neoj, redis, mongodb, cassandra,..
    - de grafos
    - de clave:valor (similar a un hashmap) Ej. redis
    - columnares (cassandra)
    - documentales (mongodb)
-** arquitectura
-   - motor de la db (proceso corriendo en un SO)
-   - interactúa con el disco
+** Arquitectura
+   - Motor de la db (proceso corriendo en un SO)
+   - Interactúa con el disco
    - appWeb
-   - gestor (ej. mysqlworkbench, dbeaver)
+   - Gestor (ej. mysqlworkbench, dbeaver)
 
    Los gestores o AppsWeb se conectan al motor mediante *sockets*
-** driver (protocolo de comunicación)
+** Driver (protocolo de comunicación)
    - el *driver* es el *protocolo de comunicación*
    - los gestores de db necesitan saber *protocolo de comunicación* de cada *motor de db*
    - cada motor de db tiene un protocolo dif.
@@ -50,7 +50,7 @@
    - lenguajes para manipula
      - DDL -> definición de datos (create, ..)
      - DML -> Manipulación de datos (update, select, ..)
-** tipos de relaciones
+** Tipos de relaciones
    - relaciones base o relaciones reales (las tablas)
    - consultas
    - vistas
