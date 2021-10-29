@@ -93,9 +93,10 @@
 *** GET con QueryParams Vs GET sin QueryParams
     #+BEGIN_QUOTE
     Si sólo hacemos esto
-    ~GET /productos/32~ devuelve un objeto
+    ~GET /productos/32~ devuelve un objeto (recurso)
 
-    Si le pasamos un *queryParams* ~?id=32~ éste aplica un filtro a la lista de objetos, y devuelve ésta lista pero filtrada
+    Si le pasamos un *queryParams* ~?id=32~ éste aplica un filtro a la colección de objetos (recursos),
+    y devuelve una colección filtrada
     ~GET /productos~ [objeto1, objeto2, ..] (?id=32) [objeto(id=32)]
     #+END_QUOTE
 *** Ejemplo en HTML
@@ -126,6 +127,19 @@
     - Se aplica sobre la *Request* (petición)
     - Aplica un filtro, devuelve otra lista de objetos con ese filtro aplicado
     - Es similar a la "orientada a procedimientos" pero aplica sobre la "orientada a recursos" (REST)
+
+    #+BEGIN_QUOTE
+    Si recibimos un parámetro la petición/request sería ~GET /guardarropas/:guardarropaId~
+    Si recibimos dos parámetros la petición/request sería ~GET /guardarropas/:guardarropaId/prenda/:prendaId~
+
+    En *Spark Java* con ~request.param("nombreDeParametro")~ capturamos los parámetros que forman parte de la ruta,
+    al pertenecer a la ruta son "obligatorios", por ejemplo ~GET /prendas/:prendaId~
+
+    En *Spark Java* con ~request.queryParams("nombreDeParametro")~  capturamos los parámetros que son opcionales,
+    es decir que NO pertenecen a la ruta, por ejemplo ~GET /prendas?color=rojo~
+
+    En ambos casos los parámetros los agarramos de la *Request* con la notación dot
+    #+END_QUOTE
 *** Ejemplo (1) en Spark Java
     #+BEGIN_SRC java
       public class UsuarioController{
@@ -149,7 +163,6 @@
       public class UsuarioController{
           public ModelAndView index(Request req, Response res){
               // - el queryParams, siempre se aplica sobre el Request/Petición que se va a mandar al servidor http
-              //
               String filtroParametro = req.queryParams("nombre");
       
               Usuario usuario = UsuarioRepositorio.get().findAny();
@@ -159,10 +172,10 @@
               // List<Pokemon> pokemonesCapturados = filtroParametro == null ? usuario.getCapturas() : usuario.filtarPorNombre(filtroParametro);
       
               // > Alternativa #2
-              // - Con el Optional, si resultado es NULL devuelve una Lista vacía y no sigue con el map
+              // - Con el Optional.ofNullable() + map, si resultado es NULL devolverá una Lista vacía
               List<Pokemon> pokemonesCapturados = Optional.ofNullable(filtroParametro)
-                  .map(filtro -> usuario.filtrarPorNombre(filtro))
-                  .orElseGet(()-> usuario.getCapturas() );
+                  .map(filtro -> usuario.filtrarPorNombre(filtro)) // "map" se ejecuta si tiene valor
+                  .orElseGet(()-> usuario.getCapturas() ); // "orElseGet" se ejecuta el valor del parámetro es NULL
       
               model.put("usuario", usuario);
               model.put("pokemones", pokemones);
@@ -171,11 +184,59 @@
           }
       }
     #+END_SRC
+*** Código 404 Si no existe el recurso
+    #+BEGIN_QUOTE
+    Si hacemos una petición de un recurso ~:empleado~ que no existe,
+    el servidor responderá con el código de estado ~404~ (not found)
+    ~GET /empleados/:empleado~
+    #+END_QUOTE
+*** Parámetros Obligatorios Vs Parámetros Opcionales
+    #+BEGIN_QUOTE
+    Si en el *Router* la ruta está definida como ~GET /empleados/:empleado~ entonces
+    es obligatorio pasarle el parámetro, y éste pertenece a la ruta
+    - podríamos hacer ~GET /empleados/5~ para obtener un recurso "empleado" en particular
+    - los ~:~ indican que parámetro es obligatorio, y que forma parte de la ruta
+
+    Si en el *Router* la ruta está definida como ~GET /empleados~ entonces es opcional pasarle parámetros
+    - podríamos hacer ~GET /empleados~ para obtener un conjunto de recursos "empleado"
+    - podríamos hacer ~GET /empleados?filtro1=valor~ usando *query params* para filtrar el conjunto
+      que devuelve la ruta ~/empleados~
+    #+END_QUOTE
+*** Recibir Parámetros en NULL
+    - Con el ~Optional.ofNullable(filtroParametro)~ si lo que recibimos por parámetro es ~NULL~, éste devuelve una lista vacia
+    - Una alternativa al ~Optional.ofNullable()~ sería usar el *operador ternario* ~(condicion) ? true : false~
+      
+   #+BEGIN_SRC java
+     public static ModelAndView index(Request request, Response response){
+         Usuario usuario = UsuarioRepositorio.get().findAny();
+         String filtroNombre = request.queryParams("nombre");
+     
+         /*
+         List<Pokemon> pokemonesCapturados = Optional.ofNullable(filtroNombre)
+             .map(filtro -> usuario.filtrarPorNombre(filtro))
+             .orElseGet(()-> usuario.getCapturas() );
+         ,*/
+     
+         List<Captura> pokemonesCapturados= Optional.fromNullable(filtroNombre)
+             .transform(filtro -> usuario.findByNombre(filtro)) // "transform" se ejecuta si tiene valor
+             .or(usuario.getCapturas()); // "or" se ejecuta el valor del parametro es NULL
+     
+         // Alternativa al Optional.ofNullable
+         pokemonesCapturados = (filtroParametro.equals(null)) ? usuario.getCapturas() : usuario.findByNombre(filtroNombre);
+         
+         // Alternativa al Optional.ofNullable
+         if (filtroParametro==null){
+             pokemonesCapturados = usuario.getCapturas();
+         }else{
+             pokemonesCapturados = usuario.findByNombre(filtroNombre);
+         }
+     }
+   #+END_SRC
 * Contenido Estático/Dinámico
 * Framework Java Spark (Web)
 ** Conceptos
   - Alternativa a *Spark* puede ser *Spring MVC*
-  - Actúa como *Enrutador*, éste le pide al *Servidor HTTP* y la respuesta la enruta al *Controller* (?)
+  - Actúa como *Enrutador*, éste le pide al *Servidor HTTP* y la respuesta la enruta al *Controller*
   - Usa una *fachada* para mandarle mensajes
     (Ej. ~Spark.port(9000)~, ~Spark.init()~, ...)
 ** Ejemplo
@@ -265,59 +326,84 @@
    - En el proyecto se debe agregar ~DebugScreen.enableDebugScreen()~
 * Layout && Template
 ** Layout
-   - Es como se estructura una página (Ej. en donde irá el Header, Footer, Sidebar, ...)
+   - Un *Layout* es como se estructura una página (Ej. en donde irá el Header, Footer, Sidebar, ...)
 ** Template
    - Para evitar repetir código
    - Un *Template* es una página que podemos reutilizar, que usa un *layouts* específico
 ** Con Handlebars
-   #+BEGIN_SRC html
-     <!-- Archivo: usuarios.hbs -->
-     {{#partial "contenido"}}
-     <h1>1) Partial: Definimos el bloque con partial</h1>
+*** Helper With
+    - El helper ~{{#with nombreObjeto}}~ nos evita el repetir ~nombreObjeto~ dentro del bloque definido
+    
+    #+BEGIN_SRC html
+      Un ejemplo usando with
+      {{#with proyecto}}
+      <h3>Proyecto {{nombre}}</h3>
+      
+      <p>precio:{{precio}}</p>
+      <p>fechaInicio: {{fechaInicio}}</p>
+      <p>fechaFin: {{fechaFin}}</p>
+      <p>fue finalizado: {{isTrue finalizado}}</p>
+      {{/with}}
+    #+END_SRC
+    
+    #+BEGIN_SRC html
+      Como quedaría si no usaramos with..
+      <h3>Proyecto {{proyecto.nombre}}</h3>
+      
+      <p>precio: {{proyecto.precio}}</p>
+      <p>fechaInicio: {{proyecto.fechaInicio}}</p>
+      <p>fechaFin: {{proyecto.fechaFin}}</p>
+      <p>fue finalizado: {{isTrue proyecto.finalizado}}</p>
+    #+END_SRC
+*** Helpers Partial y Block
+    #+BEGIN_SRC html
+      <!-- Archivo: usuarios.hbs -->
+      {{#partial "contenido"}}
+      <h1>1) Partial: Definimos el bloque con partial</h1>
      
-     <p>Con PARTIAL definimos un bloque con contenido (al menos en handlebars)</p>
-     <p>Lo usamos cuando queramos reciclar este bloque en otros layout</p>
-     <br />
-     <p>En este caso cuando vayamos a la ruta donde el View tiene asociado a <b>usuarios.hbs</b>
-       éste cargará el archivo <b>home.hbs</b> y además va a incluir este bloque,
-       en donde usemos {{#block "contenido"}}{{/block}} en ese archivo <b>home.hbs</b>
-     </p>
-     {{/partial}}
+      <p>Con PARTIAL definimos un bloque con contenido (al menos en handlebars)</p>
+      <p>Lo usamos cuando queramos reciclar este bloque en otros layout</p>
+      <br />
+      <p>En este caso cuando vayamos a la ruta donde el View tiene asociado a <b>usuarios.hbs</b>
+        éste cargará el archivo <b>home.hbs</b> y además va a incluir este bloque,
+        en donde usemos {{#block "contenido"}}{{/block}} en ese archivo <b>home.hbs</b>
+      </p>
+      {{/partial}}
      
-     {{>home.hbs}}
+      {{>home.hbs}}
      
      
-     <!-- Archivo: productos.hbs -->
-     {{#partial "contenido"}}
-     <p>texto que vamos a repetir muchas veces en el mismo layout</p>
-     {{/partial}}
+      <!-- Archivo: productos.hbs -->
+      {{#partial "contenido"}}
+      <p>texto que vamos a repetir muchas veces en el mismo layout</p>
+      {{/partial}}
      
-     Aparecerá ese texto
-     {{#block "contenido"}}{{/block}}
+      Aparecerá ese texto
+      {{#block "contenido"}}{{/block}}
      
-     Y aparecerá de nuevo
-     {{#block "contenido"}}{{/block}}
+      Y aparecerá de nuevo
+      {{#block "contenido"}}{{/block}}
      
-     y otra vez...
-     {{#block "contenido"}}{{/block}}
+      y otra vez...
+      {{#block "contenido"}}{{/block}}
      
-     <!-- Archivo: productos.hbs -->
-     <html>
-       <head>
-       </head>
-       <body>
-         <h1>2) Block: Usamos el bloque ya definido con block</h1>
+      <!-- Archivo: productos.hbs -->
+      <html>
+        <head>
+        </head>
+        <body>
+          <h1>2) Block: Usamos el bloque ya definido con block</h1>
      
-         Usamos el bloque que ya habiamos definido en otro layout
-         Dentro del bloque de abajo aparecerá lo que tiene los archivos usuarios.hbs y productos.hbs
+          Usamos el bloque que ya habiamos definido en otro layout
+          Dentro del bloque de abajo aparecerá lo que tiene los archivos usuarios.hbs y productos.hbs
      
-         suponiendo que en el path definido en el Route retorna el ModelView con esos template
+          suponiendo que en el path definido en el Route retorna el ModelView con esos template
      
-         {{#block "contenido}}{{/block}}
-     </body>
-     </html>
+          {{#block "contenido}}{{/block}}
+      </body>
+      </html>
      
-   #+END_SRC
+    #+END_SRC
 * Cookies
 ** Conceptos
    - Se guarda del lado del cliente (/en el navegador/)
@@ -353,7 +439,9 @@
    #+END_SRC
 * Recursos
 ** Documentación de la Cursada UTN
-   1. 
+   1. https://github.com/dds-utn/spark-web-proof-of-concept/tree/pokemon-step-search
+   2. https://github.com/dds-utn/spark-web-proof-of-concept/tree/pokemon-step-1
+   3. https://github.com/dds-utn/spark-web-proof-of-concept/tree/consultoras-con-persistencia
 ** Sugeridos por la Cursada UTN
    1. 
 ** Referencias externas
