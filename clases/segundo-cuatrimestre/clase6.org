@@ -6,6 +6,16 @@
 * MVC Web
 ** Conceptos
    - Se separa en Modelo, Vista, Controlador para _lograr flexibilidad_
+
+   #+BEGIN_QUOTE
+   Los escenarios donde el *Controller* recibe acciones de la *Vista*,
+   NO ocurre en la *arquitectura básica web* con el *prótocolo de http* que se da en la materia..
+   Si hubo cambios en el servidor, el cliente debe peticionarlos para obtenerlos,
+   es decir el modelo es siempre Request-Response
+
+   El *Servidor* _NO INFORMA automáticamente_ al *Cliente* según HTTP,
+   existe otros como WebSockets, Pulling (cliente peticiona a cada rato al servidor)
+   #+END_QUOTE
 ** View
 *** Conceptos
    - Para el uso de usuarios
@@ -24,10 +34,59 @@
     #+END_COMMENT
 ** Controller
 *** Conceptos
-    - Recibe acciones (/de la Vista/)
+    - Recibe los parámetros de la *Request*
+    - Interactúa con el *Modelo* (/éste se actualiza/) 
     - Genera la *Vista* (/en base al resultado de la interactuar con el Modelo/)
     - Actúa como nexo/puente entre el *Modelo* y la *Vista*
-    - Interactúa con el *Modelo* (/éste se actualiza/)
+*** Otras funciones
+    - Llamar a Repositorios para persistir/consultar (/estos tienen la lógica de persistencia con la db/)
+    - Instanciar objetos
+        
+      #+BEGIN_SRC java
+        /**
+         ,* Controller
+         ,*/
+        public class ProyectosController implements WithGlobalEntityManager, TransactionalOps{
+        
+            public ModelAndView listar(Request req, Response res){
+                Map<String, List<Proyecto>> model = new HashMap<>();
+                // llama a un Repositorio (éste se encarga de la parte de persistencia, en este caso solo para consultar un conjunto de registros)
+                List<Proyecto> proyectos = RepositorioProyectos.instancia.listar();
+        
+                // interactúa con el modelo, le da una lista de objetos    
+                model.put("proyectos", proyectos);
+        
+                // genera una vista con el resultado de la interacción con el modelo
+                return new ModelAndView(model, "proyectos/index.hbs");
+            }
+        
+            public Void crear(Request req, Response res){
+                // crear instancias
+                Proyecto proyectoNuevo = new Proyecto(req.queryParams("nombre"), new BigDecimal(req.queryParams("costo")));
+                withTransaction(() ->{
+                        RepositorioProyectos.instancia.agregar(proyectoNuevo);
+                    });
+                res.redirect("/proyectos");
+                return null;
+            }
+        }
+        
+        /**
+         ,* Repositorio
+         ,*/
+        public class RepositorioProyectos implements WithGlobalEntityManager{
+        
+          public static RepositorioProyectos instancia = new RepositorioProyectos();
+        
+          public void agregar(Proyecto proyecto) {
+            entityManager().persist(proyecto);
+          }
+        
+          public List<Proyecto> listar() {
+            return entityManager().createQuery("from Proyecto", Proyecto.class)
+            .getResultList();
+          }
+      #+END_SRC
 *** Ejemplo (1) en Spark Java
     #+BEGIN_SRC java
       public class UsuarioController{
@@ -141,6 +200,8 @@
    - Las etiquetas/tags dan un significado semántico al texto, pero también puede tener una interpretación visual (/por el browser/)
 * Protocolo HTTP (Hypertext Transfer Protocol)
   - Su traducción es *Protocolo de transferencia de hipertexto*
+  - El prótocolo es *pedido-respuesta*
+  - Es *stateless* (/después que alguien le hizo un Request y le respondió, se olvida de éste/)
 * Arquitectura Cliente-Servidor
 ** Conceptos
   - NO siempre tiene que ser *Protocolo HTTP* puede ser otros
