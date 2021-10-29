@@ -1,0 +1,274 @@
+#+TITLE: Diagramas
+* Modelo de Objetos Vs Modelo de Datos
+** Ejemplo Futbol
+*** Modelo 1
+    #+BEGIN_SRC plantuml :file img/futbol-1.png :exports results
+      @startuml
+      package "Modelo de Objetos" as p1{
+          class Partido {
+          }
+      
+          class Formacion {
+              int goles
+          }
+      
+          class Equipo {
+              String name
+          }
+      
+          class Jugador {
+              String name
+          }
+      
+          Partido -down-> Formacion : local
+          Partido -down-> Formacion : visitante
+      
+          Formacion -right-> Equipo
+          Formacion -down-> Jugador : *
+      }
+      
+      package "Modelo de Datos" as p2{
+          entity jugador{
+              id INT
+          }
+      
+          entity equipo{
+              id INT
+          }
+      
+          entity formacion{
+              id INT
+              equipo_id INT
+          }
+      
+          entity jugador_formacion{
+              jugador_id INT
+              formacion_id INT
+          }
+      
+          entity partido{
+              id INT
+              formacion_local_id INT
+              formacion_visitante_id INT
+          }
+      
+          equipo ||-left-|{ formacion
+          formacion ||-down-|| partido
+          formacion ||-down-|| partido
+      
+          formacion   ||-up-|{ jugador_formacion
+          jugador     ||-left-|{jugador_formacion
+      }
+      
+      note top of p1
+      ,**La navegabilidad de Equipo->Formacion**
+      - Desde la Formacion se puede llegar al Equipo
+      por la relación "conoce"
+      
+      ,**La navegabilidad de Formacion->Equipo**
+      - Equipo no puede acceder a la Formacion
+      porque NO es una relación bidireccional.
+      
+      __Solución__:
+      Se requiere una clase **Repositorio Formacion**
+      que tenga todas las formaciones para buscar
+      una formación por su equipo
+      ,**Formacion buscarFormacionPorEquipo(Equipo e)**
+      end note
+      
+      note top of p2
+      ,**La navegabilidad entre Equipo-Formacion**
+      - Existe una relación bidireccional
+      
+      - Se puede obtener las formaciones de
+      un equipo usando la (FK)
+      end note
+      
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:img/futbol-1.png]]
+
+** Ejemplo Alumno-Materia
+*** Modelo 1
+    #+BEGIN_SRC plantuml :file img/alumno-materia-1.png :exports results
+      @startuml
+      package "Modelo de Objetos"{
+              class Cursada
+     
+              abstract class Materia{
+                      -String nombre
+                      {abstract} boolean esPromocionable()
+              }
+     
+              class MateriaElectiva{
+                      -int creditos
+              }
+              class MateriaObligatoria{
+                      -int homogenea
+              }
+     
+              Cursada -right-> Materia
+              MateriaElectiva -up-|> Materia
+              MateriaObligatoria -up-|> Materia
+      }
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:img/alumno-materia-1.png]]
+
+** Ejemplo Auto-Posicion
+*** Modelo 1
+    #+BEGIN_SRC plantuml :file img/auto-posicion-1.png :exports results
+      @startuml
+      
+      package "Modelo de Objetos"{
+          class Auto{
+              String patente
+          }
+      
+          class Posicion{
+              String latitud
+              String longitud
+          }
+      
+      
+          Auto -right-> Posicion
+      }
+      
+      package "Modelo de Datos 1"{
+          entity "Auto" as e1{
+              ,**id**
+              --
+              posicion_id
+          }
+      
+          entity "Posicion" as e2{
+              ,**id**
+              --
+              latitud
+              longitud
+          }
+      
+          e1 ||-right-|| e2
+      
+          note as N1
+          - NO es eficiente forzar el **modelo de datos**
+          a como está el **modelo de objetos**
+          - Obtener su posición es costoso, requiere un **JOIN**
+      
+          |= auto_id   |= posicion_id   |
+          | 1         | 1             |
+          | 2         | 1             |
+          | 3         | 2             |
+      
+          |= posicion_id |= latitud |= longitud |
+          | 1 | 10 | 10 |
+          | 2 | 20 | 15 |
+          end note
+      
+          N1 -up- e1
+          N1 -up- e2
+      }
+      
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:img/auto-posicion-1.png]]
+*** Modelo 2
+    #+BEGIN_SRC plantuml :file img/auto-posicion-2.png :exports results
+      @startuml
+      
+      package "Modelo de Objetos 1 (OK)" as p1{
+          class Auto{
+              String patente
+          }
+      
+          class Posicion{
+              String latitud
+              String longitud
+          }
+      
+      
+          Auto -right-> Posicion
+      }
+      
+      note as N2
+      Si el Framework ORM ofrece @Embbeded
+      
+      class Auto{
+        String patente
+        ,**@Embedded**
+        Posicion posicion;
+      }
+      
+      ,**@Embeddable**
+      class Posicion{
+      }
+      end note
+      
+      N2 -up- p1
+      
+      package "Modelo de Objetos 2 (OK)" as p2{
+          class "Auto" as auto2{
+              String patente
+              String latitud
+              String longitud
+              Posicion getPosicion()
+          }
+      
+          class "Posicion" as posicion2{
+              String latitud
+              String longitud
+          }
+      
+      
+          auto2 .right.> posicion2 : crea
+      }
+      
+      note as N1
+      Si el Framework ORM no ofrece @Embbeded
+      
+      Posicion getPosicion(){
+       return new Posicion(this.latitud, this.posicion);
+      }
+      end note
+      
+      N1 -up- auto2
+      N1 -up- posicion2
+      
+      package "Modelo de Objetos 3 (WRONG)" as p3{
+          class "Auto" as auto3{
+              String patente
+              String latitud
+              String longitud
+          }
+      }
+      
+      package "Modelo de Datos (OK)" as p4{
+          entity "Auto" as e1{
+              ,**id**
+              --
+              latitud
+              longitud
+          }
+      }
+      
+      
+      note bottom of auto3
+      - No es correcto forzar el **modelo de objetos**
+      al el **modelo de datos**
+      - Se pierde la abstracción **Posición**
+      end note
+      
+      p4 -left- p1
+      p4 -down- p2
+      p4 -left- p3
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:img/auto-posicion-2.png]]
