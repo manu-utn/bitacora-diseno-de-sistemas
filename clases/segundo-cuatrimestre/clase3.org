@@ -25,29 +25,53 @@
    - Es el estandar que implementan los *Frameworks de ORM* (/Ej. Hibernate/)
    - Tiene las *Interfaces* (/Ej. EntityManager/) y *Annotations* (/@Entity, @Table, .../)
 ** Frameworks de ORM
-   - Facilitan el Mapeo Relacional/Consultas/Conexión a la DB
-   - Desacopla el *Modelo de objetos* del *Modelo de Datos* (/permite la separación entre ambos/)
-   - El ORM que se utiliza en la materia es *Hibernate*
-   - Implementan un ~EntityManager~ de (JPA) *Java Persistanse API*
+*** Conceptos
+    - Facilitan el Mapeo Relacional/Consultas/Conexión a la DB
+    - Desacopla el *Modelo de objetos* del *Modelo de Datos* (/permite la separación entre ambos/)
+    - El ORM que se utiliza en la materia es *Hibernate*
+    - Implementan un ~EntityManager~ de (JPA) *Java Persistanse API*
+*** Convención Vs Configuración
+    #+BEGIN_QUOTE
+    Los frameworks que trabajan por *convención* son más flexibles,
+    porque te dan un comportamiento por default con las convenciones que ofrecen,
+    evitando escribir código de más. Y además permiten sobreescribir ese comportamiento,
 
-   #+BEGIN_COMMENT
-   Cuando usamos frameworks, estos inyectan las dependencias que necesitamos en los objetos
-   por general se hace con una notación del tipo @nombreNotación
-   En Hibernate sería ~@Entity~, las relaciones ~@ManyToMany~, ~@ManyToOne~, ~@OneToMany~
+    Por ejemplo en Hibernate por convención usa el annotation de ~@Entity~ para las clases,
+    y luego al mapear asume que el nombre de la clase será el nombre de la tabla a persistir,
+    pero.. podemos sobreescribir ese comportamiento usando el annotation ~@Table~ para darle otro nombre
+    #+END_QUOTE
+    
+    #+BEGIN_QUOTE
+    Los frameworks que trabajan por *configuración*, requieren ya tener todo preconfigurado.
+    (/Ej. que definamos el nombre de las tablas que se van a crear en la db/)
+
+    Los frameworks que trabajan por *convención* por sobre la *configuración* (/priorizan la convención/) como Hibernate,
+    no requieren que definamos la configuración, sólo seguir su convención como los *annotations* que tiene un comportamiento
+    por default. Además permiten sobreescribir ese comportamiento dado por default.
+    
+    Por ejemplo, en Hibernate es opcional poner el nombre de la tabla porque con el annotation ~@Entity~
+    el comportamiento del framework es tomar el nombre de la Clase, como nombre de la tabla.
+    En caso de querer ponerle otro nombre, podríamos usar el ~@Table~ sobreescribiendo el comportamiento por default.
+    #+END_QUOTE
+*** Inyección de Dependencias 
+     #+BEGIN_QUOTE
+     Cuando usamos frameworks, estos inyectan las dependencias que necesitamos en los objetos
+     por general se hace con una notación del tipo @nombreNotación
+     En Hibernate sería ~@Entity~, las relaciones ~@ManyToMany~, ~@ManyToOne~, ~@OneToMany~
  
-   Los frameworks también proveen hacer inyección directo en los atributos.
-   En hibernate sería ~@Id~, ~@GeneratedValue~, ...
+     Los frameworks también proveen hacer inyección directo en los atributos.
+     En hibernate sería ~@Id~, ~@GeneratedValue~, ...
 
-   Aparece el concepto de *Inversión de Control* (IoC) porque delegamos/cedemos el control al ORM Hibernate.
-   Este se encarga de la conexión con la base de datos (/sólo agregamos los datos de conexión en el archivo de config/),
-   también nos desentendemos de la creación de tablas el propio framework lo hace por nosotros.
-   #+END_COMMENT
-
-   #+BEGIN_COMMENT
-   Los *frameworks* se diferencian de las *bibliotecas*
-   1. Ofrecen *puntos de extensión* para configuraciones específicas (???)
-   2. Definen un marco de trabajo (???)
-   #+END_COMMENT
+     Aparece el concepto de *Inversión de Control* (IoC) porque delegamos/cedemos el control al ORM Hibernate.
+     Este se encarga de la conexión con la base de datos (/sólo agregamos los datos de conexión en el archivo de config/),
+     también nos desentendemos de la creación de tablas el propio framework lo hace por nosotros.
+     #+END_QUOTE
+*** Frameworks Vs Bibliotecas
+     #+BEGIN_QUOTE
+     Los *frameworks* se diferencian de las *bibliotecas* porque
+     1. Ofrecen *puntos de extensión* para configuraciones específicas (/Ej. los annotations de hibernate, .../)
+     2. Definen un *marco/estructura de trabajo* (/Ej. tener la config de la db en tal lugar, .../)
+     #+END_QUOTE
 * Archivos de Configuración
 ** persistence.xml
 *** Conceptos
