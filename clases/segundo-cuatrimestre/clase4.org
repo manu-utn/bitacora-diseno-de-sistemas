@@ -1,7 +1,4 @@
 #+TITLE: Clase 04 - ORM
-* Dudas
-consulta, sólo en SINGLE_TABLE era eficiente usar consultas polimorficas+consultas no polimorficas, no? mientras que en las otras 2 solo era eficiente usar consultas no polimorficas para que el ORM no genere tantos joins?
-* Clasificación de los objetos
 * Consultas polimórficas
 ** Conceptos
    - Por una *asociación* (/Ej. Una clase abstracta "Materia" con "MateriaElectiva" y "MateriaObligatoria"/)
@@ -281,6 +278,7 @@ consulta, sólo en SINGLE_TABLE era eficiente usar consultas polimorficas+consul
 ** Mapear Interfaces
 *** Problema
     - Las *interfaces* no se pueden mapear para *persistir* (/NO tienen estado interno que guardar/)
+    - 
     - Este es un problema del *ORM*
 
     #+BEGIN_COMMENT
@@ -288,8 +286,10 @@ consulta, sólo en SINGLE_TABLE era eficiente usar consultas polimorficas+consul
 
     y un *Statefull* lo pasas a una clase abstracta
     #+END_COMMENT
+*** Clase Abstracta Vs Enum
 *** Solucion 1 - Clases abstractas
     - Si tienen estado interno (/atributos/) => Convertirlas a *clases abstractas*
+    - NO conviene si son pocos atributos (es costoso), porque el ORM al mapear hará un *JOIN* a la tabla de la Clase Abstracta
 *** Solucion 2 - Enum
     - Para *casos en que las subclases NO tienen estado* (/NO tienen atributos, estado interno/)
     - Se convierte la interfáz en un ~Enum~ *con comportamiento* que tiene como opción las subclases
@@ -433,7 +433,7 @@ consulta, sólo en SINGLE_TABLE era eficiente usar consultas polimorficas+consul
     #+END_SRC
 * Orden de los Datos
 ** Conceptos
-   - Para mantener el orden de una *LISTA* se utiliza ~@OrderColumn(name="elegirNombreColumna")~
+   - Para *persistir* el orden que un objeto tiene dentro de una *LISTA* utilizamos ~@OrderColumn(name="elegirNombreColumna")~
    - Para asegurar un orden en el Modelo de Datos, agregamos una columna en la DB
    - El ORM hará un ~ORDER BY~ del atributo en el que agregamos ~OrderColumn~ para mantener un orden
   
@@ -447,21 +447,52 @@ consulta, sólo en SINGLE_TABLE era eficiente usar consultas polimorficas+consul
    *Observación:*
    Solo las *Listas* tienen un orden, las *Colecciones* NO TIENEN UN ORDEN
 ** Ejemplo
+
+   #+NAME: tabla-alumno
+   |----+----------|
+   | id | nombre   |
+   |----+----------|
+   |  1 | pedrito  |
+   |  2 | carlitos |
+   |----+----------|
+
+
+   Supongamos que tenemos dos alumnos, y tienen sólo hasta 3 notas
+   
+   #+NAME: tabla-notas
+   |----+--------+-----------+----------|
+   | id | numero | alumno_fk | posicion |
+   |----+--------+-----------+----------|
+   |  1 |     10 |         1 |        0 |
+   |  2 |      8 |         1 |        1 |
+   |  3 |      6 |         1 |        2 |
+   |----+--------+-----------+----------|
+   |  4 |     10 |         2 |        0 |
+   |  5 |     10 |         2 |        1 |
+   |  6 |     10 |         2 |        2 |
+   |----+--------+-----------+----------|
+   
    #+BEGIN_SRC java
      @Entity
-     @Table(name="cursadas")
-     public class Cursada extends PersistentEntity{
+     @Table(name="alumnos")
+     public class Alumno extends PersistentEntity{
          @ManyToOne(cascade=CascadeType.PERSIST, fetch=FetchType.EAGER)
          private Materia materia;
-
+     
+         /**
+          ,* Cada vez que persitimos un objeto Nota en un Alumno
+          ,* se guardará en la columna "posicion", la posición que se encuentra
+          ,* dicho objeto dentro de la Lista de ese objeto Alumno
+          ,*/
          @OneToMany
-         @OrderColumn(name="posicion") // <-- aseguramos un orden al pedirle al ORM las notas
+         @OrderColumn(name="posicion")
+         @JoinColumn("alumno_id") // <--- si no lo hacemos, then Hibernate generará una tabla intermedia como la de ManyToMany
          private List<Nota> notas = new ArrayList<>();
-
+     
          public Materia getMateria(){
              return materia;
          }
-
+     
          // ...
      }
    #+END_SRC
@@ -475,7 +506,7 @@ consulta, sólo en SINGLE_TABLE era eficiente usar consultas polimorficas+consul
    | Tienen orden                    | NO        | SI     |
    | Se pueden repetir los elementos | NO        | SI     |
    |---------------------------------+-----------+--------|
-* Parcial Juego de Tronos
+* [WAITING] Parcial Juego de Tronos
 ** Interfaz FuerzaMilitar
 *** Cambios
     - Para persistir las clases que la implementan debemos pasar la *Interfaz* a *Clase Abstracta*
@@ -518,3 +549,115 @@ consulta, sólo en SINGLE_TABLE era eficiente usar consultas polimorficas+consul
       2. tener los datos *precalculados* (desnormalizados) en el atributo, para evitar calcularlo en memoria
     - En ~clase Casa~
       2. tener los datos *precalculados* (desnormalizados) en vez de hacer ~esRica~ tener un campo con la información
+* [WAITING] Ejercicio Canchas
+  #+BEGIN_COMMENT
+  Uno de los chicos lo que hizo fue hacer algo asi
+  y a nivel implementación le quedaba esto
+  
+  clase Partido{
+  @ManyToMany
+  List<Jugador> jugadores = new ArrayList<Jugador>();
+
+  // esto es lo que hacia ruido, porque el partido podria no tener una paleta
+  // forzaba el "modelo de objetos" para que encajara con el "modelo de datos"
+  
+  @ManyToMany
+  List<Paleta> paletas = new ArrayList<Paleta>();
+  }
+  #+END_COMMENT
+  
+  #+BEGIN_SRC java
+    /*
+      Participacion
+      id (PK)
+      jugador_id (FK)
+      partido_id (FK)
+      paleta_id (FK)
+     ,*/
+    
+    class Partido{
+        @OneToMany
+        List<Participacion> participaciones;
+    }
+    
+    // en el DER dberia tener una PK compuesta
+    class Participacion{
+        // esta PK es sólo porque es complicado manejar claves compuestas en Hibernate
+        @Id
+        private Long id;
+    
+        @ManyToOne
+        Paleta paleta;
+    
+        @ManyToOne
+        Jugador jugador;
+    }
+    
+  #+END_SRC
+* Recursos
+** Strategy stateless Vs Strategy stateful
+   1. http://www.javabyexamples.com/strategy-pattern-stateless-or-stateful
+   2. https://ebrary.net/73340/computer_science/stateful_strategy
+* Problemas Comunes
+** Hibernate - objetos relacionados
+*** Problema
+    #+BEGIN_QUOTE
+    object references an unsaved transient instance - save the transient instance before flushing
+    #+END_QUOTE
+    
+    Hibernate al momento de mapear arroja una excepción, surje porque los objects que están relacionados
+    con @ManyToOne ó @OneToMany no se guardan en un orden correcto
+*** Solucion
+    A los annotations ~@ManyToOne~ ó ~@OneToMany~ que definen una relación entre objects,
+    pasarle de parámetro ~cascade=CascadeType.ALL~
+
+    #+BEGIN_SRC java
+      @Entity
+      @Table(name = "alumnos")
+      public class Alumno extends PersistentEntity {
+        @OneToMany(cascade=CascadeType.ALL)
+        @JoinColumn(name = "alumno_id")
+        private Collection<Cursada> cursada = new ArrayList<>();
+      }
+    #+END_SRC
+*** Referencias
+    1. https://stackoverflow.com/questions/2302802/how-to-fix-the-hibernate-object-references-an-unsaved-transient-instance-save
+** Hibernate - Constructor de los objetos
+*** Problema
+    #+BEGIN_QUOTE
+    No default constructor fo entity: : model.Curso
+    #+END_QUOTE
+*** Solucion
+    - Sobrecargar el constructor agregando uno con ~protected~
+
+    #+BEGIN_SRC java
+      @Entity
+      @Table(name = "cursadas")
+      public class Cursada extends PersistentEntity {
+          @ManyToOne(cascade=CascadeType.ALL)
+          private Materia materia;
+      
+          protected Cursada(){ } // <--- agregar esto
+      
+          public Cursada(Materia materia) {
+              this.materia = materia;
+          }
+      }
+    #+END_SRC
+** Maven Compilar
+*** Problema
+    Si estás compilando con Spacemacs, y éste arroja un "archivo.java is non-project file"
+    es porque tenés dos proyectos maven en el mismo workspace..
+*** Solución
+    Reiniciar el workspace al parecer (?)
+*** Referencias
+  1. [[https://stackoverflow.com/questions/61826895/how-to-avoid-vs-code-warning-myfile-java-is-a-non-project-file-only-syntax][myfile.java is a non-project file (problema al compilar con maven)]]
+** Mariadb
+*** Problema
+    No poder borrar las tablas por la relación de las (FK)
+*** Solución
+    Desactivar la validación esa con ~SET foreign_key_checks = 0;~
+    y luego de borrar las tablas, habilitarlo de nuevo seteandolo a ~1~
+*** Referencias
+    1. https://dba.stackexchange.com/questions/11806/why-is-drop-database-taking-so-long-mysql
+    2. https://stackoverflow.com/questions/2300396/force-drop-mysql-bypassing-foreign-key-constraint
