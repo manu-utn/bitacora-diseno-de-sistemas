@@ -83,9 +83,21 @@
    - Tienen identidad, estado, comportamiento pero lo más importante es la *identidad*
    - Son independientes entre si
 ** Services
-   - Lo más importante es la *funcionalidad/operaciones* que exponen (Ej. Repositorios)
+   - Lo más importante es la *funcionalidad/operaciones* que exponen (/Ej. Repositorios, suelen ser Singleton/)
    - NO interesa tanto la *Identidad* ni el *Estado*
    - No se persisten
+
+   #+BEGIN_QUOTE
+   Un ejemplo de *Service* serían los *Repositorios* (Ej. RepositorioUsuarios, ...)
+   estos no dependen de otro objeto y sólo exponen *operaciones*, no tiene sentido persistirlos.
+   
+   Una caso particular que no se cumple al hecho de "exponen funcionalidad" y "no persistir" sería..
+   un *Strategy stateless* que expone algun método, como éste está asociado al que lo contiene,
+   entonces éste strategy se debe persistir en ese objeto
+
+   Por ejemplo un objeto Empleado que tiene el *strategy* de ~calcularSueldo~,
+   éste se debe persistir para luego saber cual *strategy* usar para calcular el sueldo
+   #+END_QUOTE
 ** @ElementCollection
    - para listas de objects
    - genera una tabla similar al de @OneToMany
