@@ -266,6 +266,21 @@
          }
      }
    #+END_SRC
+** Tips
+*** Cerrar EntityManager global
+    #+BEGIN_SRC java
+      /**
+       ,* Agregamos al Router.java
+       ,*
+       ,* - Cuando terminen todas las Request/Peticiones es necesario
+       ,* cerrar el EntityManager global
+       ,* - Si no lo cerramos, puede que haya algún hilo/thread que tenga
+       ,* datos desactualizados
+       ,*/
+      Spark.after((request, response)-> {
+              PerThreadEntityManagers.closeEntityManager();
+          });
+    #+END_SRC
 * Otros
 ** Gson
 *** Conceptos
@@ -406,12 +421,19 @@
     #+END_SRC
 * Cookies
 ** Conceptos
+   - Es un mecanismo para *guardar un estado del lado del cliente*
    - Se guarda del lado del cliente (/en el navegador/)
-   - Aparece en el *Request Header* (el cliente la crea y la manda al servidor http)
+   - Se agrega al *Header* un campo ~(clave, valor)~
+     - la *clave* es el nombre de la Cookie
+     - el *valor* es lo que queremos mantener de la Cookie de lado del cliente
+
+   #+BEGIN_COMMENT
+   - Aparece en el *Request Header* (el servidor la crea, se la manda al cliente y éste luego la manda al servidor http)
    - Aparece en el *Response Headers* (la respuesta del servidor)
+   #+END_COMMENT
 
    #+BEGIN_QUOTE
-   Como el *Servidor HTTP* es *STATELESS* porque luego que recibe una *REQUEST* de un *cliente HTTP*
+   El *Servidor HTTP* es *STATELESS* porque luego que recibe una *REQUEST* de un *cliente HTTP*,
    el servidor se olvida de quien se la mandó..
 
    Con las cookies permiten recordar cosas de quien la mandó
@@ -429,13 +451,70 @@
    3) Cliente HTTP  --REQUEST-->  Servidor HTTP
       (/en cada nueva request el cliente HTTP va a recordar la cookie y la mandará/)
    #+END_QUOTE
-** Que se persiste
+** Que suele persistir
    - Estado de la sesión (/Ej. el login, .../)
    - Personalización (/Ej. el idioma, el color de la página, .../)
    - Tracking
 ** Ejemplo en Spark Java
    #+BEGIN_SRC java
-     response.cookie("usuario_logeado", usuario);
+     public class LoginController {
+         public static ModelAndView login(Request req, Response res) {
+             // usamos queryParams porque no forma parte de la ruta,
+             // es decir no es un parámetro obligatorio
+             String nombre=request.queryParams("usuario");
+     
+             // creamos la cookie, guardamos el estado en el cliente
+             response.cookie("usuario_logeado", nombre);
+             response.redirect("/home");
+             return null;
+         }
+     
+         public static ModelAndView show(Request request, Response response){
+             // chequeamos el estado del cliente,
+             // validamos si éste tiene la cookie creada
+             if(request.cookie("usuario_logeado") != null){
+                 response.redirect("/home");
+             }
+     
+             return new ModelAndView(null, "home/login.hbs");
+         }
+     }
+   #+END_SRC
+* Sesión
+** Conceptos
+   - Es un mecanismo para *guardar el estado de Cliente en el lado del Servidor*
+   - Se genera una *Cookie* (en el lado del Cliente) con un valor que genera el Servidor,
+     que luego usa el Servidor para obtener el valor que se guardó en el Servidor
+** Desventajas
+   - Si se cae el servidor, se pierden los datos porque se guardan en memoria
+     (/aunque se podría persistir en una base de datos/)
+** Ventajas
+   - Es más seguro, porque se guarda el dato (clave, valor) del lado del servidor
+   - El cliente NO puede manipular los datos de una sesión
+** Ejemplo en Spark Java
+   #+BEGIN_SRC java
+     public class LoginController {
+         public static ModelAndView login(Request request, Response response) {
+             // usamos queryParams porque no forma parte de la ruta,
+             // es decir no es un parámetro obligatorio
+             String nombre=request.queryParams("usuario");
+     
+             // creamos la sesión, guardamos el estado en el servidor (en memoria)
+             request.sesion().attribute("usuario_logeado", nombre);
+             response.redirect("/home");
+             return null;
+         }
+     
+         public static ModelAndView show(Request request, Response response){
+             // chequeamos el estado del lado del servidor,
+             // validamos si éste tiene la sesión creada
+             if(request.session().attribute("usuario_logeado") != null){
+                 response.redirect("/home");
+             }
+     
+             return new ModelAndView(null, "home/login.hbs");
+         }
+     }
    #+END_SRC
 * Recursos
 ** Documentación de la Cursada UTN
@@ -443,7 +522,7 @@
    2. https://github.com/dds-utn/spark-web-proof-of-concept/tree/pokemon-step-1
    3. https://github.com/dds-utn/spark-web-proof-of-concept/tree/consultoras-con-persistencia
 ** Sugeridos por la Cursada UTN
-   1. 
+   1. [[https://martinfowler.com/bliki/EvansClassification.html][Clasificación de los Objetos By Evans (martinflower.com)]]
 ** Referencias externas
    1. https://www.oscarblancarteblog.com/2019/01/03/java-query-param/
    2. https://sparkjava.com/documentation
