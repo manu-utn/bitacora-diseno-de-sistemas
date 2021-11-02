@@ -98,20 +98,43 @@
    Por ejemplo un objeto Empleado que tiene el *strategy* de ~calcularSueldo~,
    éste se debe persistir para luego saber cual *strategy* usar para calcular el sueldo
    #+END_QUOTE
-** @ElementCollection
-   - para listas de objects
-   - genera una tabla similar al de @OneToMany
-   - en el DER no se nota la diferencia,
-   - Si le ponemos @embbebled se puede usar como @elementCollection
+** [#A] @ElementCollection
+*** Conceptos
+    - Para definir un ~@OneToMany~ de listas de Objetos simples (/Ej. Enum, String, .../) se agrega ~@ElementCollection~
+    - Genera una tabla similar al de ~@OneToMany~
+    - En el DER (modelo físico) no se nota la diferencia
 
-   #+BEGIN_COMMENT
-   Para lista de enums,numeros,strings,emmbebable,... estos representan valores
-   y se puede usar @ElementCollection
-
-   sirve para @OneToOne, pero NO para @OneToMany ó @ManyToOne
-   
-   Si le ponemos @entity sólo se puede usar @ManyToOne @OneToOne @OneToOne
-   #+END_COMMENT
+    [[./img/ObjectRelational-ElementCollection.jpg]]
+    
+    #+BEGIN_QUOTE
+    Para lista de enums, numeros, strings, embedabble,... *estos representan valores*
+    y se puede usar el ~@ElementCollection~
+    #+END_QUOTE
+    
+    *Observaciones:*
+    - Para listas de *identity objects* que tienen ~@Entity~ sólo usamos ~@OneToMany~ ~@ManyToMany~
+*** Ejemplo
+    #+BEGIN_SRC java
+      @Entity
+      @Table(name="hogares")
+      class Hogar{
+          // - usamos @ElementCollection para una lista de String
+          @ElementCollection
+          @CollectionTable(name = "caracteristicas_hogares", joinColumns=@JoinColumn(name="hogar_id"))
+          @Column(name="característica")
+          private List<String> caracteristicas;
+      
+          // - usamos @ElementCollection para una lista de Enum
+          @ElementCollection
+          @CollectionTable(name = "preferencias", joinColumns=@JoinColumn(name="hogar_id"))
+          @Column(name="preferencia")
+          private List<ClaseMascota> preferencias;
+      }
+      
+      public enum ClaseMascota {
+          PERRO, GATO;
+      }
+    #+END_SRC
 * Ejemplo de clase
   Habian dos tablas Auto y Posicion, con una relacion 1 a 1
   y tenerlas separadas implicaba hacer un join, que no es eficiente
@@ -119,3 +142,7 @@
 
   si estuvieran en una sola tabla, se pierde la semantica
   si estan separadas se pierde performance (por el join)
+* Recursos
+** Referencias externas
+   1. [[https://stackoverflow.com/questions/3418683/jpa-when-to-choose-multivalued-association-vs-element-collection-mapping][@OneToMany Vs @ElementCollection (stackoverflow.com)]]
+   2. [[https://stackoverflow.com/questions/8969059/difference-between-onetomany-and-elementcollection/8969169#:~:text=I%20believe%20%40ElementCollection%20is%20mainly,what%20you%20want%20to%20achieve.][Difference between @OneToMany and @ElementCollection (stackoverflow.com)]]
