@@ -1,0 +1,222 @@
+#+TITLE: Clase 08 - Arquitectura
+* Conceptos
+  - Es el *Diseño lógico* de alto nivel, y el *Diseño físico*
+* Construcción
+** Iterativa
+   - Agregar herramientas a medida que se necesiten
+   - Evitar empezar agregando complejidad que no se necesita
+** Constructiva
+   - Cuando empezamos a integrar los componentes
+   - Si al momento de construir, el diseño de la arquitectura funciona como se esperaba
+** Verificable
+   - Si las decisiones que se tomaron para armar la arquitectura fueron coherentes
+** Holístico
+   Cuando intervienen muchos aspectos técnicos/económicos/políticos
+   - Técnicos (/por temas de implementación/)
+   - Económicos (/si se puede adquirir los servidores/)
+   - Políticos (/algún acuerdo con alguna empresa que restringe el lenguaje, ó el sistema operativo, o cuál DB/)
+* Niveles de arquitectura
+  - Arquitectura del sistema
+* Aspectos Físicos
+** Hardware
+   - Que equipos ó que capacidad tendrán
+** Distribución
+   - Si va a haber sólo un equipo, ó varios equipos
+   - Si se va a exponer a internet
+   - Si habrá una red intermedia
+** Tecnologías críticas
+* Lógicas
+** Responsabilidad funcional
+   - Si lo separamos por funcionalidades (/Ej. módulo de cobranza/ventas/)
+   - Que módulo tendra el modelo de persistencia, el modelo de UI, ..
+** [WAITING] Tipo de responsabilidad
+   - Si tenemos todo en una capa de presentación, otra capa persistenca,
+* Atributos de calidad
+  - Eficiencia (/cuanto suele demorar una operación, .../)
+  - Disponibilidad (/cuanto tiempo está accesible/disponible un recurso/)
+  - Seguridad (/Ej. la seguridad en la conexión entre el cliente-servidor es HTTPS, el costo de encriptar/hashear la información, .../)
+  - Escabilidad (/capacidad para soportar más operaciones/)
+  - Usabilidad (/Ej. según dif métricas como la cant. de clicks para realizar una operación, .../)
+  - Portabilidad (/acceder a la app desde diferentes plataformas, Ej. dispositivo android, en windows, ../)
+
+  #+BEGIN_QUOTE
+  Similar a las *cualidades de diseño* pero para arquitectura..
+  
+  Los *atributos de calidad* tienen que poder medirse (/para saber si se puede mejorar ó no un atributo/)
+  pudiendo usarse herramientas
+  
+  y están relacionados con los *requerimientos no funcionales*
+  #+END_QUOTE
+* Vista de despliegue
+** Conceptos
+** Componentes/Modulo
+*** Componente lógico
+    - Se representa con un cuadrado
+    - Suele ser un software (/EJ. una API ó una aplicación web/)
+    - Puede contener a otros componentes lógicos
+*** Componente físico (nodo)
+    - Se representa con un cubo
+    - Representa un ordenador
+    - Puede contener a otros componentes
+*** Base de Datos
+    - Se representa con un cilindro
+    - Para representar cual es el motor de base de datos, _para indicar que tecnología se usa_
+    - Para _indicar que es lo que se guarda_ (/Ej. los usuarios, las compras, las ventas, .../)
+** Ejemplo - Web tradicional
+   - Usuario (actor)
+   - Cliente (componente físico), contiene Navegador (componente lógico)
+   - Servidor (componente físico), contiene Aplicación Web (componente lógico)
+   - Base de datos
+
+   #+BEGIN_SRC plantuml :file img/arquitectura-web-tradicional.png :exports results
+     @startuml
+     actor Usuario
+     
+     node Cliente{
+         component Navegador
+     }
+     node Servidor{
+         component "Aplicacion Web" as App
+     }
+     
+     database Datos
+     
+     Usuario -> Navegador
+     Navegador -> App
+     App -> Datos
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/arquitectura-web-tradicional.png]]
+   
+   #+BEGIN_QUOTE
+   Usuario -> Cliente -> Servidor -> DB
+   
+   *Usuario* interactua con *Cliente* (navegador)
+
+   *Cliente* interactua con *Servidor* (aplicación web)
+
+   *Sevidor* interactua con *Base de Datos*
+   #+END_QUOTE
+** Ejemplo - Web 2.0
+   - Más dinámico que la web tradicional
+   
+   #+BEGIN_QUOTE
+   Usuario -> Cliente (navegador + app js) -> Servidor (API Rest) -> Base de Datos
+   #+END_QUOTE
+* Donde se almacena
+** Bare metal
+   - Es el *Self-Hosted* autohosteado por uno mismo
+   - Uno mismo debe configurar/instalar los Servidores/Servicios locales/..
+
+   |------------+----------------+---------+----------------|
+   | App        | Datos          | Runtime | Middleware     |
+   |------------+----------------+---------+----------------|
+   | OS         | Virtualización | Red     | Almacenamiento |
+   |------------+----------------+---------+----------------|
+   | Servidores |                |         |                |
+   |------------+----------------+---------+----------------|
+** Cloud
+*** Conceptos
+    - Contratar los servicios a terceros
+    - Acceder al servicio de forma remota
+*** IaSS
+    - Significa *Infraestructura como servicio*
+    - Puede ser una máquina física ó máquina virtual (VM)
+    - Ya viene resuelto el tema de virtualización, almacenamiento, ...
+    - Sólo nos encargamos de la instalación del software
+*** PaaS
+    - Significa *Plataforma como servicio*
+    - Se contrata la plataforma correrá la app (/Ej. VM con java 8, VM con php8, .../)
+
+    #+BEGIN_QUOTE
+    Es común para comenzar una startup y no lidiar en como configurar la infraestructura
+
+    cuando la aplicación se vuelve más robusta, se puede cambiar a otro servicio Cloud (/Ej. IaSS/)
+    #+END_QUOTE
+*** SaaS
+    - Significa *software como servicio*
+    - Se contrata sólo el servicio (/Ej. Sistema de mail/login, Almacenamiento Cloud como Dropbox, Firebase que es una db como servicio, .../)
+
+    #+BEGIN_QUOTE
+    El TP de la cursada es un *SaaS*  (software como servicio),
+    para que cualquier empresa pueda usarlo,
+    pero que se hará *deploy* en un *IaSS* ó *PaaS*
+    #+END_QUOTE
+* Escalabilidad
+** Conceptos
+  - Es la capacidad para soportar más operaciones
+  - Es uno de los *atributos de calidad* de arquitectura
+** Horizontal
+   - Se agregan servidores en paralelo
+   - Aparece el concepto del *load balancer* que *redirige las peticiones a los servidores*
+   - Se suelen agregar más servidores para tener mayor *tolerancia a fallos*, si alguno se cae => otro lo atiende
+** Vertical
+   - A la máquina física se le agrega más poder
+** Load Balancer / Reverse Proxy
+   - Todas las peticiones de internet se centralizan en el *load balancer*
+   - Redirige/Distribuye la información/tráfico/peticiones a los *servidores*
+   - Puede ser un *software* (app) ó *dispositivo hardware*
+   - Si llegase a caer/fallar se podría poner otro *load balancer*
+
+   #+BEGIN_QUOTE
+   Mientras menos lógica tenga el *load balancer* más rápido funcionaría,
+   si llegase a andar lento => el usuario lo notará
+
+   Si contratamos un servicio *PaaS* no es necesario administrarlo, ya viene resuelto
+   en cambio en un *IaSS* tendríamos que solucionarlo nosotros
+   #+END_QUOTE
+* Soluciones al problema en que servidor se guardó el valor de una Sesión
+** Conceptos
+   #+BEGIN_QUOTE
+   *Escenario donde tenemos 1 servidor*
+   No existe el problema de donde se guardan las cookies de las sesiones, porque se guardan en un único lugar, ese servidor.
+   
+   Se puede guardar en memoria usando cookies o sesiones (estas ultimas también generan cookies, y guardan datos del lado del cliente y del servidor)
+   ó persistir en disco usando una base de datos de (clave, valor)
+   #+END_QUOTE
+
+   #+BEGIN_QUOTE
+   *Problema: tenemos varios servidores, identificar en que servidor se guardó la sesión*
+
+   Si el *Usuario* interactua con el sistema y realiza una petición, entonces interviene el *load balancer* que
+   redirige la petición a alguno de los servidores.
+   
+   Si queremos crear una sesión para el usuario, se crearia una cookie del lado del cliente,
+   y el valor de la sesión se guarda del lado del servidor..
+   Cuando el cliente vuelve a interactuar con el sistema,
+   éste le manda la cookie que contiene el identificador que usa el Servidor para obtener el valor que guardó
+   en un diccionario (clave, valor).
+
+   El problema surje en identificar en que servidor se guardó el valor de la sesión..
+   #+END_QUOTE
+** NO usar sesiones, sólo usar Cookies
+  #+BEGIN_QUOTE
+  Una alternativa a usar Sesiones sería, "NO USARLAS" y sólo manejarse con *Cookies* y que éstas se guardan del lado del cliente,
+  evitando el saber en que servidor se guardó una sesión
+
+  (recordando que una sesión genera una una cookie de lado del cliente,
+  pero su valor es un identificador que usa el servidor como clave de un diccionario para saber el valor
+  que guardó de la sesión)
+  #+END_QUOTE
+** Persistir en una base de datos en vez de en memoria
+   #+BEGIN_QUOTE
+   En vez de usar cookies que se guardan en memoria, 
+   se podría usar base de datos especializadas en guardar datos (clave, valor)
+    
+   Como las base de datos no relacionales osea noSQL como mongodb, redis, ...
+   #+END_QUOTE
+** Replicar sesión en todos los servidores
+** Sticky Session
+   - Significa *sesión pegajosa*
+   - Este mecanismo está en el *load balancer*
+   - Resuelve el problema de saber en que servidor se guardó el valor de la sesión
+   - Se guarda en una *Cookie* (que devuelve el load balancer) en que *Servidor* se guardó el valor de la sesión
+   - Esta *Cookie* especial permite indicarle al *load balancer* a que servidor redirigir la petición
+* Recursos
+** Documentación de la Cursada UTN
+   1. [[https://docs.google.com/document/d/1LBqAhXPzn-aeN5BIRZBmIrU5RKiYvySyWH-2Jkn-kJw/edit][Intro Arquitectura Web (docs.google.com)]]
+   2. [[https://docs.google.com/document/d/1Zn0caIulROTp471uIPuQ7SnszMwzaEQSoWmDP8UsmPM/edit#][Sobre la Arquitectura de Software (docs.google.com)]]
+   3. [[https://docs.google.com/document/d/1UoEb9bzut-nMmB6wxDUVND3V8EymNFgOsw7Hka6EEkc/edit#heading=h.6ew85j4snou0][Taller de Maquetado Web (docs.google.com)]]
+   4. [[https://docs.google.com/document/d/1EFxqHstgtZ5jI5_plso6nfhvSXXcaT4iyE1qaZuPtXg/edit][MVC Web del lado del Servidor con Spark (docs.google.com)]]
