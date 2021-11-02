@@ -595,9 +595,9 @@
     
   #+END_SRC
 * Recursos
-** Strategy stateless Vs Strategy stateful
-   1. http://www.javabyexamples.com/strategy-pattern-stateless-or-stateful
-   2. https://ebrary.net/73340/computer_science/stateful_strategy
+** Referencias externas
+   1. [[http://www.javabyexamples.com/strategy-pattern-stateless-or-stateful][Strategy Pattern statefull or stateless (javabyexamples.com)]]
+   2. [[https://ebrary.net/73340/computer_science/stateful_strategy][Stateful strategy (ebrary.net)]]
 * Problemas Comunes
 ** Hibernate - objetos relacionados
 *** Problema

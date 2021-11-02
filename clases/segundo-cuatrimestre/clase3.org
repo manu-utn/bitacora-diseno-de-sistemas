@@ -770,3 +770,5 @@
 ** Referencias externas
    1. [[https://maven.apache.org/guides/getting-started/maven-in-five-minutes.html][Maven in five minutes - apache.org, Maven]]
    2. [[https://github.com/emacs-lsp/lsp-java/issues/98][Spacemacs run main class - github.com, Issue]]
+   3. [[https://www.baeldung.com/hibernate-aggregate-functions][Hibernate aggregate functions (baeldung.com)]]
+   4. [[https://docs.jboss.org/hibernate/orm/3.3/reference/en/html/queryhql.html#queryhql-aggregation][HQL, The Hibernate Query Language - Aggregate functions (jboss.org)]]
