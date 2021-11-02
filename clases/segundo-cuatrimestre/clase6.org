@@ -1,8 +1,4 @@
 #+TITLE: Clase 06 - Arquitectura MVC Web - HTTP + Diseño de Rutas
-* Recursos
-  1. https://docs.google.com/document/d/1LBqAhXPzn-aeN5BIRZBmIrU5RKiYvySyWH-2Jkn-kJw/edit#heading=h.jii8bn1f6qx1
-  2. https://github.com/flbulgarelli/http-tutorial/tree/master/tutorial/es
-  3. https://docs.google.com/presentation/d/1O0v4Xf-O_9RwegSMS2mvRXan0n1A_I0KNbDoxb0m4lI/edit#slide=id.g94d66de747_0_33
 * MVC Web
 ** Conceptos
    - Se separa en Modelo, Vista, Controlador para _lograr flexibilidad_
@@ -38,6 +34,16 @@
     - Interactúa con el *Modelo* (/éste se actualiza/) 
     - Genera la *Vista* (/en base al resultado de la interactuar con el Modelo/)
     - Actúa como nexo/puente entre el *Modelo* y la *Vista*
+
+    #+BEGIN_QUOTE
+    El *Controller* maneja el abrir/cerrar las *transacciones* y llamar a los *Repositorios*
+    
+    Los *Repositorios* tienen la implementación de la *persistencia* (Consultar tablas, insertar registros, ...)
+    usan al *EntityManager* que provee el ORM (hibernate) del estándar de *JPA* (Java Persistanse API)
+
+    Como dato de color, el *JPA* es el estándar que implemetan los *Frameworks de ORM* (/Ej. Hibernate/)
+    que tiene las *Interfaces* (/Ej. EntityManager/) y *Annotations* (/@Entity, @Table, .../)
+    #+END_QUOTE
 *** Otras funciones
     - Llamar a Repositorios para persistir/consultar (/estos tienen la lógica de persistencia con la db/)
     - Instanciar objetos
@@ -53,7 +59,7 @@
                 // llama a un Repositorio (éste se encarga de la parte de persistencia, en este caso solo para consultar un conjunto de registros)
                 List<Proyecto> proyectos = RepositorioProyectos.instancia.listar();
         
-                // interactúa con el modelo, le da una lista de objetos    
+                // interactúa con el modelo, le da una lista de objetos
                 model.put("proyectos", proyectos);
         
                 // genera una vista con el resultado de la interacción con el modelo
@@ -63,9 +69,12 @@
             public Void crear(Request req, Response res){
                 // crear instancias
                 Proyecto proyectoNuevo = new Proyecto(req.queryParams("nombre"), new BigDecimal(req.queryParams("costo")));
+                // abre una transacción
                 withTransaction(() ->{
+                        // es el repositorio quien implementa las operaciones de persistencia en la db
                         RepositorioProyectos.instancia.agregar(proyectoNuevo);
                     });
+                // cuando termine la transacción, decide si generar una Vista ó sólo redireccionar
                 res.redirect("/proyectos");
                 return null;
             }
@@ -407,3 +416,6 @@
       }
     ]
 
+* Recursos
+** Documentación de la Cursada UTN
+  1. [[https://github.com/flbulgarelli/http-tutorial/tree/master/tutorial/es][Tutorial HTTP]]
