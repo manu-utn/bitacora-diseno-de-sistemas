@@ -459,9 +459,9 @@
     #+END_SRC
 
     #+RESULTS:
-    [[file:../img/parcial-qmp3.png]]
+    [[file:img/parcial-qmp-3.png]]
 
-* Punto C
+* [DOING] Punto C
 ** Rutas
   #+BEGIN_QUOTE
   ~GET /guardarropas~ (/para ver todas las prendas/)

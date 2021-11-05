@@ -113,7 +113,7 @@
      }
    #+END_SRC
 ** Modelo de datos (DER Fisico)
-   #+BEGIN_SRC plantuml :file img/parcial-juego-de-tronos-1.png :export results
+   #+BEGIN_SRC plantuml :file img/parcial-juego-de-tronos-1.png :exports results
      @startuml
      title Juego de Tronos - Modelo de Datos (DER Físico)
      entity regiones{
@@ -197,7 +197,7 @@
    #+END_SRC
 
    #+RESULTS:
-   [[file:../img/parcial-juego-de-tronos-der.png]]
+   [[file:img/parcial-juego-de-tronos-1.png]]
 
 * Punto B
 ** Modelo de objetos en Java
