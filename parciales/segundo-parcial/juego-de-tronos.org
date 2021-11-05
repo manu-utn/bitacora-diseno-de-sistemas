@@ -113,7 +113,7 @@
      }
    #+END_SRC
 ** Modelo de datos (DER Fisico)
-   #+BEGIN_SRC plantuml :file ../img/parcial-juego-de-tronos-der.png :export results
+   #+BEGIN_SRC plantuml :file img/parcial-juego-de-tronos-1.png :export results
      @startuml
      title Juego de Tronos - Modelo de Datos (DER Físico)
      entity regiones{

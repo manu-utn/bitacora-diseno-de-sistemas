@@ -109,8 +109,8 @@
        }
    }
  #+END_SRC
-** DER Fisico
-   #+BEGIN_SRC plantuml :file ../img/parcial-qmp1.png :exports results
+** Modelo de datos (DER Fisico)
+   #+BEGIN_SRC plantuml :file img/parcial-qmp-1.png :exports results
      @startuml
      title Que Me Pongo - Modelo de Datos (DER Físico)
      entity eventos{
@@ -159,7 +159,7 @@
    #+END_SRC
 
    #+RESULTS:
-   [[file:../img/parcial-qmp1.png]]
+   [[file:img/parcial-qmp-1.png]]
 ** Anotaciones
   |----------------+-----------------+-------------+--------+-------------|
   | evento_id (PK) | usuario_id (FK) | tipo_evento | ciudad | recurrencia |
@@ -271,8 +271,8 @@
       }
       
     #+END_SRC
-*** DER
-    #+BEGIN_SRC plantuml :file ../img/parcial-qmp2.png :exports results
+*** Modelo de datos (DER Fisico)
+    #+BEGIN_SRC plantuml :file img/parcial-qmp-2.png :exports results
       @startuml
       title Que Me Pongo - Modelo de Datos (DER Físico)
       entity eventos{
@@ -345,7 +345,7 @@
     #+END_SRC
 
     #+RESULTS:
-    [[file:../img/parcial-qmp2.png]]
+    [[file:img/parcial-qmp-2.png]]
 
 ** Solución (2)
 *** Solución en Java
@@ -412,7 +412,7 @@
     #+END_SRC
 
 *** Solución (2) en el DER
-    #+BEGIN_SRC plantuml :file ../img/parcial-qmp3.png :exports results
+    #+BEGIN_SRC plantuml :file img/parcial-qmp-3.png :exports results
       @startuml
       title Que Me Pongo - Modelo de Datos (DER Físico)
       entity eventos{

@@ -142,7 +142,7 @@
      }
    #+END_SRC
 *** Modelo de Datos (DER Fisico)
-    #+BEGIN_SRC plantuml :file ../img/parcial-muertos-andantes1.png :export results
+    #+BEGIN_SRC plantuml :file img/parcial-muertos-andantes-1.png :export results
       @startuml
       title Los Muertos Andantes - Modelo de Datos (DER Físico)
       entity sobrevivientes{
@@ -211,7 +211,7 @@
     #+END_SRC
 
     #+RESULTS:
-    [[file:../img/parcial-muertos-andantes1.png]]
+    [[file:img/parcial-muertos-andantes-1.png]]
 
 ** Punto 2
 *** Modelo de Objetos en Java+Hibernate
@@ -247,7 +247,7 @@
       }
     #+END_SRC
 *** Modelo de Datos (DER Fisico)
-    #+BEGIN_SRC plantuml :file ../img/parcial-muertos-andantes2.png :export results
+    #+BEGIN_SRC plantuml :file img/parcial-muertos-andantes-2.png :export results
       @startuml
       title Los Muertos Andantes - Modelo de Datos (DER Físico)
       entity sobrevivientes{

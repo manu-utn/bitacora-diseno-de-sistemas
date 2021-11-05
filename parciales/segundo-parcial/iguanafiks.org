@@ -153,7 +153,7 @@
      
      #+END_SRC
 *** Modelo de datos (DER Fisico)
-   #+BEGIN_SRC plantuml :file ../img/parcial-iguana-fiks1.png :export results
+   #+BEGIN_SRC plantuml :file img/parcial-iguana-fiks1.png :export results
        @startuml
        entity Servicio{
            id
@@ -195,7 +195,7 @@
      #+END_SRC
 
      #+RESULTS:
-     [[file:../img/parcial-iguana-fiks1.png]]
+     [[file:img/parcial-iguana-fiks1.png]]
 
 ** Punto 2
 *** Problema planteado
@@ -254,7 +254,7 @@
       }
     #+END_SRC
 *** Solución en el Modelo de Datos
-   #+BEGIN_SRC plantuml :file ../img/parcial-iguana-fiks2.png :export results
+   #+BEGIN_SRC plantuml :file img/parcial-iguana-fiks2.png :export results
       @startuml
       title Iguanafiks - Modelo de Datos (DER Físico)
       entity servicios{
@@ -350,7 +350,7 @@
     #+END_SRC
 
     #+RESULTS:
-    [[file:../img/parcial-iguana-fiks2.png]]
+    [[file:img/parcial-iguana-fiks2.png]]
 
 *** [DOING] Solución del código dado
     #+BEGIN_SRC java

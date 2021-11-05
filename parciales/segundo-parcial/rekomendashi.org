@@ -137,7 +137,7 @@
       }
     #+END_SRC
 *** DER Físico
-    #+BEGIN_SRC plantuml :file ../img/parcial-reko1.png :exports results
+    #+BEGIN_SRC plantuml :file img/parcial-reko-1.png :exports results
       @startuml
       '!theme vibrant
       title Rekomendashi - Modelo de Persistencia
@@ -207,6 +207,6 @@
     #+END_SRC
 
     #+RESULTS:
-    [[file:../img/parcial-reko1.png]]
-** Punto 2
+    [[file:img/parcial-reko-1.png]]
+** [TODO] Punto 2
 
