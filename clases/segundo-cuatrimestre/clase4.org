@@ -31,15 +31,15 @@
     El *Single table* sería mas en los casos que
     1. Cuando las subclases comparten campos en común
     
-    |--------------------------------+--------------+--------------------------|
-    |                                | Single Table | Joined                   |
-    |--------------------------------+--------------+--------------------------|
-    | Tablas que genera              | 1            | Muchas (una por c/clase) |
-    | Permite consultas polimorficas | SI           | NO                       |
-    | Costoso hacer ~SELECT~         | NO           | SI                       |
-    | ~INSERTs~ que hace             | 1            | El doble                 |
-    | Normaliza los datos            | NO           | SI                       |
-    |--------------------------------+--------------+--------------------------|
+    |--------------------------------+--------------------+------------------------------------------|
+    |                                | Single Table       | Joined                                   |
+    |--------------------------------+--------------------+------------------------------------------|
+    | Tablas que genera              | 1                  | Muchas (una por c/clase)                 |
+    | Permite consultas polimorficas | SI                 | SI                                       |
+    | Costoso hacer ~SELECT~         | NO                 | SI                                       |
+    | ~INSERTs~ que hace             | 1 (la única tabla) | El doble (superclase + numero subclases) |
+    | Normaliza los datos            | NO (todo junto)    | SI (cada clase tiene una tabla)          |
+    |--------------------------------+--------------------+------------------------------------------|
 
     El *single table:*
     1. Agrupa todos los campos de todas las tablas (/quedan columnas con valor NULL/)
@@ -49,7 +49,7 @@
     El *joined*:
     1. Normaliza los datos (/los separa por dominio..../) <---
     2. Hace el doble de inserts (/uno en la tabla de la superclase, y luego otro en la tabla de la subclase/)
-    3. Hacer un SELECT implica muchos JOIN por cada tabla
+    3. Hacer una *consulta polimórfica* implíca muchos JOIN, uno por cada subclase
 *** Single Table
 **** Conceptos
      - Es la que más se suele utilizar
@@ -598,6 +598,11 @@
 ** Referencias externas
    1. [[http://www.javabyexamples.com/strategy-pattern-stateless-or-stateful][Strategy Pattern statefull or stateless (javabyexamples.com)]]
    2. [[https://ebrary.net/73340/computer_science/stateful_strategy][Stateful strategy (ebrary.net)]]
+   3. [[https://www.baeldung.com/jpa-one-to-one][JPA OneToOne (Baeldung.com)]]
+   4. [[https://www.baeldung.com/java-jpa-lazy-collections][Lazy Elements Collections in JPA (Baeldung.com)]]
+   5. [[https://www.baeldung.com/jpa-join-column][JPA @JoinColumn (Baeldung.com)]]
+   6. [[https://www.concretepage.com/hibernate/elementcollection_hibernate_annotation][@ElementCollection in Hibernate (Concretepage.com)]]
+   7. [[https://medium.com/nerd-for-tech/elementcollection-vs-onetomany-in-hibernate-7fb7d2ac00ea][@ElementCollection Vs @OneToMany (medium.com)]]
 * Problemas Comunes
 ** Hibernate - objetos relacionados
 *** Problema
