@@ -1,0 +1,212 @@
+#+TITLE: Parcial Rekomendashi
+#+STARTUP: inlineimages
+* Referencias
+  1. [[https://docs.google.com/document/d/1OTmrCpW-Ode-h_k1qWIE9OB4Uuzs9ZbR_A1JMJwHK-I/edit#][Enunciado]]
+* Punto A
+** Punto 1
+*** Código Java
+    #+BEGIN_SRC java
+      // Todas las clases que llevan @Entity extienden de esta
+      // no lo colocamos porque son varias, pero es la idea
+      @MappedSuperclass
+      abstract class PersistentEntity{
+          @Id
+          @GenerateValue
+          Long id;
+      }
+     
+      // - Convertimos la Interfaz a Clase, porque es un Strategy statefull
+      // es decir los strategies tienen "estado interno" (atributos)
+      // y porque el ORM Hibernate no persiste las interfaces
+      // - No podemos convertirlo en un Enum con comportamiento, por lo anterior
+      @Entity
+      @Table(name="tipoDePedido")
+      @Inheritance(strategy=SINGLE_TABLE)
+      @DiscriminatorColumn(name="tipo_pedido")
+      abstract class TipoDePedido{
+          public Set armarSet(List<Pieza> piezasPosibles){
+              // ..
+          }
+      }
+     
+      @Entity
+      class Individual extends TipoDePedido{
+          Number precioMaximo;
+          int coeficienteDeVariedad;
+      }
+     
+      @Entity
+      class Grupal extends TipoDePedido{
+          int cantidadDeComensales;
+      }
+     
+      @Entity
+      @Table(name="pedidos")
+      class Pedido{
+          // - Como TipoDeCoccion no es un identity value, si no un "object value"
+          // usamos el @ElementCollection que genera una relación del tipo @OneToMany
+          // - Usamos JoinColumn porque si no el ORM Hibernate genera una tabla intermedia del tipo asociativa
+          // como si fuese un ManyToMany
+          @ElementCollection
+          @CollectionTable(name = "coccionesPreferidas", joinColumns = @JoinColumn(name = "id_pedido"))
+          private List<TipoDeCoccion> coccionesPreferidas;
+     
+          // - Es importante el orden en que eligieron las categorías, por eso elegimos List en vez de Collection
+          // - Al usar @OrderColumn persistimos a posición que tengan en la Lista
+          // - Usamos @ElementCollection por la misma razón que TipoDeCoccion
+          @ElementCollection
+          @CollectionTable(name = "categoriasPreferidas", joinColumns = @JoinColumn(name = "id_pedido"))
+          @OrderColumn(name="prioridad")
+          private List<Categoria> categoriasPreferidas;
+     
+          // - No podemos embeber el tipo de pedido, porque TipoDePedido usa una estrategia de herencia
+          @OneToOne
+          @JoinColumn(name="id_tipo_pedido", referencedColumName="id") // fk del lado de la tabla Pedidos
+          private TipoDePedido tipoDePedido;
+     
+          public Set recomendar(){
+              piezasPosibles = CatalogoDePiezas
+                  .buscarSegunPreferencias(coccionesPreferidas, categoriasPreferidas);
+     
+              // la lógica viene de Tipo Individual/Grupal
+              return tipoDePedido.armarSet(piezasPosibles)
+          }
+      }
+     
+      // las enumeraciones no se persisten, y no necesitan de annotations (en su definición)
+      enum TipoDeCoccion{
+          CRUDO, REBOZADO;
+      }
+     
+      enum Categoria{
+          PESCADO, MARISCO, QUESO, VERDURA;
+      }
+     
+      @Entity
+      @Table(name="piezas")
+      class Pieza{
+          private String nombre;
+          private Number precio;
+          private Imagen imagen;
+     
+          // - indicamos que es una enumeración, y queremos guardar el texto en vez del valor numérico
+          @Enumerated(type.STRING)
+          TipoDeCoccion tipoDeCoccion;
+     
+          // - Indicamos el @JoinColumn para evitar que se genere la tabla asociativa de ManyToMany
+          @OneToMany
+          @JoinColumn(name="id_pieza") // fk del lado de la tabla ingredientes
+          Collection<Ingrediente> ingredientes;
+      }
+     
+      @Entity
+      @Table(name="ingredientes")
+      class Ingrediente{
+          private String nombre;
+     
+          @Enumerated(type.STRING)
+          Categoria categoria;
+      }
+     
+      // No necesitamos persistir, los tipos Individual/Grupal
+      // tienen una lógica que devuelve el set de selecciones
+      // en base a las cocciones preferidas y categorias preferidas
+      class Set{
+          Collection<Seleccion> selecciones;
+     
+          public Number precio(){
+              // ..
+          }
+          public int cantidadDePiezas(){
+              // ...
+          }
+      }
+     
+      // No necesitamos persistir, idem Set
+      class Seleccion{
+          private int cantidad;
+     
+          Pieza pieza;
+      }
+     
+      // No persistimos porque actúa como un Repositorio para piezas
+      class CatalogoDePiezas{
+          public List<Pieza> buscarSegunPreferencias(){
+              // ...
+          }
+      }
+    #+END_SRC
+*** DER Físico
+    #+BEGIN_SRC plantuml :file ../img/parcial-reko1.png :exports results
+      @startuml
+      '!theme vibrant
+      title Rekomendashi - Modelo de Persistencia
+     
+      entity tipoDePedidos{
+          id
+          --
+          precioMaximo
+          coeficienteDeVariedad
+          cantidadDeComensales
+      }
+     
+      note right of tipoDePedidos
+      SINGLE_TABLE
+      Individual+Grupal
+      end note
+     
+      entity pedidos{
+          id
+          --
+          id_tipo_pedido <<FK>>
+      }
+     
+      entity coccionesPreferidas{
+          id
+          --
+          id_pedido <<FK>>
+          tipo_coccion
+      }
+     
+      entity categoriasPreferidas{
+          id
+          --
+          id_pedido <<FK>>
+          prioridad
+      }
+     
+     
+      entity piezas{
+          id
+          --
+          tipo_coccion
+          nombre
+          precio
+          imagen
+      }
+     
+      entity ingredientes{
+          id
+          --
+          pieza_id <<FK>>
+          categoria
+          nombre
+      }
+     
+     
+      pedidos ||-up-o| tipoDePedidos
+     
+     
+      pedidos      ||-right-|{ categoriasPreferidas : tiene
+     
+      pedidos          ||-left-|{ coccionesPreferidas : tiene
+     
+      piezas |o-right-|{ ingredientes : tiene
+     
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:../img/parcial-reko1.png]]
+** Punto 2
+

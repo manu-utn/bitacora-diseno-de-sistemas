@@ -1,0 +1,564 @@
+* Punto A
+** Modelo de Objetos en Java+Hibernate
+ #+BEGIN_SRC java
+   @Entity
+   @Table(name="usuarios")
+   class Usuario{
+       // - Porque una prenda no puede ser compartida entre usuarios
+       // si ya la tiene uno, otro no la puede tener
+       // - Usamos el JoinColumn para que el ORM no genere la tabla asociativa,
+       // si no haría como ManyToMany quedando una tabla intermedia entre Usuario y Prendas
+       @OneToMany
+       @JoinColumn(name="usuario_id") // campo que se guarda en la tabla usuarios_prendas
+       List<Prenda> guardarropas = new ArrayList<Prenda>();
+   }
+   
+   // - Para avisar que esta clase va a ser Embebida por otra clase, no se creará una tabla Ciudad
+   // - Consideramos que es un "Value Object" no tiene IDENTIDAD en este modelo
+   @Embeddable
+   class Ciudad{
+       String ciudad;
+   }
+   
+   // Estrategias de Herencia
+   // 1. Se elije la Estrategia de Herencia "Single Table" porque las subclases
+   // no tienen tantos atributos (de hecho sólo el Recurrente tiene), por tanto una única tabla sería válida
+   // 2. No se elije la estrategia "TABLE PER CLASS" porque se necesitan datos de la super_clase
+   // 3. No se elije la estrategia "JOINED" porque implicaría JOINs innecesarios
+   //
+   // - Se definió como clase abstracta porque sólo hay eventos específicos Recurrentes o Únicos
+   @Entity
+   @Table(name="eventos")
+   @Inheritance(strategy = SINGLE_TABLE)
+   @DiscriminatorColumn(name="tipo_evento", type=String)
+   abstract class Evento{
+       // - Al ser un atributo simple y no una lista sabemos que será @ToOne
+       // luego un usuario puede asisir a muchos eventos quedando @ManyToOne
+       // - En el modelo de datos tendremos un campo fk del usuario
+       @ManyToOne
+       Usuario usuario;
+       // - Embebemos la ciudad, porque forma parte de la identidad del evento
+       // - Es un object value, no necesitamos manejar su identidad, no queremos una tabla de ciudades
+       @Embedded
+       Ciudad ciudad;
+   }
+   
+   @Entity
+   @DiscriminatorValue("unico")
+   class EventoUnico extends Evento{
+   }
+   
+   @Entity
+   @DiscriminatorValue("recurrente")
+   class EventoRecurrente extends Evento{
+       @Enumerated(EnumType.String)
+       Recurrencia recurrencia;
+   
+       boolean ocurreProximamente(Datetime fecha){
+           recurrencia.proximaOcurrencia(this);
+       }
+   }
+   
+   //------------------------------------------------------
+   
+   // - Convertimos la Interfaz a un Enum con comportamiento
+   // - Las enumeraciones no requieren un annotation en su definición
+   enum Recurrencia{
+       Semanal, Mensual;
+   
+       DateTime proximaOcurrencia(Evento evento){
+           // alguna lógica
+       }
+   }
+   
+   //------------------------------------------------------
+   
+   @Entity
+   @Table(name="prendas")
+   class Prenda{
+       // - Como sólo nos interesa el valor, es una colección de "value objects"
+       // - Define una relación @OneToMany donde una prenda puede tener muchos colores
+       // pero Color es un Embeddable
+       @ElementCollection
+       List<Color> colores = new ArrayList<Color>();
+   
+       @Enumerated(EnumType.STRING)
+       Categoria categoria;
+   
+       String descripcion;
+   }
+   
+   // - Avisamos que esta clase se va a embeber dentro de otra clase,
+   // porque lo consideramos como un "value object", no queremos manejar su identidad
+   // - Todos los atributos estarán en otra clase, no se creará una tabla
+   // pd: aunque como en Prenda usamos @ElementCollection se creará la tabla como un @OneToMany
+   @Embeddable
+   class Color{
+       @Column(name="color_nombre");
+       String color;
+       @Column(name="color_codigo");
+       String codigoHexa;
+   }
+   
+   // En la definición de los Enum no requieren annotations
+   enum CategoriaPrenda{
+       ARRIBA, ABAJO, ENTEROS, CALZADOS, ACCESORIOS;
+   
+       boolean cubreTemperatura(int temperatura){
+           // ...
+       }
+   }
+ #+END_SRC
+** DER Fisico
+   #+BEGIN_SRC plantuml :file ../img/parcial-qmp1.png :exports results
+     @startuml
+     title Que Me Pongo - Modelo de Datos (DER Físico)
+     entity eventos{
+         id
+         --
+         id_usuario <<FK>>
+         tipo_evento
+         recurrencia
+         ciudad
+         inicio
+         fin
+     }
+     note bottom of eventos
+     Estrategia de Herencia
+     "Single Table"
+     end note
+     
+     entity usuarios{
+         id
+     
+     }
+     
+     entity prendas{
+         id
+         --
+         id_usuario <<FK>>
+         categoria
+         descripcion
+     }
+     
+     entity coloresDePrendas{
+         id
+         --
+         id_prenda <<FK>>
+         color_descripcion
+         color_codigo
+     }
+     
+     
+     eventos }o-right-|| usuarios : asistir a
+     
+     usuarios |o-down-|{ prendas
+     
+     prendas ||-right-|{ coloresDePrendas : tiene
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:../img/parcial-qmp1.png]]
+** Anotaciones
+  |----------------+-----------------+-------------+--------+-------------|
+  | evento_id (PK) | usuario_id (FK) | tipo_evento | ciudad | recurrencia |
+  |----------------+-----------------+-------------+--------+-------------|
+  |              1 |               1 | recurrente  | bs as  | semanal     |
+  |              2 |               2 | recurrente  | bs as  | mensual     |
+  |              3 |               1 | unico       | bs as  | NULL        |
+  |              4 |               2 | unico       | bs as  | NULL        |
+  |----------------+-----------------+-------------+--------+-------------|
+* Punto B
+** Código Java
+   #+BEGIN_SRC java
+     class Evento{
+     // devuelve el nivel de parecido (promedio) de esta nueva sugerencia con las anteriores
+         method ponderar(nuevaSugerencia){
+             return this.getUsuario().getEventosPasados()
+                 .flatMap(e => e.getSugerenciasGustadas())
+                 .map(s => nuevaSugerencia.nivelDeParecidoCon(s))
+                 .average();
+         }
+     }
+     
+     class Sugerencia{
+         method nivelDeParecidoCon(otraSugerencia){
+             return this.perfil().nivelDeParecidoCon(otraSugerencia.perfil())
+         }
+     
+         method perfil(){
+             // El nivel de parecido entre dos sugerencias se basa en los colores en común
+             // y prendas exactas en común
+             return new PerfilSugerencia(
+                                         this.getId(), this.getColorPrincipalArriba(),
+                                         this.getColorPrincipalAbajo(), this.getColorPrincipalCalzado())
+         }
+     
+     }
+     
+     // representa  a los datos relevantes de una sugerencia para la ponderación
+     class PerfilSugerencia{
+         method nivelDeParecidoCon(otroPerfil){
+             // hace la ponderación, el cálculo exacto no es relevante
+         }
+     }
+     
+   #+END_SRC
+
+** Solución (1)
+*** Solución en Java
+    #+BEGIN_SRC java
+      @Entity
+      class Evento{
+          @OneToMany
+          List<Sugerencia> sugerencias;
+      
+          // devuelve el nivel de parecido (promedio) de esta nueva sugerencia con las anteriores
+          method ponderar(nuevaSugerencia){
+              return this.getUsuario().getEventosPasados()
+                  .flatMap(e => e.getSugerenciasGustadas())
+                  .map(s => nuevaSugerencia.nivelDeParecidoCon(s))
+                  //.map(s => nuevaSugerencia.nivelDeParecidoCon(s.sugerenciasEnComun))
+                  .average();
+          }
+      }
+      
+      // 1. Que la sugerencia tenga 3 campos calculados de los tres colores que gustaron
+      // 2. Que guarde las sugerencias con las que tiene en común para que no esté comparando
+      // con cualquier sugerencia
+      @Entity
+      class Sugerencia{
+          @ManyToMany
+          List<Prenda> prendas;
+      
+          // D U  D A <---
+          //
+          // - Esta opcion quizás no es tan efectiva como creía
+          // @ManyToMany
+          // List<Sugerencia> sugerenciasEnComun;
+      
+          // D U  D A <---
+          method getColorPrendaArriba(){
+              // lógica para colores[0]
+          }
+          method getColorPrendaAbajo(){
+              // lógica para colores[1]
+          }
+          method getColorPrincipalCalzado(){
+              // lógica para colores[2]
+          }
+      
+          method nivelDeParecidoCon(otraSugerencia){
+              return this.perfil().nivelDeParecidoCon(otraSugerencia.perfil())
+          }
+      
+          method perfil(){
+              // El nivel de parecido entre dos sugerencias se basa en los colores en común
+              // y prendas exactas en común
+              return new PerfilSugerencia(
+                                          this.getId(), this.getColorPrincipalArriba(),
+                                          this.getColorPrincipalAbajo(), this.getColorPrincipalCalzado())
+          }
+      
+      }
+      
+      // representa  a los datos relevantes de una sugerencia para la ponderación
+      class PerfilSugerencia{
+          method nivelDeParecidoCon(otroPerfil){
+              // hace la ponderación, el cálculo exacto no es relevante
+          }
+      }
+      
+    #+END_SRC
+*** DER
+    #+BEGIN_SRC plantuml :file ../img/parcial-qmp2.png :exports results
+      @startuml
+      title Que Me Pongo - Modelo de Datos (DER Físico)
+      entity eventos{
+          id
+          --
+          id_usuario <<FK>>
+          tipo_evento
+          recurrencia
+          ciudad
+          inicio
+          fin
+      }
+      
+      entity usuarios{
+          id
+      
+      }
+      
+      entity prendas{
+          id
+          --
+          id_usuario <<FK>>
+          categoria
+          descripcion
+      }
+      
+      entity coloresDePrendas{
+          id
+          --
+          id_prenda <<FK>>
+          color_posicion
+          color_descripcion
+          color_codigo
+      }
+      
+      
+      entity sugerencias{
+          id
+          --
+          evento_id <<FK>>
+      }
+      
+      entity sugerenciasDePrendas{
+          id_sugerencia
+          id_prenda
+      }
+      
+      note bottom of prendas
+      En el modelo de objetos usaría OrderColumn
+      para hacer una única consulta y manejarse
+      con la posición
+      
+      @ElementCollection
+      @OrderColumn("posicion")
+      List<Color> colores;
+      end note
+      
+      eventos }o-right-|| usuarios : asistir a
+      
+      usuarios ||-down-o{ prendas : eligen
+      
+      prendas ||-right-|{ coloresDePrendas : tiene
+      
+      eventos ||-left-o{ sugerencias : tiene
+      
+      sugerencias ||-down-|{ sugerenciasDePrendas : tiene
+      prendas     ||-down-o{ sugerenciasDePrendas : pertenece
+      
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:../img/parcial-qmp2.png]]
+
+** Solución (2)
+*** Solución en Java
+    #+BEGIN_SRC java
+      @Entity
+      class Evento{
+          @OneToMany
+          List<Sugerencia> sugerencias;
+      
+          // devuelve el nivel de parecido (promedio) de esta nueva sugerencia con las anteriores
+          method ponderar(nuevaSugerencia){
+              return this.getUsuario().getEventosPasados()
+                  .flatMap(e => e.getSugerenciasGustadas())
+                  .map(s => nuevaSugerencia.nivelDeParecidoCon(s))
+                  //.map(s => nuevaSugerencia.nivelDeParecidoCon(s.sugerenciasEnComun))
+                  .average();
+          }
+      }
+      
+      // 1. Que la sugerencia tenga 3 campos calculados de los tres colores que gustaron
+      // 2. Que guarde las sugerencias con las que tiene en común para que no esté comparando
+      // con cualquier sugerencia
+      @Entity
+      class Sugerencia{
+          // @ManyToMany
+          // List<Prenda> prendas;
+      
+          // - En la clase Prenda, sacaríamos el atributo color
+          @Embedded
+          Prenda prenda;
+      
+          // - Esta opcion quizás no es tan efectiva como creía
+          // @ManyToMany
+          // List<Sugerencia> sugerenciasEnComun;
+      
+          Color color_arriba;
+          Color color_abajo;
+          Color color_calzado;
+      
+          method nivelDeParecidoCon(otraSugerencia){
+              return this.perfil().nivelDeParecidoCon(otraSugerencia.perfil())
+          }
+      
+          method perfil(){
+              // El nivel de parecido entre dos sugerencias se basa en los colores en común
+              // y prendas exactas en común
+              // return new PerfilSugerencia(
+              //                             this.getId(), this.getColorPrincipalArriba(),
+              //                             this.getColorPrincipalAbajo(), this.getColorPrincipalCalzado())
+      
+              // usariamos los campos pre-calculados que ya contienen los colores,
+              return new PerfilSugerencia(this.getId(), color_arriba, color_abajo, color_calzado)
+          }
+      
+      }
+      
+      // representa  a los datos relevantes de una sugerencia para la ponderación
+      class PerfilSugerencia{
+          method nivelDeParecidoCon(otroPerfil){
+              // hace la ponderación, el cálculo exacto no es relevante
+          }
+      }
+      
+    #+END_SRC
+
+*** Solución (2) en el DER
+    #+BEGIN_SRC plantuml :file ../img/parcial-qmp3.png :exports results
+      @startuml
+      title Que Me Pongo - Modelo de Datos (DER Físico)
+      entity eventos{
+          id
+          --
+          id_usuario <<FK>>
+          tipo_evento
+          recurrencia
+          ciudad
+          inicio
+          fin
+      }
+      
+      entity usuarios{
+          id
+      
+      }
+      
+      entity sugerenciasDePrendas{
+          id
+          --
+          id_usuario <<FK>>
+          id_evento <<FK>>
+          categoria
+          descripcion
+          color_arriba
+          color_abajo
+          color_calzado
+      }
+      
+      note right of sugerenciasDePrendas
+      En el modelo de objetos hariamos
+      ,* Embeber la Prenda en Sugerencia
+      ,* 3 Atributos para los colores
+      end note
+      
+      eventos }o-right-|| usuarios : asistir a
+      
+      usuarios ||-down-o{ sugerenciasDePrendas : eligen
+      
+      eventos ||-down-o{ sugerenciasDePrendas : tiene
+      
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:../img/parcial-qmp3.png]]
+
+* Punto C
+** Rutas
+  #+BEGIN_QUOTE
+  ~GET /guardarropas~ (/para ver todas las prendas/)
+  ~POST /guardarropas~ (/cargar una prenda/)
+  #+END_QUOTE
+** Repositorios
+   #+BEGIN_SRC java
+   #+END_SRC
+** MVC
+   #+BEGIN_SRC java
+     // Router.java
+     class Router{
+         get("/prendas", PrendasController::indexView, engineTemplate);
+         get("/prendas/new", PrendasController::cargarPrendaView, engineTemplate);
+         post("/prendas", PrendasController::cargarPrenda, engineTemplate);
+     }
+     
+     // Model/Prenda.java
+     @Entity
+     @Table(name= "Prendas")
+     class Prenda{
+         @Id
+         @GeneratedValue
+         private long id;
+     
+         private String descripcion;
+         private Categoria categoria;
+         private Color colorPrincipal;
+     
+         // constuctor
+         public Prenda(String descripcion, Categoria categoria, Color colorPrincipal){
+             this.descripcion = descripcion;
+             this.categoria = categoria;
+             this.colorPrincipal = colorPrincipal;
+         }
+     
+         // getters && setters
+     }
+     
+     
+     // Controllers/PrendasController.java
+     class PrendasController{
+        public static ModelAndView indexView(Request request, Response response){
+            Map<String, Collection<Prenda>> modelo = new HashMap<>();
+            Collection<Prenda> prendas = RepositorioGuardarropas.getAllPrendas();
+     
+            modelo.put("prendas", prendas);
+            return new ModelAndView(modelo, "prendas/index.hbs");
+        }
+     
+       public static ModelAndView cargarPrendaView(Request request, Response response){
+           return new ModelAndView(null, "prendas/new.hbs");
+       }
+     
+       public static ModelAndView cargarPrenda(Request request, Response response){
+          String descripcion = request.queryParams("descripcion");
+          Categoria categoria  = request.queryParams("categoria");
+          Color colorPrincipal = request.queryParams("color");
+     
+          Prenda nuevaPrenda = new Prenda(categoria, descripcion, color);
+     
+          // - ejecuta todas las operaciones como una transacción (única operación)
+          // - ejecutaría las operaciones transaccionales begin() para iniciar la transacción
+          // y al final commit()
+          withTransaction(()->{
+                  RepositorioGuardarropas.getInstance().cargarPrenda(nuevaPrenda);
+              });
+     
+          response.redirect("/prendas");
+          return null;
+        }
+     }
+     
+     // Persistense/RepositorioGuardarropa.java
+     class RepositorioGuardarropa{
+        public static RepositorioGuardarropas instance;
+     
+         // patrón singleton
+         public static getInstance(){
+             if(instance == null){
+                 instance = new RepositorioGuardarropas();
+             }else{
+                 return instance;
+             }
+         }
+     
+        public Collection<Prenda> getAllPrendas(){
+            return entityManager().createQuery("from prendas");
+        }
+     
+        public void cargarPrenda(Prenda nuevaPrenda){
+            entityManager().persist(nuevaPrenda);
+     
+            return null;
+        }
+     }
+   #+END_SRC
+
+* Referencias
+  1. [[https://docs.google.com/document/d/15ifQWQqfzbwwHIiiuoZiE4eyhd_DpmaQ5OGPvD9x2Wc/edit][Enunciado]]

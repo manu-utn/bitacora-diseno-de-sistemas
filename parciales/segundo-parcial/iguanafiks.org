@@ -1,0 +1,369 @@
+#+TITLE: Parcial Iguanafiks
+#+STARTUP: inlineimages
+* Punto A
+** Punto 1
+*** Modelo de objetos en Java+Hibernate
+     #+BEGIN_SRC java
+       // - NO persistimos, porque actúa como un Repositorio, no nos interesa su identidad ni su estado
+       // - Sólo nos interesa sus "funcionalidades/operaciones" que exponen,
+       class SeleccionadorDeProfesionales{
+           private bool usaModoEscricto;
+           private int coeficienteDeAptitud;
+     
+           public List<Profesional> seleccionarProfesionales(Servicio servicio){
+               // ...
+           }
+       }
+     
+       // - Indicamos que esta clase es un "value object" que será embebido en otra clase
+       // consideramos que esta clase no tiene identidad en este modelo
+       @Embeddable
+       class Ubicacion{
+           private int latitud;
+           private int longitud;
+       }
+     
+       enum Tipo{
+           ELECTRICIDAD, PLOMERIA, PISOS;
+       }
+     
+       // Estrategia de Herencia
+       // a) TABLE PER CLASS (tabla por clase concreta) NO ES OPCION
+       // 1. Se perdería la "regla de integridad referencial", por tanto los "presupuestos" el id_servicio no sería FK,
+       // pudiendo borrar presupuestos que podrían estar asociados a un servicio
+       // 2. tendriamos una estructura auxiliar en memoria, que almacene ids según alguna "estrategia para la generación de IDs" (Ej. uuid)
+       //
+       // b) SINGLE TABLE, QUIZAS
+       // 1. Se podría haber optado por la estrategia "SINGLE TABLE", porque las subclases tienen pocos atributos
+       // por tanto habrían pocos campos en NULL, pero... Como la superclase "servicios" ya tiene
+       // varios atributos, al agregar los de las subclases quedaría una tabla con demasiados campos.
+       // 2. Aunque tenía como ventaja que los INSERTs se harían en una única tabla
+       //
+       // c) JOINED, ELEGIDA
+       // 1. Optamos por la estrategia "JOINED" ya que son pocas la cantidad de subclases, por lo cual no sería costoso
+       // hacer "consultas polimórficas" porque implicaría sólo 2 JOINs.
+       // 2. Queda estructuralmente más representativo por el dominio, lo normaliza
+       // 3. Aunque se pierde un eficiencia en los INSERTs, se haría en 3 tablas (superclase+ 2 subclases)
+       @Entity
+       @Table(name="servicios")
+       @Inheritance(strategy=JOINED)
+       @DiscriminatorColumn(name="tipo_servicio")
+       abstract class Servicio{
+           @Convert(converter = LocalDateTimeConverter.class)
+           private LocalDateTime fechaDeRealizacion;
+           // - consideramos Ubicacion como un "Object Value",
+           // lo embebemos en esta clase para que se integren sus atributos
+           @Embedded
+           private Ubicacion ubicacion;
+           private String descripcion;
+     
+           // - Usamos el @JoinColumn para evitar la "tabla asociativa" que se genera por el ORM Hibernate,
+           // caso contrario se comporta como si fuese un ManyToMany generando una tabla intermedia
+           @OneToMany
+           @JoinColumn(name="servicio_id") // fk del lado de la tabla "presupuestos"
+           Collection<Presupuesto> presupuestos;
+     
+           // - Señalamos que queremos guardar el texto de la enumeración y no su valor numérico
+           @Enumerated(Type.String)
+           Tipo tipoServicio;
+     
+           public abstract void generarFactura();
+       }
+     
+       @Entity
+       @DiscriminatorValue(name="empresarial")
+       class ServicioEmpresarial extends Servicio{
+           private String cuit;
+           private String razonSocial;
+     
+           @Override
+           public void generarFactura(){
+               // ...
+           }
+       }
+     
+       @Entity
+       @DiscriminatorValue(name="hogarenio")
+       class ServicioHogarenio extends Servicio{
+           private String dniSolicitante;
+           private String nombreSolicitante;
+     
+           @Override
+           public void generarFactura(){
+               // ...
+           }
+       }
+     
+       @Entity
+       @Table(name="presupuestos")
+       class Presupuesto{
+           private float monto;
+           private float tiempoEnHoras;
+           private boolean estaAprobado;
+     
+           // 1. Un presupuesto está realizado por un profesional
+           // 2. Un profesional puede realizar muchos presupuestos
+           @ManyToOne
+           Profesional profesional;
+       }
+     
+       @Entity
+       @Table(name="profesionales")
+       class Profesional{
+           private String nombre;
+           private String apellido;
+           private Certificacion certificacionActual;
+     
+           // - Al embeber este "Value Object", en el Modelo de Datos se incluirán los atributos
+           // de la clase "Ubicacion" como campos adicionales
+           @Embedded
+           private Ubicacion ubicacionActual;
+     
+           // - Un profesional puede tener muchas certificaciones
+           // - Pero cada certificacion es propia de cada profesional
+           @OneToMany
+           @JoinColumn(name="id_profesional")
+           Collection<Certificacion> certificaciones;
+     
+           // - Un profesional puede aceptar varias políticas(ó no)
+           // - Cada politica aceptada por ese profesional implica un aumento o no en el presupuesto
+           @OneToMany
+           @JoinColumn(name="id_profesional")
+           Collection<PoliticaDeCuota> politicas;
+       }
+     
+       @Entity
+       @Table(name="politicasCuota")
+       class PoliticaDeCuota{
+           private int cuotas;
+           private float intereses;
+           private String nombre;
+       }
+     
+       @Entity
+       @Table(name="certificaciones")
+       class Certificacion{
+           @Enumerated(Type.String)
+           private Tipo tipoServicio;
+     
+           private DateTime fecha;
+           private int puntajeObtenido;
+           private String descripcion;
+       }
+     
+     #+END_SRC
+*** Modelo de datos (DER Fisico)
+   #+BEGIN_SRC plantuml :file ../img/parcial-iguana-fiks1.png :export results
+       @startuml
+       entity Servicio{
+           id
+           --
+           tipo_servicio
+           fechaDeRealizacion
+           latitud
+           longitud
+           descripcion
+       }
+     
+       entity ServicioEmpresarial{
+           id
+           --
+           cuit
+           razonSocial
+       }
+     
+       entity ServicioHogarenio{
+           id
+           --
+           dniSolicitante
+           nombreSolicitante
+       }
+     
+       entity Presupuesto{
+           id
+           --
+           monto
+           tiempoEnHoras
+           estaAprobado
+       }
+     
+       Servicio ||-down-|| ServicioEmpresarial : es
+       Servicio ||-down-|| ServicioHogarenio : es
+     
+       Servicio |o-right-|{ Presupuesto : tiene
+       @enduml
+     #+END_SRC
+
+     #+RESULTS:
+     [[file:../img/parcial-iguana-fiks1.png]]
+
+** Punto 2
+*** Problema planteado
+    #+BEGIN_SRC java
+      metodo obtenerReportePorPeriodo(fechaInicio, fechaFin){
+          return entityManager.createQuery("from Servicio")
+              .filter(servicio => servicio.esDelPeriodo(fechaInicio, fechaFin))
+              .groupBy(servicio => servicio.getProfesionalAsignado()) // agrupo por profesional
+              .sortByDesc((profesional, servicios) => servicios.length()) // ordeno grupos por cantidad
+              .map( (profesional,_) => pofesional) // me quedo con los profesionales
+              .take(10); // agarro los primeros 10
+      }
+    #+END_SRC
+*** Solución en el Modelo de Objetos
+    #+BEGIN_SRC java
+      // agregamos esta nueva entidad
+      @Entity
+      @Table(name="calificaciones")
+      class Calificacion{
+          private int puntaje;
+          private String comentario;
+      }
+      
+      @Entity
+      @Table(name="profesionales")
+      class Profesional{
+          private String nombre;
+          private String apellido;
+          private Certificacion certificacionActual;
+      
+          // - Agregamos este nuevo atributo
+          // - Un profesional puede tener muchas calificaciones por clientes (ó ninguna)
+          // - Esa calificación está designada sólo al profesional que se asignó, no a otro/s
+          // - Usamos Collection porque no indica que debe tener un orden como una Lista
+          // - Definimos el @JoinColumn para evitar la tabla asociativa de ManyToMany que genera el ORM
+          @OneToMany
+          @JoinColumn(name="id_profesional")
+          Collection<Calificacion> calificaciones;
+      
+          // - Al embeber este "Value Object", en el Modelo de Datos se incluirán los atributos
+          // de la clase "Ubicacion" como campos adicionales
+          @Embedded
+          private Ubicacion ubicacionActual;
+      
+          // - Un profesional puede tener muchas certificaciones
+          // - Pero cada certificacion es propia de cada profesional
+          @OneToMany
+          @JoinColumn(name="id_profesional")
+          Collection<Certificacion> certificaciones;
+      
+          // - Un profesional puede aceptar varias políticas(ó no)
+          // - Cada politica aceptada por ese profesional implica un aumento o no en el presupuesto
+          @OneToMany
+          @JoinColumn(name="id_profesional")
+          Collection<PoliticaDeCuota> politicas;
+      }
+    #+END_SRC
+*** Solución en el Modelo de Datos
+   #+BEGIN_SRC plantuml :file ../img/parcial-iguana-fiks2.png :export results
+      @startuml
+      title Iguanafiks - Modelo de Datos (DER Físico)
+      entity servicios{
+          id
+          --
+          tipo_servicio
+          fechaDeRealizacion
+          latitud
+          longitud
+          descripcion
+      }
+      
+      note left of servicios
+      Estrategia de Herencia
+      ,**JOINED**
+      end note
+      
+      entity serviciosEmpresariales{
+          id <<PK/FK>>
+          --
+          cuit
+          razonSocial
+      }
+      
+      entity serviciosHogarenios{
+          id <<PK/FK>>
+          --
+          dniSolicitante
+          nombreSolicitante
+      }
+      
+      entity presupuestos{
+          id
+          --
+          id_servicio <<FK>>
+          id_profesional <<FK>>
+          monto
+          tiempoEnHoras
+          estaAprobado
+      }
+      
+      entity profesionales{
+          id
+          --
+          id_certificacion_actual <<FK>>
+          nombre
+          apellido
+          latitud
+          longitud
+      }
+      
+      entity politicasCuota{
+          id
+          --
+          id_profesional <<FK>>
+          cuotas
+          intereses
+          nombre
+      }
+      
+      entity certificaciones{
+          id
+          --
+          id_profesional <<FK>>
+          tipo_servicio
+          fecha
+          puntajeObtenido
+          descripcion
+      }
+      
+      entity calificaciones{
+          id
+          --
+          id_profesional <<FK>>
+          puntaje
+          comentario
+      }
+      
+      profesionales ||-right-o{ calificaciones : tiene
+      
+      servicios ||-down-|| serviciosEmpresariales : es
+      servicios ||-down-|| serviciosHogarenios : es
+      
+      servicios |o-right-|{ presupuestos : tiene
+      
+      presupuestos }|-right-|| profesionales : realizado por
+      
+      profesionales ||-down-o{  politicasCuota : acepta
+      profesionales ||-down-o{ certificaciones : tiene
+      profesionales ||-down-o| certificaciones : actual
+      
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:../img/parcial-iguana-fiks2.png]]
+
+*** [DOING] Solución del código dado
+    #+BEGIN_SRC java
+      metodo obtenerReportePorPeriodo(fechaInicio, fechaFin){
+          return entityManager.createQuery("from Servicio")
+              .filter(servicio => servicio.esDelPeriodo(fechaInicio, fechaFin))
+      
+              .groupBy(servicio => servicio.getProfesionalAsignado()) // agrupo por profesional
+      
+              .sortByDesc((profesional, servicios) => servicios.length()) // ordeno grupos por cantidad
+      
+              .map( (profesional,_) => pofesional) // me quedo con los profesionales
+      
+              .take(10); // agarro los primeros 10
+      }
+    #+END_SRC
