@@ -55,7 +55,7 @@
    #+END_SRC
 
    #+RESULTS:
-   [[file:img/ejercicio-arq-entregayayaya.png]]
+   [[file:img/ejercicios/arq-entregayayaya.png]]
 * MicroPC IDE
 ** Diagrama
    #+BEGIN_SRC plantuml :file img/ejercicios/arq-micropc.png :exports results
