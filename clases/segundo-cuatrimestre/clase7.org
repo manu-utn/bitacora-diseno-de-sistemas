@@ -1,4 +1,5 @@
 #+TITLE: Clase 07 - Rutas REST + Spark Java + Motor de Templates + Cookies
+#+STARTUP: inlineimages
 * Protocolo DNS (Domain Name System)
   - Para darle un alias a una ip
   - Traduce nombres/alias a IP
@@ -419,6 +420,46 @@
       </html>
      
     #+END_SRC
+* Cookies Vs Sesiones
+** Ejemplo 1
+  #+BEGIN_SRC plantuml :file img/cookies-sessions.png :exports results
+    @startuml
+    title Cookies + Sessions
+    
+    ' COOKIES
+    autonumber 1
+    box "Cookies" #LightBlue
+    participant ClienteWeb as cliente1
+    participant ServidorWeb as servidor1
+    
+    cliente1 -> servidor1 : HTTP Request
+    servidor1 --> cliente1 : HTTP Response + Set-Cookie
+    
+    cliente1 -> servidor1 : HTTP Request + Cookie
+    servidor1 --> cliente1 : HTTP Response
+    endbox
+    
+    
+    ' COOKIES + SESSIONS
+    autonumber 1
+    box "Cookies + Session" #LightGreen
+    participant ClienteWeb as cliente2
+    participant ServidorWeb as servidor2
+    
+    cliente2 -> servidor2 : HTTP Request
+    note over servidor2: Crea y guarda la sesión en Memoria
+    servidor2 --> cliente2 : HTTP Response + Set-Cookie:sessionID=665..
+    
+    cliente2 -> servidor2 : HTTP Request + Cookie=sessionID=665...
+    note over servidor2: Compara la sessionID con el almacenado
+    
+    servidor2 --> cliente2 : HTTP Response
+    endbox
+    @enduml
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:img/cookies-sessions.png]]
 * Cookies
 ** Conceptos
    - Es un mecanismo para *guardar un estado del lado del cliente*
@@ -516,6 +557,103 @@
          }
      }
    #+END_SRC
+* Middleware/Filtros
+** Conceptos
+   - Actúan como un filtro, ante una *Solicitud* al Servidor, el *middleware* decide que *Respuesta* devolver al cliente/usuario
+   - Intercepta las *Requests* (peticiones/solicitudes) y filtra el contenido de la *Request* (respuesta) al usuario
+   - Se suelen usar como seguridad para validar autenticación (/Ej. evitar un acceso indeseado a una pantalla si no está logeado ó si no tiene permisos/)
+
+   #+BEGIN_COMMENT
+   Su ciclo de vida es lo que dure la Solicitud-Respuesta
+   #+END_COMMENT
+
+   #+BEGIN_QUOTE
+   Es un método ó un programa que se ejecuta en el momento que el Servidor recibe una *Solicitud* (Request)
+   y en el momento en que el Servidor envía una *Respuesta* (Response) al Cliente
+
+   Los métodos middleware tienen acceso a los objetos de Solicitud, y los de Respuesta
+   #+END_QUOTE
+
+   #+BEGIN_QUOTE
+   Es similar al Patrón de Diseño *Decorator*
+   1. éste intercepta operaciones
+   2. decide si ejecutar ciertas instrucciones
+   3. ó elige ejecutar la siguiente operación
+   #+END_QUOTE
+** Ejemplos
+*** Ejemplo en Spark Java
+    #+BEGIN_SRC java
+      // se ejecuta antes de cada petición (request)
+      before((request, response) -> {
+              boolean autenticado;
+      
+              if(!autenticado){
+                  // halt() detiene la ejecución
+                  halt(401, "Necesitás autenticarte para ingresar");
+              }
+          });
+      
+      // se ejecuta después de cada petición (request)
+      after((request, respone) -> {
+              response.header("foo", "blabla");
+          });
+    #+END_SRC
+*** Ejemplo en Node.js + Express
+    #+BEGIN_SRC javascript
+      import express from 'express'
+      const app = express()
+      
+      // usamos nuestra función validarLogin() como middleware
+      app.use(validarLogin)
+      
+      const estaLogeado = false;
+      
+      const data = [
+          {id:1, name: 'Baila para mi'},
+          {id:2, name: 'Mama mía'},
+      ]
+      
+      app.get('/home', (request, response) =>{
+          response.send('Bienvenido..!');
+      })
+      
+      app.get('/canciones', (request, response) =>{
+          response.send(data);
+      })
+      
+      // función que usaremos como middleware
+      function validarLogin(){
+          estaLogeado ? next() : console.log("No has iniciado la sesión")
+      }
+      
+      app.listen(8080, () => {
+          console.log('El servidor se está ejecutando...')
+      })
+    #+END_SRC
+** Diagramas
+*** Diagrama 1
+    #+BEGIN_SRC plantuml :file img/middlewares-app.png :exports results
+      @startuml
+      title Middlewares
+      
+      component Request as req
+      component Response as res
+      component "Authentication Middleware" as m1{
+          component "Geolocation Middleware" as m2{
+              component App
+          }
+      }
+      
+      req --> m1
+      m1 --> res
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:img/middlewares-app.png]]
+
+*** Diagrama 2
+    [[./img/middlewares-componentes.png]]
 * Recursos
 ** Documentación de la Cursada UTN
    1. https://github.com/dds-utn/spark-web-proof-of-concept/tree/pokemon-step-search
