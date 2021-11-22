@@ -1,0 +1,269 @@
+#+TITLE: Ejecicios de Arquitectura
+#+STARTUP: inlineimages
+* Problemas Comunes
+** Escala Vertical
+*** Riesgo al mejorar una única instancia de hardware
+    #+BEGIN_QUOTE
+    Escalar verticalmente implíca agregar mejoras al servidor (más RAM, más procesadores, más capacidad disco, ..),
+    agregar estas características a veces implíca tener fuera de servicio al servidor mientras esto ocurre..
+    #+END_QUOTE
+** Automatizar Tareas - Monitorear Servidor
+*** Chequear el estado del servidor
+    #+BEGIN_QUOTE
+    Si el servidor se cae porque otra aplicación lo hizo fallar,
+    se debe automatizar tareas que lo levanten junto con la aplicación
+    #+END_QUOTE
+** Copias de Seguridad
+*** Separar el almacenamiento de Backups del Servidor que los genera
+    #+BEGIN_QUOTE
+    Separar el equipo que hacer los *backups* del equipo donde se guardan los *backups*,
+    porque si fallara el servidor que hace los backups y también aplicación fallara...
+    NO podríamos llevar al sistema a un estado anterior en el que funcionaba OK...
+    #+END_QUOTE
+*** Validar que los Backups existentes funcionan
+    #+BEGIN_QUOTE
+    Comprobar que los *backups* existentes funcionan, restaurarlos y chequearlo...
+    En caso de falla de la aplicación, son la única forma de llevar al sistema a un estado seguro
+    #+END_QUOTE
+* Entrega YaYaYa
+** Diagrama
+   #+BEGIN_SRC plantuml :file img/ejercicios/arq-entregayayaya.png :exports results
+     @startuml
+     title EntregaYaYaYa
+     
+     actor Usuario <<Mobile>> as cliente1
+     actor Operador <<Browser>> as cliente2
+     
+     node ServidorWeb as servidor{
+         component App
+         database BaseDeDatos as db
+     }
+     
+     cliente1 -right-> App : HTTPS
+     cliente2 -up-> App : HTTPS
+     
+     App -right-> db
+     
+     
+     note as N1
+     ,* **Servicio Cloud:** PaaS Por ser una aplicación sencilla
+     ,* El **operador** y el **despachante** se comunicarían
+     vía telefónica
+     end note
+     
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/ejercicio-arq-entregayayaya.png]]
+* MicroPC IDE
+** Diagrama
+   #+BEGIN_SRC plantuml :file img/ejercicios/arq-micropc.png :exports results
+     @startuml
+      @startuml
+      title MicroPC IDE
+     
+      Actor Usuario <<Mobile>>
+     
+      node Marketplace{
+         component Snippets
+          database datos
+     
+          Snippets -down-> datos
+      }
+     
+      component AppEditor{
+          component Debugger
+          component Simulador
+      }
+     
+      Usuario -> Snippets : HTTPS
+      AppEditor -> Snippets
+      @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/ejercicios/arq-micropc.png]]
+* Rekomendashi Fase 2
+** Observaciones
+   #+BEGIN_QUOTE
+   Soluciones para optimizar el tiempo de carga de las imágenes de alta calidad
+
+   Una solución sería *contratar un servicio CDN para replicar el contenido*, en este caso las imagenes.
+   Cuando los usuarios se conecten a la aplicación, el servicio CDN se conectará entre su cluster de servidores
+   al servidor más cercano geograficamente del usuario, que tiene una réplica del contenido.
+   
+   Esto reduciría la carga a los servidores, porque se delegaría la responsabilidad al servicio CDN,
+   que él se encarge de distribuir la carga de las peticiones de imágenes a sus servidores.
+
+   Además optimizaría las imagenes (suponiendo que es un feature que provee el servicio CDN)
+   #+END_QUOTE
+
+   #+BEGIN_QUOTE
+   Otra solución para reducir la *latencia* del usuario respecto a las imágenes de alta calidad,
+   sería que nosotros redujeramos la calidad de las mismas.
+   
+   Esta quizás es menos costosa que contratar un servicio CDN, pero podría no ser tan eficiente.
+   #+END_QUOTE
+** Diagrama
+   #+BEGIN_SRC plantuml :file img/ejercicios/arq-rekomendashi-fase2.png :exports results
+     @startuml
+     title "Rekomendashi, Fase 2"
+     
+     Actor Usuario <<Browser>>
+     
+     node "Load Balancer" as load
+     
+     node Servidor as s1{
+         component App as a1
+     }
+     node Servidor as s2{
+         component App as a2
+     }
+     
+     node Servidor as s3{
+         component App as a3
+     }
+     
+     database BaseDeDatos as db
+     
+     '------------------------------------
+     '   Interacciones
+     
+     Usuario -right-> load : HTTP
+     
+     load -down-> s1 : HTTP
+     load -down-> s2 : HTTP
+     load -down-> s3 : HTTP
+     
+     s1 -down-> db
+     s2 -down-> db
+     s3 -down-> db
+     
+     '------------------------------------
+     '   Notas
+     note as N1 #LightBlue
+     ,* Preferimos **Escala Horizontal** en servidor porque
+     ,** Tenemos más instancias del recurso para __distribuir la carga__
+     ,** Hace al sistema __tolerante a fallos__ permitiendo que
+     el sistema siga funcionando si un servidor falla
+     ,** Es menos costoso (//enunciado lo dice//)
+     
+     ,* Evitamos la **Escala Vertical** en servidor porque
+     ,** Era una única instancia => era **spof**
+     ,** Cada mejora en el hardware provocaba que 
+     estuviera fuera de servicio (downtime)
+     end note
+     
+     note bottom of s3
+     ,* Cada servidor tiene una **replica** exacta
+     de la aplicación, el usuario no se da
+     cuenta de a cual servidor accedió
+     ,* Al tener varias instancias del recurso
+     Servidor ya no son un **spof**
+     ,* Al tener varios servidores podemos
+     separar al que hace los **backups**
+     de quien almacena
+     end note
+     
+     note right of load
+     ,**Balanceador de Carga**
+     ,* Para __redirigir las solicitudes__ de los usuarios
+     a los __servidores activos__
+     ,* Antes de redirigir el tráfico, verifica si el 
+     servidor está caido o no
+     ,* Es un **spof** a menos que agregemos uno adicional
+     ,* Se podría agregar el mecanismo de **sticky sessión**
+     para  __gestionar las sesiones en cada servidor__
+     end note
+     
+     note right of db
+     ,* Es un **spof**
+     end note
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/ejercicios/arq-rekomendashi-fase2.png]]
+* Shera Enterprise
+** Diagrama
+   #+BEGIN_SRC plantuml :file img/ejercicios/arq-shera-enterprise.png :exports results
+     @startuml
+     title SheRa Enterprise
+     
+     Actor Usuario
+     
+     node "API Gateway" as gate
+     
+     node ServicioKanban as servicio1
+     node ServicioTracking as servicio2
+     node ServicioRevision as servicio3
+     node ServicioVersionado as servicio4
+     node ServicioFacturacion as servicio5
+     
+     database Datos as db1
+     database Datos as db2
+     database Datos as db3
+     
+     '-------------------------------------
+     '   Interaciones
+     '-------------------------------------
+     gate -down-> servicio1 : HTTP
+     gate -down-> servicio2 : HTTP
+     gate -down-> servicio3 : HTTP
+     gate -down-> servicio5 : HTTP
+     servicio1 -down-> servicio4 : HTTP
+     servicio2 -down-> servicio4 : HTTP
+     servicio3 -down-> servicio4 : HTTP
+     
+     servicio5 -down-> db3
+     servicio2 -down-> db2
+     servicio1 -down-> db1
+     
+     Usuario -right-> gate : HTTPS
+     
+     
+     '-------------------------------------
+     '   Observaciones
+     '-------------------------------------
+     
+     note right of gate
+     ,* __Redirecciona las peticiones a los servicios__
+     ,* Actúa similar a un loadbalancer (pero no
+     redirige la carga, si no las peticiones)
+     ,* Exponemos solo los **endpoints** que queremos
+     ,* Ofuscamos algunos servicios de la API principal
+     end note
+     
+     note as N1 #LightBlue
+     ,**Arquitectura de Microservicios**
+     ,* Divimos la aplicación por funcionalidad, cada una es un microservicio
+     ,* Hacer un deploy en un servicio no afecta al resto, porque son aplicaciones
+     independientes, evitamos tener la aplicación principal fuera de servicio (downtime)
+     ,* Cada servicio expone su API, e interactúan entre ellos mediante
+     peticiones con el protocolo HTTP si usaran una API Web
+     
+     ,**SPOFs** (Single point of failure):
+     ,* Las base de datos para con cada servicio
+     ,* La **API Gateway** porque es el único punto de acceso para
+     interactuar con los servicios
+     ,* El ServicioVersionado para los Kanban, Tracking, Revisión
+     (suponiendo que hubiera sido ese el modelo)
+     end note
+     
+     legend
+     Si se comercializa como **SaaS**
+     ,* Se estaría enfocando en el usuario final en que sólo use la aplicación.
+     ,* El usuario final se despreocuparía de la arquitectura, sólo usaría el servicio
+     ,* El usuario no tendría control sobre la arquitectura
+     
+     Si se comercializa como **On-Premise**
+     ,* Apuntaría a usuarios experimentados con conocimiento técnico
+     ,* El usuario debe tener experiencia en como armar la arquitectura
+     ,* El usuario debe instalar/configurar el equipo, mantener la conectividad, ...
+     end legend
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/ejercicios/arq-shera-enterprise.png]]
