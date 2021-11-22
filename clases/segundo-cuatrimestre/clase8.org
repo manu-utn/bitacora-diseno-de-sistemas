@@ -1,44 +1,46 @@
 #+TITLE: Clase 08 - Arquitectura
+#+STARTUP: inlineimages
 * Conceptos
   - Es el *Diseño lógico* de alto nivel, y el *Diseño físico*
 * Construcción
 ** Iterativa
-   - Agregar herramientas a medida que se necesiten
+   - Agregar herramientas a medida que se necesiten, para evitar agregar complejidad que no necesita
    - Evitar empezar agregando complejidad que no se necesita
+   - Es más fácil ir a otro esquema al ir definiendo las cosas de a poco y no todo de repente
 ** Constructiva
    - Cuando empezamos a integrar los componentes
    - Si al momento de construir, el diseño de la arquitectura funciona como se esperaba
+   - Cuando materializamos los distintos diagramas (Ej. diagramas de clases)
 ** Verificable
+   - Que sea medible, que se pueda verificar que lo que está realmente funciona (Ej. como en objetos cuando usabamos tests para validarlo)
    - Si las decisiones que se tomaron para armar la arquitectura fueron coherentes
 ** Holístico
    Cuando intervienen muchos aspectos técnicos/económicos/políticos
-   - Técnicos (/por temas de implementación/)
-   - Económicos (/si se puede adquirir los servidores/)
-   - Políticos (/algún acuerdo con alguna empresa que restringe el lenguaje, ó el sistema operativo, o cuál DB/)
-* Niveles de arquitectura
-  - Arquitectura del sistema
-* Aspectos Físicos
-** Hardware
-   - Que equipos ó que capacidad tendrán
-** Distribución
-   - Si va a haber sólo un equipo, ó varios equipos
-   - Si se va a exponer a internet
-   - Si habrá una red intermedia
-** Tecnologías críticas
-* Lógicas
-** Responsabilidad funcional
-   - Si lo separamos por funcionalidades (/Ej. módulo de cobranza/ventas/)
-   - Que módulo tendra el modelo de persistencia, el modelo de UI, ..
-** [WAITING] Tipo de responsabilidad
-   - Si tenemos todo en una capa de presentación, otra capa persistenca,
+   - Técnicos (/elegir el lenguaje de programación según el personal técnico, ../)
+   - Económicos (/migrar la aplicación a servidores más baratos, si se puede adquirir los servidores, .../)
+   - Políticos (/algún acuerdo con alguna empresa que restringe el lenguaje, ó el sistema operativo, o cuál DB, .../)
+** Potenciado por la tecnologia
+   - Analizar los pro/contras al elegir las tecnologías
+   - Elegir sólo herramientas que aportan solución a los requerimientos
+* Aspectos Estructurales
+** Aspectos Físicos
+*** Hardware
+    - Que equipos ó que capacidad tendrán
+*** Distribución
+    - Si va a haber sólo un equipo, ó varios equipos
+    - Si se va a exponer a internet
+    - Si habrá una red intermedia
+*** Tecnologías críticas
+** Aspectos Lógicos
+*** Responsabilidad funcional
+    - Si lo separamos por funcionalidades (/Ej. módulo de cobranza/ventas/)
+    - Que módulo tendrá el modelo de persistencia, el modelo de UI, ..
+*** [WAITING] Tipo de responsabilidad
+    - Si tenemos todo en una capa de presentación, otra capa persistencia, ...
 * Atributos de calidad
-  - Eficiencia (/cuanto suele demorar una operación, .../)
-  - Disponibilidad (/cuanto tiempo está accesible/disponible un recurso/)
-  - Seguridad (/Ej. la seguridad en la conexión entre el cliente-servidor es HTTPS, el costo de encriptar/hashear la información, .../)
-  - Escabilidad (/capacidad para soportar más operaciones/)
-  - Usabilidad (/Ej. según dif métricas como la cant. de clicks para realizar una operación, .../)
-  - Portabilidad (/acceder a la app desde diferentes plataformas, Ej. dispositivo android, en windows, ../)
-
+** Conceptos
+   - Son los *criterios para decidir*
+     
   #+BEGIN_QUOTE
   Similar a las *cualidades de diseño* pero para arquitectura..
   
@@ -47,15 +49,95 @@
   
   y están relacionados con los *requerimientos no funcionales*
   #+END_QUOTE
+** Eficiencia
+   - Cuanto suele demorar una operación, _para esto debe poder ser "medible"_ (/para saber con que comparar/)
+   - Ej. cuanto demora el login, la cantidad de requests...
+** Disponibilidad
+   - Cuanto tiempo está accesible/disponible un recurso
+   - Relacionado con *SPOF* (single point of failure)
+** Seguridad
+   - Ej. la seguridad en la conexión entre el cliente-servidor es HTTPS, el costo de encriptar/hashear la información, visibilidad de los datos, ...
+** Escabilidad
+   - Capacidad para soportar más operaciones
+   - NO confundir con *extensibilidad* (cualidad de diseño, que permite agregar nuevas características con poco impacto)
+** Usabilidad
+   - Según diferentes métricas poder estimar si algo es fácil de usar o no
+   - Ej. Como la cant. de clicks para realizar una operación, cuantos usuarios pudieron crear una cuenta, ...
+** Portabilidad
+   - Acceder a la app desde diferentes plataformas
+   - Ej. dispositivo android, en windows, ..
+* SPOF (Single Point Of Failure)
+** Conceptos
+  - Un *SPOF* es componente del que depende completamente el sistema, si ese componente falla => el sistema deja de funcionar
+  
+  - Está relacionado con el *atributo de calidad* "Disponibilidad"
+  - Ej. una base de datos relacional, si tenemos sólo un servidor, si nosotros manejamos la conectividad, ...
+** Ejemplos
+*** Ejemplo - SPOFs en Web Tradicional 
+    #+BEGIN_SRC plantuml :file img/spof-arquitectura-web-tradicional.png :exports results
+      @startuml
+      title SPOFs en Web Tradicional
+      actor Usuario
+      
+      node Cliente{
+        component Navegador
+      }
+      
+      node Servidor{
+        component "Aplicacion Web" as App
+      }
+      
+      database BaseDeDatos as db
+      
+      Usuario -right-> Navegador
+      Navegador -right-> App
+      App -right-> db
+      
+      '-----------------------------------
+      '-- Notas
+      
+      legend 
+      ,* Si es el servidor es **autohosteado** (bare metal, self-hosted),
+      entonces nosotros administramos la conectividad,
+      por tanto la conectividad sería otro **spof**
+      
+      ,* Es **spof** todo componente del que
+      la aplicación dependa, y sólo tengamos
+      una instancia de ese recurso
+      end legend
+      
+      
+      note bottom of db
+      La DB es un **spof**
+      si se cae no debería de andar
+      del todo la aplicación
+      end note
+      
+      note bottom of Servidor
+      ,* El servidor es **spof** si falla
+      no hay punto de acceso para
+      acceder a la app
+      end note
+      
+      note bottom of Cliente
+      El cliente NO es **spof**
+      porque esto no depende de la app
+      end note
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:img/spof-arquitectura-web-tradicional.png]]
 * Vista de despliegue
 ** Conceptos
+   - En el *diagrama de despliegue* las flechas indican la interacción entre los componentes y/ó actores
 ** Componentes/Modulo
 *** Componente lógico
-    - Se representa con un cuadrado
+    - En el diagrama de despliegue, se representa con un cuadrado
     - Suele ser un software (/EJ. una API ó una aplicación web/)
     - Puede contener a otros componentes lógicos
 *** Componente físico (nodo)
-    - Se representa con un cubo
+    - En el diagrama de despliegue, se representa con un cubo
     - Representa un ordenador
     - Puede contener a otros componentes
 *** Base de Datos
@@ -100,15 +182,53 @@
    *Sevidor* interactua con *Base de Datos*
    #+END_QUOTE
 ** Ejemplo - Web 2.0
-   - Más dinámico que la web tradicional
+*** Conceptos
+    - Más dinámico que la web tradicional
+    - El *Cliente* tiene más *responsabilidades* y ejecuta más lógica (Ej. javascript)
+    - El *Servidor* sólo expone los datos, no renderiza *html*
+    - Las validaciones se sugiere que también estén del lado del servidor
    
-   #+BEGIN_QUOTE
-   Usuario -> Cliente (navegador + app js) -> Servidor (API Rest) -> Base de Datos
-   #+END_QUOTE
-* Donde se almacena
+    #+BEGIN_QUOTE
+    Usuario -> Cliente (navegador + app js) -> Servidor (API Rest) -> Base de Datos
+    #+END_QUOTE
+*** Ventajas
+    - El servidor no renderiza el *html*, sólo el *cliente*
+*** Desventajas
+    - Es menos seguro tener los datos en el lado del *cliente* (Ej. se puede manipular las cookies)
+    - La carga inicial puede ser más lenta
+** Otro Ejemplo
+   #+BEGIN_SRC plantuml :file img/arquitectura-servidor.png :exports results
+     @startuml
+     node Servidor{
+         component "ServidorWeb" as App
+             
+         database "CachéUltimasEntradas" as Cache
+     }
+     
+     App -> Cache
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/arquitectura-servidor.png]]
+
+* Hosting
+** Tabla Comparativa
+   |----------------------------------------------------------------+------+------+------+-------------|
+   | Características                                                | SaaS | PaaS | IaSS | Self-Hosted |
+   |----------------------------------------------------------------+------+------+------+-------------|
+   | Enfocado a Usuarios finales (consumir app)                     | X    |      |      |             |
+   | Enfocado a Desarrolladores (entorno para construir Apps)       |      | X    |      | X           |
+   | Enfocado a Sysadmins (para migrar arquitectura, control total) |      |      | X    | X           |
+   |----------------------------------------------------------------+------+------+------+-------------|
+   | Control sobre la Arquitectura                                  | 0%   | 50%  | 100% | 100%        |
+   |----------------------------------------------------------------+------+------+------+-------------|
 ** Bare metal
    - Es el *Self-Hosted* autohosteado por uno mismo
-   - Uno mismo debe configurar/instalar los Servidores/Servicios locales/..
+   - Uno mismo debe instalar/configurar los Servidores/Servicios locales/..
+   - Se debe mantener la conectividad, la red
+   - Se puede utilizar para aplicaciones simples, por políticas de seguridad
+   - Requiere mucha responsabilidad + conocimiento técnico
 
    |------------+----------------+---------+----------------|
    | App        | Datos          | Runtime | Middleware     |
@@ -121,14 +241,32 @@
 *** Conceptos
     - Contratar los servicios a terceros
     - Acceder al servicio de forma remota
+*** PaaS Vs IaSS
+    |---------------------------------------------------------+------+------|
+    |                                                         | PaaS | IaSS |
+    |---------------------------------------------------------+------+------|
+    | Mas costoso                                             | X    |      |
+    | NO permiten escribir sobre el *file sytem*              | X    |      |
+    |---------------------------------------------------------+------+------|
+    | Es más fácil para empezar                               | X    |      |
+    | Facilita que nos concentremos en las features de la app | X    |      |
+    | Requiere mantenimiento + conocimiento técnico           |      | X    |
+    |---------------------------------------------------------+------+------|
+*** FaaS
+    - Significa *Function as a Service*
+    - Cuando no es necesario montar una aplicación con infraestructura
+    - Sólo nos cobran por ejecutar una función (Ej. una función para deploy)
 *** IaSS
     - Significa *Infraestructura como servicio*
-    - Puede ser una máquina física ó máquina virtual (VM)
-    - Ya viene resuelto el tema de virtualización, almacenamiento, ...
+    - Se contrata a un tercero una máquina física ó máquina virtual (VM)
+    - Ya viene resuelto el tema de virtualización, almacenamiento, conectividad, red, ...
     - Sólo nos encargamos de la instalación del software
 *** PaaS
     - Significa *Plataforma como servicio*
-    - Se contrata la plataforma correrá la app (/Ej. VM con java 8, VM con php8, .../)
+    - Se contrata a un tercero la plataforma donde correrá la app (/Ej. VM con java 8, VM con php8, .../)
+    - Por lo general no permiten escribir sobre el *file system* (disco) se debe adicionar un disco aparte
+    - Se pueden agregar *Load Balancer* para tener replicas de la aplicación
+    - Tiende a ser más costoso, ya que viene casi todo resuelto y sólo nos enfocamos en las features de la aplicación
 
     #+BEGIN_QUOTE
     Es común para comenzar una startup y no lidiar en como configurar la infraestructura
@@ -137,37 +275,173 @@
     #+END_QUOTE
 *** SaaS
     - Significa *software como servicio*
-    - Se contrata sólo el servicio (/Ej. Sistema de mail/login, Almacenamiento Cloud como Dropbox, Firebase que es una db como servicio, .../)
+    - Ya viene resuelto el tema de la Aplicación, virtualización, almacenamiento, conectividad, red, ...
+    - Se contrata a un tercero sólo el servicio (/Ej. Sistema de mail/login, Almacenamiento Cloud como Dropbox, Firebase que es una db como servicio, .../)
 
     #+BEGIN_QUOTE
     El TP de la cursada es un *SaaS*  (software como servicio),
     para que cualquier empresa pueda usarlo,
     pero que se hará *deploy* en un *IaSS* ó *PaaS*
     #+END_QUOTE
+** Diagramas
+*** Diagrama 1
+    #+ATTR_HTML: :width 700
+    [[./img/servicios-cloud-pizza.png]]
+*** Diagrama 2
+    #+ATTR_HTML: :width 700
+    [[./img/servicios-cloud3.jpg]]
+*** Diagrama 3
+    #+ATTR_HTML: :width 700
+    [[./img/servicios-cloud2.jpg]]
+*** Diagrama 4
+    #+ATTR_HTML: :width 700
+    [[./img/servicios-cloud1.png]]
+* Servicios de CDN (Content Delivery Network)
+** Conceptos
+   - Su traducción es *Red de Distribución de Contenido*
+   - Se utilizan cuando los usuarios que usan el sistema son de distintos países
+   - Es un servicio de internet que contiene un *cluster de servidores* ubicados en distintas zonas geográficas
+   - *Replican el contenido en otros servidores* y *el usuario accede a una versión del contenido que está en la caché del servidor más cercano geograficamente*
+   - Almacenan una versión del contenido (scripts, imágenes, videos, ...) en caché para un acceso rápido
+   - El servicio se encarga de actualizar las réplicas de contenido en sus servidores
+** Ventajas
+   - Reduce la carga de nuestro servidor, se redirige al servicio CDN (/ellos distribuyen la carga a sus servidores/)
+   - Entregan contenido por ubicación física más cercana al usuario (/es transparente para el usuario, no se entera/)
+   - Mayor velocidad de descarga del contenido (software, scripts, imágenes, videos, ...) para el usuario que usa el sistema (porque se conecta a un servidor cercano)
+   - Menor latencia (para el usuario)
+   - Optimizan automaticamente el contenido multimedia
+   - Seguridad contra ciberataques (DoS, DDoS, ..)
+     
+   #+BEGIN_QUOTE
+   La *latencia* desde el punto de vista del servidor,
+   es el tiempo de respuesta del servidor para recibir y enviar información del contenido.
+
+   Mientras que desde el punto de vista del usuario,
+   el tiempo desde entre que solicitamos el recurso y lo recibimos.
+
+   En lo que es aplicaciones web sería el tiempo de carga del contenido,
+   tanto imágenes, scripts (javascript, css, ...), etc..
+   #+END_QUOTE
+** Diagramas
+*** Diagrama 2
+    [[./img/cdns.png]]
+*** Diagrama 1
+   
+    [[./img/que-es-un-cdn.jpeg]]
 * Escalabilidad
 ** Conceptos
   - Es la capacidad para soportar más operaciones
   - Es uno de los *atributos de calidad* de arquitectura
 ** Horizontal
-   - Se agregan servidores en paralelo
-   - Aparece el concepto del *load balancer* que *redirige las peticiones a los servidores*
-   - Se suelen agregar más servidores para tener mayor *tolerancia a fallos*, si alguno se cae => otro lo atiende
+*** Conceptos
+    - Agregar replicas (nodos/componentes iguales al anterior) para distribuir la carga entre los componentes
+    - Se suelen agregar más servidores para tener mayor *tolerancia a fallos*, si alguno se cae => otro lo atiende
+    - Aparece el concepto del *load balancer* que *redirige las peticiones a los servidores*
+    - Se agregan servidores (replicas) en paralelo
+*** Ventajas
+    - *Distribuir la carga*, para mejorar el tiempo de respuesta quizás
+    - *Tolerancia a fallos*, porque al haber más replicas del componente.. si alguna falla, hay otra funcionando
+    - *Menor Costo*, porque agregar una réplica de un componente es más barato que mejorar el hardware
+*** Desventajas
+    - Agrega *complejidad*, se necesita el conocimiento para armar/mantener la infraestructura
+    - El componente debe soportar tener réplicas
 ** Vertical
    - A la máquina física se le agrega más poder
 ** Load Balancer / Reverse Proxy
-   - Todas las peticiones de internet se centralizan en el *load balancer*
-   - Redirige/Distribuye la información/tráfico/peticiones a los *servidores*
-   - Puede ser un *software* (app) ó *dispositivo hardware*
-   - Si llegase a caer/fallar se podría poner otro *load balancer*
+*** Conceptos
+    - Se conoce por *Balanceador de Carga*
+    - Todas las peticiones de internet se centralizan en el *load balancer*
+    - Distribuye la carga a los servidores, chequeando si están funcionando si no.. lo redirige a otro servidor
+    - Redirige/Distribuye la información/tráfico/peticiones a los *servidores* (que estén activos)
+    - Puede ser un *software* (app) ó *dispositivo hardware*
+    - Si llegase a caer/fallar se podría poner otro *load balancer* (si se tuviese sólo uno, sería un Spoff)
 
-   #+BEGIN_QUOTE
-   Mientras menos lógica tenga el *load balancer* más rápido funcionaría,
-   si llegase a andar lento => el usuario lo notará
+    #+BEGIN_QUOTE
+    Mientras menos lógica tenga el *load balancer* => más rápido funcionará
+    si llegase a andar lento => el usuario lo notará
 
-   Si contratamos un servicio *PaaS* no es necesario administrarlo, ya viene resuelto
-   en cambio en un *IaSS* tendríamos que solucionarlo nosotros
-   #+END_QUOTE
-* Soluciones al problema en que servidor se guardó el valor de una Sesión
+    Si contratamos un servicio *PaaS* no es necesario administrarlo, ya viene resuelto
+    en cambio en un *IaSS* tendríamos que solucionarlo nosotros
+    #+END_QUOTE
+*** Ejemplo 1
+    #+BEGIN_SRC plantuml :file img/load-balancer-protocolos.png :exports results
+      @startuml
+      
+      title Load Balancer (Balanceador de Carga)
+      
+      Actor Usuario <<Browser>>
+      
+      node "Balanceador de Carga" as Balanceador
+      node "Red interna" as red{
+          node ServidorA
+          node ServidorB
+          node ServidorC
+      
+          database BaseDeDatos
+      }
+      
+      
+      Usuario -right-> Balanceador : HTTPS
+      
+      Balanceador -down-> ServidorA : HTTP
+      Balanceador -down-> ServidorB : HTTP
+      Balanceador -down-> ServidorC : HTTP
+      
+      ServidorA -down-> BaseDeDatos
+      ServidorB -down-> BaseDeDatos
+      ServidorC -down-> BaseDeDatos
+      
+      note as N1 #LightGreen
+      ,* La interacción entre Usuario y el Loadbalancer
+       es mediante el **protocolo HTTPS** porque permite
+       __establecer una conexión segura entre cliente-servidor__
+      
+      ..
+      
+      ,* La interacción entre el Loadbalancer y los Servidores
+      es con el **protocolo HTTP** porque suponemos que se
+      tiene una __red interna segura__
+      end note
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:img/load-balancer-protocolos.png]]
+
+*** Ejemplo 2
+    #+BEGIN_SRC plantuml :file img/load-balancer.png :exports results
+      @startuml
+      
+      title Load Balancer (Balanceador de Carga)
+      
+      node Cliente
+      cloud Internet
+      
+      node Balanceador
+      node ServidorA
+      node ServidorB
+      node ServidorC
+      
+      database BaseDeDatos
+      
+      Cliente -right-> Internet : http
+      
+      Internet -right-> Balanceador
+      
+      Balanceador -down-> ServidorA
+      Balanceador -down-> ServidorB
+      Balanceador -down-> ServidorC
+      
+      ServidorA -down-> BaseDeDatos
+      ServidorB -down-> BaseDeDatos
+      ServidorC -down-> BaseDeDatos
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:img/load-balancer.png]]
+
+* Problema - En que servidor guardar la Sesión del Usuario
 ** Conceptos
    #+BEGIN_QUOTE
    *Escenario donde tenemos 1 servidor*
@@ -191,7 +465,7 @@
 
    El problema surje en identificar en que servidor se guardó el valor de la sesión..
    #+END_QUOTE
-** NO usar sesiones, sólo usar Cookies
+** Solución A - NO usar sesiones, sólo usar Cookies
   #+BEGIN_QUOTE
   Una alternativa a usar Sesiones sería, "NO USARLAS" y sólo manejarse con *Cookies* y que éstas se guardan del lado del cliente,
   evitando el saber en que servidor se guardó una sesión
@@ -200,23 +474,155 @@
   pero su valor es un identificador que usa el servidor como clave de un diccionario para saber el valor
   que guardó de la sesión)
   #+END_QUOTE
-** Persistir en una base de datos en vez de en memoria
+** Solución B - Persistir en una base de datos en vez de en memoria
    #+BEGIN_QUOTE
    En vez de usar cookies que se guardan en memoria, 
    se podría usar base de datos especializadas en guardar datos (clave, valor)
     
    Como las base de datos no relacionales osea noSQL como mongodb, redis, ...
    #+END_QUOTE
-** Replicar sesión en todos los servidores
-** Sticky Session
-   - Significa *sesión pegajosa*
-   - Este mecanismo está en el *load balancer*
-   - Resuelve el problema de saber en que servidor se guardó el valor de la sesión
-   - Se guarda en una *Cookie* (que devuelve el load balancer) en que *Servidor* se guardó el valor de la sesión
-   - Esta *Cookie* especial permite indicarle al *load balancer* a que servidor redirigir la petición
+** Solución C - Replicar sesión en todos los servidores
+** Solución D - Sticky Session
+*** Conceptos
+    - Significa *sesión pegajosa* porque pega la sesión a un servidor
+    - Este mecanismo está en el *load balancer*
+    - Resuelve el problema de saber en que servidor se guardó el valor de la sesión
+    - Se guarda en una *Cookie* (que devuelve el load balancer) en que *Servidor* se guardó el valor de la sesión
+    - Esta *Cookie* especial permite indicarle al *load balancer* a que servidor redirigir la petición
+*** Desventajas
+    #+BEGIN_QUOTE
+    Si los servidores tienen mucha carga (solicitudes que redirige el loadbalancer),
+    el agregar una nueva réplica de un servidor no implíca una mejora al instante.
+    
+    La carga no se redirige al instante, porque los servidores contienen las sesiones
+    guardadas en memoria.
+    #+END_QUOTE
+*** Diagrama
+    #+ATTR_HTML: :width 600px
+    [[./img/sticky-session.jpg]]
+* Arquitectura Monolíticas Vs Arquitectura de Microservicios
+** Tabla comparativa
+  |--------------------------------+----------------------------------------------------------------------------+---------------------------------------------------------------------------------------|
+  |                                | Arq. Monolítica                                                            | Arq. de Microservicios                                                                |
+  |--------------------------------+----------------------------------------------------------------------------+---------------------------------------------------------------------------------------|
+  | Funcionalidad                  | Está todo empaquetado en la misma aplicación                               | Se divide en microservicios independientes entre si                                   |
+  |--------------------------------+----------------------------------------------------------------------------+---------------------------------------------------------------------------------------|
+  | Despliege                      | Se despliega toda la aplicación entera (/lleva tiempo/)                    | Se despliega cada microservicio por separado (/es más rápido/)                        |
+  |--------------------------------+----------------------------------------------------------------------------+---------------------------------------------------------------------------------------|
+  | Migración                      | Se debe migrar toda la aplicación                                          | Se puede migrar un microservicio a otro servidor (/no afecta al resto/)               |
+  |--------------------------------+----------------------------------------------------------------------------+---------------------------------------------------------------------------------------|
+  | Comunicación                   | Los *objetos se comunican más rápido* mediante mensajes (/mismo servidor/) | Los *microservicios se comunican más lento* mediante una API interna                  |
+  |--------------------------------+----------------------------------------------------------------------------+---------------------------------------------------------------------------------------|
+  | Interacción con Usuarios       | Interactúan con la aplicación                                              | Interactúan con una *API Gateway* que expone algunos servicios de los microservicios  |
+  |--------------------------------+----------------------------------------------------------------------------+---------------------------------------------------------------------------------------|
+  | Lenguajes/Tecnologías          | Mismo entorno para todo (lenguaje, bibliotecas, ..)                        | Cada microservicio puede tener un lenguaje diferente, la tecnología que necesita      |
+  |--------------------------------+----------------------------------------------------------------------------+---------------------------------------------------------------------------------------|
+  | SPOF (Single Point of Failure) | Si falla una funcionalidad, fallan las demás (porque es todo uno)          | Si falla un microservicio, no afecta al resto porque son independientes               |
+  |--------------------------------+----------------------------------------------------------------------------+---------------------------------------------------------------------------------------|
+  | Escalar                        | Problemas para *Escala Vertical*, la aplicación queda fuera de servicio    | Facilidad para *Escala vertical* por servicio, se pueden mejorar sin afectar al resto |
+  |--------------------------------+----------------------------------------------------------------------------+---------------------------------------------------------------------------------------|
+** Diagramas
+*** Diagrama 1 - Arquitectura Monolítica
+    [[./img/arquitectura-monolitica.png]]
+*** Diagrama 2 - Arquitectura de Microservicios
+    [[./img/arquitectura-microservicios.png]]
+*** Diagrama 3 - API Gateway
+    #+ATTR_HTML: :width 600
+    [[./img/gateway1.png]]
+* Arquitectura de Microservicios
+** Conceptos
+   - Divide la aplicación por funcionalidad, cada funcionalidad se representa con un *microservicio*
+   - Divide los módulos de una *aplicación monolítica* en una con *microservicios* independientes
+
+   #+BEGIN_QUOTE
+   Un indicio de que necesitamos pasar a una *arquitectura de microservicios* sería
+   1. si tenemos una *arquitectura monolítica* donde la aplicación tiene demasiados *módulos* (/Ventas, Compras, Marketing, .../)
+   2. si al hacer *deploy* en alguno de esos módulos implíca que la aplicación deje de estar disponible (esto se conoce como *Downtime*),
+      
+   Si la aplicación no está disponible => tampoco lo estarán el resto de los módulos para los usuarios.
+   #+END_QUOTE
+** Microservicio
+*** Conceptos
+    - Son como aplicaciones/subsistemas independientes que en conjunto actúan como un sólo sistema
+    - Cada microservicio es independiente del resto (/podemos hacer deploy en él, sin afectar al resto/)
+    - Pueden tener su propia arquitectura (/cada uno con un Lenguaje diferente, conectarse a otras Bases de Datos, .../)
+    - Interactúa con otros microservicios a mediante una *API Rest* con peticiones HTTP
+    - Expone sus servicios (/la interfaz/) mediante una *API*
+*** Microservicios como endpoints
+    #+BEGIN_QUOTE
+    Cada microservicio sería un endpoint porque al estar en distintos servidores,
+    la única manera de interactuar con ellos es mediante peticiones HTTP a una API REST,
+    que en este caso sería al *API Gateway*
+
+    Por ejemplo si queremos interactuar con los microservicios mediante peticiones HTTP,
+    - ~GET /ventas~ (solicitamos una colección del recurso venta al microservicio Ventas)
+    - ~GET /compras~ (solicitamos una colección del recurso producto al microservicio Compras)
+    - ~POST /ventas~ (solicitamos crear una nueva instancia del recurso venta al microservicio Ventas)
+    #+END_QUOTE
+** API Gateway
+*** Conceptos
+   - Actúa como *único punto de entrada* hacia un grupo de microservicios
+   - Actúa similar a un *Load Balancer*, pero NO redirige la carga, sólo redirige las peticiones a los microservicios
+   - Es un posible *spof*
+*** Ventajas
+    - Evita exponer servicios a clientes externos
+    - Oculta algunos servicios de la *API principal* exponiendo sólo algunos *endpoints* para consumo del API
+    - Separa la *API pública* de la *API interna de microservicios*
+    - Para *orquestar* microservicios, por si tuviesemos muchos *endpoints* a causa de la cantidad de *microservicios*
+** Ventajas
+   - Cada microservicio es independiente, si alguno falla, no afecta al resto
+   - Se puede *migrar* cada servicio de forma independiente
+   - Se puede *desplegar* cada servicio, sin afectar a los demás servicios
+   - Facilidad para *escalar*
+   - Permite *escala* independiente, escalar un servicio no implíca que otro también deba hacerlo
+** Desventajas
+*** Coordinación al actualizar y Acoplamiento entre APIs
+    #+BEGIN_QUOTE
+    Si un servicio A es usado por otros servicios {B,C} existe un *acoplamiento* entre las API de los servicios,
+    porque {B,C} podrían no funcionar si solicita un servicio que A aún no deployó,
+    por tanto se requiere una coordinación entre ellos.
+    #+END_QUOTE
+*** Operaciones Transaccionales
+    #+BEGIN_QUOTE
+    Se debe contemplar soluciones si realizamos *operaciones transaccionales* contra las base de datos,
+    porque los servicios aplicaciones independientes no operan al mismo tiempo
+    #+END_QUOTE
+*** Debugear y Traza de Errores
+    - Se dificulta el *debugear* la aplicación, porque los *microservicios* son aplicaciones diferentes
+    - Se complica encontrar la traza de error, ubicar cual fue el microservicio que generó el problema en la app principal
+*** Repetición de lógica entre Servicios
+    Se debe contemplar como evitar repetición de lógica entre los microservicios
+** Diagramas
+* Endpoints
+  - Están asociados a un entorno *RESTful* (/que maneja servicios REST/)
+  - Son URLs de un API que responden a una *solicitud* (Request)
+  - NO están pensados para interactuar con el usuario final, no necesitan renderizar algo (/pueden devolver un json o no devolver nada/)
+  - En una *API Web* el cliente interactúa con ellos mediante el *protocolo HTTP*
+
+  #+BEGIN_QUOTE
+  Para un mismo *endpoint* puede usarse varios *verbos* (GET, POST, PUT, ...)
+
+  Por ejemplo para el endpoint ~/productos~
+  - Usamos el verbo ~GET~ para traer una colección de recursos (productos)
+  - Usamos el verbo ~POST~ para crear un nueva instancia del recurso (producto)
+  #+END_QUOTE
 * Recursos
 ** Documentación de la Cursada UTN
    1. [[https://docs.google.com/document/d/1LBqAhXPzn-aeN5BIRZBmIrU5RKiYvySyWH-2Jkn-kJw/edit][Intro Arquitectura Web (docs.google.com)]]
    2. [[https://docs.google.com/document/d/1Zn0caIulROTp471uIPuQ7SnszMwzaEQSoWmDP8UsmPM/edit#][Sobre la Arquitectura de Software (docs.google.com)]]
    3. [[https://docs.google.com/document/d/1UoEb9bzut-nMmB6wxDUVND3V8EymNFgOsw7Hka6EEkc/edit#heading=h.6ew85j4snou0][Taller de Maquetado Web (docs.google.com)]]
    4. [[https://docs.google.com/document/d/1EFxqHstgtZ5jI5_plso6nfhvSXXcaT4iyE1qaZuPtXg/edit][MVC Web del lado del Servidor con Spark (docs.google.com)]]
+** Referencias externas
+*** CDNs
+    1. [[https://www.redeszone.net/tutoriales/servidores/mejores-cdn-acelerar-web/][Mejores CDN para acelerar la carga del contenido web (redeszone.net)]]
+    2. [[https://www.adslzone.net/reportajes/internet/mejores-cdn/][Mejores cdn (adslzone.net)]]
+    3. [[https://www.cdnplanet.com/tools/cdnfinder][Herramienta - CDN Finder (cdnplanet.com)]]
+*** Arquitectura de Microservicios
+    1. [[https://www.itdo.com/blog/api-gateway-en-tu-arquitectura-de-microservicios/][API Gateway (itdo.com)]]
+    2. [[https://www.itdo.com/blog/api-gateway-en-tu-arquitectura-de-microservicios/][Microservicios (itdo.com)]]
+    3. [[https://www.itdo.com/blog/integracion-continua-con-jenkins/][Integración Continua con Jenkins (itdo.com)]]
+    4. [[https://ricardogeek.com/que-es-un-api-gateway/][Que es una API Gateway (ricardogeek.com)]]
+    5. [[https://medium.com/@jovaniarzate/apis-y-microservicios-en-empresas-monol%C3%ADticas-api-gateway-y-management-6-69ba6dd0080c][APIs y Microservicios (medium.com/@jovaniarzate)]]
+    6. [[https://www.clubdetecnologia.net/blog/2019/api-vs-microservicio-microservicios-mas-que-un-api/][API Vs Microservicios (clubdetecnologia.net)]]
+*** Endpoints
+    1. [[https://es.stackoverflow.com/questions/51758/qu%C3%A9-es-un-entry-point-y-un-end-point/51764][Que es un endpoint (stackoverflow.com)]]
