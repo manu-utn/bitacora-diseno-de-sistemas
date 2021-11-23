@@ -593,6 +593,121 @@
 *** Repetición de lógica entre Servicios
     Se debe contemplar como evitar repetición de lógica entre los microservicios
 ** Diagramas
+* Caché
+** Conceptos
+** Características
+*** Consistencia
+    #+BEGIN_QUOTE
+    Si la caché está en *memoria* y tenemos varios servidores,
+    se debe contemplar si deben compartir el mismo valor, ó si no es relevante
+
+    Si sabemos que el valor que guardamos en caché no cambia,
+    nos evitamos contemplar el escenario donde varios servidores comparten el valor
+    #+END_QUOTE
+*** Volumen
+    - La cantidad de datos en caché
+    - La caché tiene un espacio limitado
+*** Política de expiración
+    - Por cuanto tiempo vamos a guardar los valores en caché
+    - Soluciona el problema de volumen, reduciendo la cant. de datos en caché
+    - Podría solucionar el problema de consistencia
+** Ejemplos
+*** Ejemplo 1 - Con caché
+    #+BEGIN_SRC java
+      const value = cache.get(clave);
+      
+      // usando la caché
+      // reducimos el número de operaciones costosas
+      if (value == NULL){
+          value = procesoCostoso();
+          cache.set(clave, value);
+      }
+    #+END_SRC
+*** Ejemplo 2 - Sin caché
+    #+BEGIN_SRC java
+      const value = procesoCostoso();
+    #+END_SRC
+* Procesamiento Asincrónico
+** Conceptos
+   - Para *operaciones asincrónicas* aparecen *componentes* (aplicaciones) específicas (Ej. cola de mensajes)
+   - Las *operaciones asincrónicas* son aquellas que no necesitamos que se resuelvan en el instante que lo solicitamos
+** Cola de Mensajes (Message Queue)
+*** Conceptos
+    - Es un *componente* (aplicación) pensado para *operaciones asincrónicas*
+    - Es una aplicación que expone una API para que insertemos/saquemos mensajes
+    - Permite el *procesamiento asincrónico* (/enviar solicitudes que en algún momento serán atendidas, no necesariamente en el momento/)
+    - Utiliza el concepto de *productor-consumidor* (/El Productor agrega mensajes a la cola, y el Consumidor recupera los mensajes/)
+    - Los mensajes son del mismo tipo (Ej. Solicitudes, Respuestas, Mensajes de error, ...)
+
+    #+BEGIN_QUOTE
+    Están enfocadas para la comunicación de *aplicaciones distribuidas* (sistemas distribuidos),
+    donde sus *componentes* se ejecutan en entornos separados (están desacoplados, viven en distintos servidores, son independientes).
+
+    Permite que las distintas partes/componentes del sistema puedan comunicarse y *procesar operaciones de forma asincrónica*
+
+    Los mensajes que se agregan a la cola de mensajes pueden ser *Peticiones*, *Respuestas*, *Mensajes de error*, ó solo *información*.
+    #+END_QUOTE
+
+    #+BEGIN_QUOTE
+    El componente *Productor* agrega los mensajes a la cola, y el componente *Consumidor* los recupera de la cola.
+
+    Muchos *productores* pueden usar la cola y muchos *consumidores* pueden usar la cola,
+    pero *un consumidor procesa un mensaje una sola vez*
+    #+END_QUOTE
+*** Ventajas
+**** Manejar reintentos
+     Está relacionado a las forma en que los *consumidores* pueden pedir sacar los mensajes de la cola
+     1. El consumidor pide sacar el mensaje de la cola y luego pide que lo borre
+     2. El consumidor pide sacar el mensaje por un período de tiempo para procesarlo y decidir si borrarlo
+    
+     #+BEGIN_QUOTE
+     Cuando el consumidor pide sacar el mensaje por un período de tiempo para procesarlo y decidir si borrarlo
+     - durante ese período de tiempo el mensaje no está disponible para el resto de los consumidores
+     - si el consumidor no decidió si borrarlo, se lo da a otro consumidor
+     #+END_QUOTE
+**** Escala Horizontal de Productores y Consumidores
+     - Permite escalar horizontalmente (la cantidad de productores, consumidores)
+*** Desventajas
+    - Agrega complejidad, porque es un componente extra, se debe modelar los productores/consumidores
+*** Ejemplos
+** Message Broker
+*** Conceptos
+    - Es un tipo de *cola de mensajes*
+    - Existen *productores* que producen un tipo especifico de mensaje
+    - _Los mensajes se propagan a todos los suscriptores_
+    - Tiene una *estructura de publisher/suscriber* (similar al patrón de diseño observer)
+*** Ventajas
+    - Puede manejar *distintos tipos de mensajes*
+    - Los *consumidores* pueden *suscribirse* a un tipo específico de mensaje
+*** Patrón Observer
+    - Usa el modelo del *patrón de diseño Observer*
+    - Los *mensajes* son los *eventos*
+    - Los *consumidores* son los *suscriptores*
+*** Ejemplo
+    #+BEGIN_QUOTE
+    Tenemos una aplicación de ventas de productos con una *Arquitectura de Microservicios*
+    y cada microservicio es una sucursal de la empresa.
+
+    Los clientes (consumers/suscribers) pueden suscribirse a un tipo de producto (mensaje/evento),
+    si alguna de las sucursales tiene ese tipo de producto, entonces les notificará (mensaje/evento)..
+    El mensaje/evento se encola porque los clientes pueden leerlo cuando quieran.
+
+    Usando de referencia el *patrón de diseño Observer*, la *notificación* se propaga a todos los *suscribers*
+    que se hayan suscripto a ese evento.
+    #+END_QUOTE
+** Ejemplos
+*** Ejemplo 1 - Cola de Mensajes
+    #+ATTR_HTML: :width 700
+    [[./img/message-queue1.png]]
+
+    #+ATTR_HTML: :width 700
+    [[./img/cola-de-mensajes2.png]]
+*** Ejemplo 2 - Cola de Mensajes
+    #+ATTR_HTML: :width 800
+    [[./img/cola-de-mensajes1.png]]
+*** Ejemplo 3 - Message Broker
+    #+ATTR_HTML: :width 700
+    [[./img/message-broker.jpg]]
 * Endpoints
   - Están asociados a un entorno *RESTful* (/que maneja servicios REST/)
   - Son URLs de un API que responden a una *solicitud* (Request)
@@ -626,3 +741,8 @@
     6. [[https://www.clubdetecnologia.net/blog/2019/api-vs-microservicio-microservicios-mas-que-un-api/][API Vs Microservicios (clubdetecnologia.net)]]
 *** Endpoints
     1. [[https://es.stackoverflow.com/questions/51758/qu%C3%A9-es-un-entry-point-y-un-end-point/51764][Que es un endpoint (stackoverflow.com)]]
+*** Cola de Mensajes
+    1. [[https://aws.amazon.com/es/message-queue/][Message queue (amazon.com)]]
+    2. [[https://aws.amazon.com/es/pub-sub-messaging/?nc1=h_ls][Message Broker ó Publisher-Suscriber Messaging (amazon.com)]]
+    3. [[https://www.sdos.es/blog/microservicios-mensajes-spring-rabbitmq][Microservicios y colas de mensajes (sdos.es)]]
+    4. [[https://medium.datadriveninvestor.com/what-is-message-queue-b5468ff6db50][what is message queue (medium.datadriveninvestor.com)]]
