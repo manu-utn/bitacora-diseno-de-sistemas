@@ -27,7 +27,7 @@
     #+END_QUOTE
 * Entrega YaYaYa
 ** Diagrama
-   #+BEGIN_SRC plantuml :file img/ejercicios/arq-entregayayaya.png :exports results
+   #+BEGIN_SRC plantuml :file img/arquitectura/arq-entregayayaya.png :exports results
      @startuml
      title EntregaYaYaYa
      
@@ -55,10 +55,10 @@
    #+END_SRC
 
    #+RESULTS:
-   [[file:img/ejercicios/arq-entregayayaya.png]]
+   [[file:img/arquitectura/arq-entregayayaya.png]]
 * MicroPC IDE
 ** Diagrama
-   #+BEGIN_SRC plantuml :file img/ejercicios/arq-micropc.png :exports results
+   #+BEGIN_SRC plantuml :file img/arquitectura/arq-micropc.png :exports results
      @startuml
       @startuml
       title MicroPC IDE
@@ -83,7 +83,7 @@
    #+END_SRC
 
    #+RESULTS:
-   [[file:img/ejercicios/arq-micropc.png]]
+   [[file:img/arquitectura/arq-micropc.png]]
 * Rekomendashi Fase 2
 ** Observaciones
    #+BEGIN_QUOTE
@@ -106,7 +106,7 @@
    Esta quizás es menos costosa que contratar un servicio CDN, pero podría no ser tan eficiente.
    #+END_QUOTE
 ** Diagrama
-   #+BEGIN_SRC plantuml :file img/ejercicios/arq-rekomendashi-fase2.png :exports results
+   #+BEGIN_SRC plantuml :file img/arquitectura/arq-rekomendashi-fase2.png :exports results
      @startuml
      title "Rekomendashi, Fase 2"
      
@@ -184,10 +184,10 @@
    #+END_SRC
 
    #+RESULTS:
-   [[file:img/ejercicios/arq-rekomendashi-fase2.png]]
+   [[file:img/arquitectura/arq-rekomendashi-fase2.png]]
 * Shera Enterprise
 ** Diagrama
-   #+BEGIN_SRC plantuml :file img/ejercicios/arq-shera-enterprise.png :exports results
+   #+BEGIN_SRC plantuml :file img/arquitectura/arq-shera-enterprise.png :exports results
      @startuml
      title SheRa Enterprise
      
@@ -266,4 +266,52 @@
    #+END_SRC
 
    #+RESULTS:
-   [[file:img/ejercicios/arq-shera-enterprise.png]]
+   [[file:img/arquitectura/arq-shera-enterprise.png]]
+* Librerías Bustos
+** Diagrama
+   #+BEGIN_SRC plantuml :file img/arquitectura/arq-librerias-bustos.png :exports results
+     @startuml
+     title Librerías Bustos Domecq
+     
+     node ModuloVentas <<Producer>> as servicio1
+     node ModuloEstadisticas <<Consumer>> as servicio2
+     
+     node ColaDeMensajes as cola
+     
+     servicio1 -right-> cola : HTTP
+     
+     cola -right-> servicio2 : HTTP
+     
+     note bottom of servicio1
+     ,* Agrega la información de lo vendido como 
+     mensaje a la cola
+     
+     ,* Como la operación es asincrónica, ya no 
+     depende de que el otro servicio termine
+     de procesar la información, evitamos que
+     el servicio deje de estar disponible (__downtime__)
+     end note
+     
+     note bottom of servicio2
+     ,* Recupera la información de las ventas como 
+     mensaje de la cola a medida que lo necesite
+     
+     ,* Al no llegar todas las peticiones de inmediato
+     el servicio ya no se satura, haciendo que el
+     sistema en general tenga mayor __tolerancia a fallos__
+     end note
+     
+     legend
+     El Componente **Cola de Mensajes** es una aplicación más
+     ,* __Permite una comunicación asincrónica entre los microservicios__
+     ,* Expone una API Web para que los servicios interactúen con él
+     con peticiones mediante el protocolo HTTP (//suponemos que usa API Web//)
+     ,* Los microservicios vuelven a ser aplicaciones independientes
+     ,* Podríamos haberlo implementado nosotros, pero preferimos
+      utilizar alguno ya hecho y testeado que resuelva la problemática
+     end legend
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/arquitectura/arq-librerias-bustos.png]]
