@@ -421,51 +421,174 @@
      
     #+END_SRC
 * Cookies Vs Sesiones
-** Ejemplo 1
-  #+BEGIN_SRC plantuml :file img/cookies-sessions.png :exports results
-    @startuml
-    title Cookies + Sessions
-    
-    ' COOKIES
-    autonumber 1
-    box "Cookies" #LightBlue
-    participant ClienteWeb as cliente1
-    participant ServidorWeb as servidor1
-    
-    cliente1 -> servidor1 : HTTP Request
-    servidor1 --> cliente1 : HTTP Response + Set-Cookie
-    
-    cliente1 -> servidor1 : HTTP Request + Cookie
-    servidor1 --> cliente1 : HTTP Response
-    endbox
-    
-    
-    ' COOKIES + SESSIONS
-    autonumber 1
-    box "Cookies + Session" #LightGreen
-    participant ClienteWeb as cliente2
-    participant ServidorWeb as servidor2
-    
-    cliente2 -> servidor2 : HTTP Request
-    note over servidor2: Crea y guarda la sesión en Memoria
-    servidor2 --> cliente2 : HTTP Response + Set-Cookie:sessionID=665..
-    
-    cliente2 -> servidor2 : HTTP Request + Cookie=sessionID=665...
-    note over servidor2: Compara la sessionID con el almacenado
-    
-    servidor2 --> cliente2 : HTTP Response
-    endbox
-    @enduml
-  #+END_SRC
+** Conceptos
+   - Al crear una *Cookie* en el cliente, ésta se registra/asocia a un sitio web (dominio), y sólo él puede acceder a esa cookie
+   - Al crear una *Sesión* se crea una *Cookie* del lado del cliente, y se le asocia un identificador de la sesion (Ej. sessionID=123..)
+   - El Servidor le pide al Cliente (browser) que cree una *Cookie* agregando un atributo ~set-cookie~ en el *Header* del *Response*
+** response.cookie() Vs request.session() en Spark Java
+   #+BEGIN_SRC java
+     public static ModelAndView loginConCookie(Request request, Response response) {
+         String nombre=request.queryParams("usuario");
+     
+         // 1. Le manda al cliente como respuesta en el header un atributo set-cookie:usuario_logeado=valor
+         // 2. El navegador entiende esto y crea la cookie con ese identificador y ese valor (también asocia el dominio de servidor)
+         response.cookie("usuario_logeado", nombre);
+     
+         // ------------------------------------------------------------------------------------------------------------------
+     
+         // 1. Captura la solicitud del Cliente y busca en el Servidor la sesión que tenga asociada
+         // el identificador sessionID que mandó el cliente en el Header..
+         // 2. Si no existe, crea la sesión en el servidor
+         // 3. La implementación de request.sesion() hará un response.cookie() para pedirle al Cliente que cree la Cookie
+         // asociandole como valor el identificador de la sesión, que luego usará el servidor para buscar el valor en un mapa (clave, valor)
+         // que guarda en memoria)
+         // (el cliente le volverá a mandar otra petición, con la Cookie que creó con el identificador de la sesión que le pasó el servidor)
+         request.sesion().attribute("usuario_logeado", nombre);
+     
+         response.redirect("/profile");
+         return null;
+     }
+   #+END_SRC
+** Relación con las Peticiones HTTP
+   - Las *peticiones HTTP* son *stateless* (NO tienen estado)
+   - Las *peticiones HTTP* + Cookies, permiten que sean *statefull* (tienen estado, porque se guardan datos)
 
-  #+RESULTS:
-  [[file:img/cookies-sessions.png]]
+   #+BEGIN_QUOTE
+   Lo mismo ocurría en el mundo de objetos..
+   Si un objeto es *stateless* => no tiene estado (no tiene atributos)
+   Si un objeto es *statefull* => tiene estado (tiene atributos)
+
+   Una *interfáz* por naturaleza es *stateless*, porque no tiene estado, sólo comportamiento..
+   Una *clase* puede ser *stateless* ó *statefull*
+
+   Otro caso de una clase *statefull* sería si le inyectaramos una dependencia por setter..
+   Recordando el *patrón de diseño Strategy* y la *Inyección de Dependencias* (DI, Dependency Injection),
+   podíamos hacer *inyección por setter* (por atributo), inyectando como dependencia el comportamiento de la interfáz
+   y la clase podía usarlo a través del atributo.
+   Ej. ~Luchador (String nombre, Patada patada){ ...  }~ donde la interfáz Patada es un Strategy
+   porque puede haber PatadaVoladora, PatadaGiratoria, ... y la clase la usa como ~patada.darPatada()~ 
+   porque todas concreteStrategy entienden el mensaje ~darPatada()~
+   #+END_QUOTE
+** Ejemplos
+*** Ejemplo 1 - Diagramas
+   #+BEGIN_SRC plantuml :file img/cookies-sessions.png :exports results
+     @startuml
+     title Cookies + Sessions
+     
+     ' COOKIES
+     autonumber 1
+     box "Cookies" #LightBlue
+     participant ClienteWeb as cliente1
+     participant ServidorWeb as servidor1
+     
+     cliente1 -> servidor1 : HTTP Request
+     servidor1 --> cliente1 : HTTP Response + Set-Cookie
+     
+     cliente1 -> servidor1 : HTTP Request + Cookie
+     servidor1 --> cliente1 : HTTP Response
+     endbox
+     
+     
+     ' COOKIES + SESSIONS
+     autonumber 1
+     box "Cookies + Session" #LightGreen
+     participant ClienteWeb as cliente2
+     participant ServidorWeb as servidor2
+     
+     cliente2 -> servidor2 : HTTP Request
+     note over servidor2: Crea y guarda la sesión en Memoria
+     servidor2 --> cliente2 : HTTP Response + Set-Cookie:sessionID=665..
+     
+     cliente2 -> servidor2 : HTTP Request + Cookie=sessionID=665...
+     note over servidor2: Compara la sessionID con el almacenado
+     
+     servidor2 --> cliente2 : HTTP Response
+     endbox
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/cookies-sessions.png]]
+*** Ejemplo 2 - En Spark Java
+    #+BEGIN_SRC java
+      public class LoginController {
+          public static ModelAndView loginConCookie(Request request, Response response) {
+              String nombre=request.queryParams("usuario");
+      
+              /**
+               ,* Alternativa #1 - Cookies (estado del lado del Cliente)
+               ,* 1. Le pedimos al Cliente que cree una Cookie con el identificador "usuario_logado"
+               ,* y como valor el que recibamos por parámetro
+               ,* (el cliente la creará sólo si agegamos el atributo "Set-Cookie:usuario_logeado=algunNombre" en el Header)
+               ,*
+               ,* 2. Le mandamos el Header al Cliente (con el objeto Response)
+               ,*
+               ,* 3. El Cliente (browser) crea la Cookie (a causa del atributo 'set-cookie:nombre=valor' que recibió en el Header)
+               ,* que le pedimos (nosotros Servidor), y la guarda de su lado (es un archivo de texto que guarda temporalmente el navegador)
+               ,*/
+      
+              // Le manda al cliente como respuesta en el header un set-cookie:usuario_logeado=valor
+              // el navegador entiende esto y crea la cookie con ese identificador y ese valor
+              response.cookie("usuario_logeado", nombre);
+      
+              response.redirect("/profile");
+              return null;
+          }
+      
+          public static ModelAndView loginConSession(Request request, Response response) {
+              String nombre=request.queryParams("usuario");
+      
+              /**
+               ,* Alternativa #2 - Sessions (estado del lado del Servidor)
+               ,* 1. Creamos la sesión (nosotros Servidor) y le asignamos un valor aleatorio único como identificador Ej. sesionID=19192
+               ,* y le asociamos un valor (Ej. el nombre de usuario que recibimos por parámetro, es decir en el queryParams).
+               ,* Luego guardamos la sesión en memoria en un mapa como (clave, valor)
+               ,*
+               ,* 2. Le pedimos al Cliente que cree una Cookie, que tendrá el identificador de la sesión
+               ,* (el cliente la creará sólo si agegamos el atributo "Set-Cookie:sessionID=elIdentificadorDeLaSesion" en el Header)
+               ,*/
+      
+              // 1. Captura la solicitud del Cliente y busca en el Servidor la sesión que tenga asociada
+              // el identificador sessionID que mandó el cliente en el Header..
+              // 2. Si no existe, crea la sesión en el servidor
+              // 3. La implementación de request.sesion() hará un response.cookie() para pedirle al Cliente que cree la Cookie
+              // asociandole como valor el identificador de la sesión, que luego usará el servidor para buscar el valor en un mapa (clave, valor)
+              // que guarda en memoria
+              request.sesion().attribute("usuario_logeado", nombre);
+      
+              response.redirect("/profile");
+              return null;
+          }
+      
+          public static ModelAndView show(Request request, Response response){
+              /**
+               ,* Alternativa #1 - Cookies
+               ,* - Captura la solicitud/request del cliente y busca en el Header si tiene esa Cookie
+               ,*/
+              if(request.cookie("usuario_logeado") != null){
+                  response.redirect("/home");
+              }
+      
+              /**
+               ,* Alternativa #2 - Sessions
+               ,* - Captura la solicitud/request del cliente y busca en el Header si tiene la Cookie asociada a esta Sesión
+               ,*/
+              if(request.session().attribute("usuario_logeado") != null){
+                  response.redirect("/home");
+              }
+      
+              return new ModelAndView(null, "home/login.hbs");
+          }
+      }
+    #+END_SRC
 * Cookies
 ** Conceptos
    - Es un mecanismo para *guardar un estado del lado del cliente*
-   - Se guarda del lado del cliente (/en el navegador/)
-   - Se agrega al *Header* un campo ~(clave, valor)~
-     - la *clave* es el nombre de la Cookie
+   - Son *Client-side* porque se crean/guardan del lado del cliente (/en el navegador, ó dispositivo que use/)
+   - _Son archivos de texto que se guardan del lado del cliente_ para recordar las preferencias de un visitante a un dominio
+   - Tienen asociadas un dominio, y sólo ese domino puede pedir esas cookies
+   - Se agregan al *Header* un campo ~(clave, valor)~
+     - la *clave* es el nombre que identifica a la Cookie
      - el *valor* es lo que queremos mantener de la Cookie de lado del cliente
 
    #+BEGIN_COMMENT
@@ -523,9 +646,32 @@
    #+END_SRC
 * Sesión
 ** Conceptos
+   - Son *Server-side* porque los datos se crean/guardan del lado del Servidor
    - Es un mecanismo para *guardar el estado de Cliente en el lado del Servidor*
-   - Se genera una *Cookie* (en el lado del Cliente) con un valor que genera el Servidor,
-     que luego usa el Servidor para obtener el valor que se guardó en el Servidor
+
+   #+BEGIN_QUOTE
+   Al pasar ~set-cookie: valor~ en el *header* del *Response*,
+   el Servidor le está pidiendo al Cliente (browser) que cree esa cookie y le asocie ese valor.
+   En el caso de las sesiones podría ser ~set-cookie: sessionID=193...~ siendo 193.. un valor aleatorio
+   que genera y usa el Servidor para identificar la sesión que creó y guardó en memoria.
+
+   Cada nueva petición del cliente al servidor, mandará en el *Header* esa Cookie y todas las cookies asociadas a ese servidor,
+   que pueden tener asociadas o no un sessionID
+   #+END_QUOTE
+
+   #+BEGIN_QUOTE
+   Al crear una Sesión se le asocia una *Cookie* (que se crea del lado del Cliente)
+   un ~sessionID~ que sería un valor aleatorio generado del lado Servidor para identificar la Sesión.
+  
+   En cada nueva petición del Cliente hacia Servidor,
+   el navegador manda todas *Cookies* asociadas a ese Servidor
+   (/el browser sabe cuales mandar por porque las registró/asoció por dominio/)
+
+   Si alguna de las *Cookies* que recibe el Servidor tiene asociada una ~sessionID~
+   que actúa como un identificador único, enonces el Servidor busca si ésta existe en su mapa de sesiones
+   que guarda en memoria como ~(clave, valor)~ donde la clave sería el ~sessionID~
+   y obtiene el valor asociado que se guardó.
+   #+END_QUOTE
 ** Desventajas
    - Si se cae el servidor, se pierden los datos porque se guardan en memoria
      (/aunque se podría persistir en una base de datos/)
@@ -557,7 +703,7 @@
          }
      }
    #+END_SRC
-* Middleware/Filtros
+* [#A] Middleware/Filtros
 ** Conceptos
    - Actúan como un filtro, ante una *Solicitud* al Servidor, el *middleware* decide que *Respuesta* devolver al cliente/usuario
    - Intercepta las *Requests* (peticiones/solicitudes) y filtra el contenido de la *Request* (respuesta) al usuario
@@ -662,5 +808,10 @@
 ** Sugeridos por la Cursada UTN
    1. [[https://martinfowler.com/bliki/EvansClassification.html][Clasificación de los Objetos By Evans (martinflower.com)]]
 ** Referencias externas
-   1. https://www.oscarblancarteblog.com/2019/01/03/java-query-param/
-   2. https://sparkjava.com/documentation
+*** Java + Query Params
+    1. https://www.oscarblancarteblog.com/2019/01/03/java-query-param/
+    2. https://sparkjava.com/documentation#sessions
+*** Cookies
+    1. [[https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies][Using HTTP cookies (developer.mozilla.org)]]
+    2. [[https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie][Set-Cookie - HTTP (developer.mozilla.org)]]
+    3. [[https://programacionymas.com/blog/cookies-y-sesiones][Cookies y Sesiones (programacionymas.com)]]
