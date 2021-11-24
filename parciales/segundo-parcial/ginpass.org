@@ -2,7 +2,6 @@
 #+STARTUP: inlineimages
 * Referencias
   1. [[https://docs.google.com/document/d/18uB4Bb5qnfsrvH3I6sDWCF6LxlBvY7mHkFkTBrRdOG4/edit][Enunciado]]
-* Observaciones
 * Punto (A) - Persistencia Relacional
 ** Modelo de Objetos (Java + ORM Hibernate)
    #+BEGIN_SRC java
@@ -368,8 +367,51 @@
 
    #+RESULTS:
    [[file:img/parcial-ginpass-der.png]]
-* [DOING] Punto (C) - Vista Web
-** Problema
+* Punto (B)
+** Planteos
+   |----+--------|
+   | id | nombre |
+   |----+--------|
+   |  1 | fernet |
+   |  2 | coca   |
+   |----+--------|
+   
+   |-----------+------------+-----------+-------+----------|
+   | pedido_id | usuario_fk | bebida_fk |  hora | cantidad |
+   |-----------+------------+-----------+-------+----------|
+   |         1 |          1 |         2 | 10:05 |       50 |
+   |         2 |          1 |         1 | 10:30 |        1 |
+   |         3 |          1 |         1 | 11:30 |        1 |
+   |         4 |          1 |         1 | 12:40 |        1 |
+   |         5 |          1 |         1 | 12:45 |        1 |
+   |         6 |          1 |         1 | 12:50 |        1 |
+   |-----------+------------+-----------+-------+----------|
+
+   Ranking: gana bebida_id=1
+
+   #+BEGIN_SRC sql
+     SELECT b.nombre, COUNT(pedido_id)
+       FROM Bebida b
+     JOIN Pedido p ON p.bebida_id = b.id
+      ORDER BY 2 DESC
+   #+END_SRC
+** Solución
+*** Punto 1
+   #+BEGIN_QUOTE
+   Suponemos que el problema de que tarda en cargar la pantalla de Ranking de Bebidas
+   porque tiene que hacer un SELECT de la tabla de bebidas + JOIN a los pedidos,
+   y si son demasiados pedidos quizás se demore.
+   #+END_QUOTE
+*** Punto 2
+    #+BEGIN_QUOTE
+    Una posible solución podría ser desnormalizar esa parte del modelo,
+    agregando en la tabla Bebidas una columna calculada llamada "veces_comprada",
+    de forma que con cada INSERT en pedidos esa columna se actualice e incremente en 1
+
+    Otra posible solución sería agregar en la consulta anterior,
+    una restricción a la columna hora, para reducir la cantidad de registros.
+    #+END_QUOTE
+* [TODO] Punto (C) - Vista Web
 ** Solución
 *** Rutas + Componentes HTML
    #+BEGIN_QUOTE
@@ -406,9 +448,67 @@
 
    *Pantalla de Búsqueda de locales*
    - ~GET /locales~ para ingresar a la búsqueda de locales, podrían no aparecer resultados hasta que se ingresen parámetros
-   - ~GET /locales?bebidas=una,dos,tres&clave=mojito,otra~ al darle al botón "Buscar", le muestra una lista de locales filtrados por los parámetros
+   - ~GET /locales~ al darle al botón "Buscar", le muestra una lista de locales filtrados por los parámetros
+     - ~queryParams("bebida")~ y ~queryParams("clave")~  (Ej. ~/locales?bebidas=una,dos,tres&clave=mojito,otra~)
    - ~GET /locales/:local~ si le dá al botón "Ver detalle" le muestra información del local
    #+END_QUOTE
-*** Implementación MVC (Con Spark Java)
+*** [TODO] Implementación MVC (Con Spark Java)
+    #+BEGIN_QUOTE
+    No está terminado, pero como no lo toman en el parcial, lo dejamos hasta ahí.. (?
+    #+END_QUOTE
+    
     #+BEGIN_SRC java
+      class Router{
+          get("/login", LoginController:index, engineTemplate);
+          post("/login", LoginController:login, engineTemplate);
+      
+          get("/locales", LocalesController:index, engineTemplate);
+          get("/locales/:local", LocalesController:show, engineTemplate);
+      }
+      
+      class RepositorioLocales{
+          static Collection<Local> getLocalesFilterBy(Collection<String> tiposDeBebidas, Collection<String> palabrasClaves){
+              // entityManager.createQuery("from locales WHERE bebida IN :bebida")
+              return entityManager.createQuery("from Local", Local.class)
+                  .filter(local => local.filterByTiposBebidas(tiposDeBebidas) && local.filterByPalabrasClaves(palabrasClaves))
+          }
+      }
+      
+      class LocalesController{
+          static ModelAndView index(Request req, Response res){
+              Map<String, Collection<Local>> model = new HashMap<>();
+      
+              Collection<String> tiposDeBebidas = req.queryParams("tiposDeBebidas");
+              Collection<String> palabrasClaves= req.queryParams("palabrasClaves");
+              Collection<Local> locales = RepositorioLocales.getAllLocalesFilterBy(tiposDeBebidas, palabrasClaves);
+      
+              model.put("locales", locales);
+      
+              return new ModelAndView(model, "locales/index.hbs");
+          }
+      
+          static ModelAndView show(Request req, Response res){
+              Map<String, Object> model = new HashMap<>();
+              String nombre = req.params("id");
+      
+              Local local = RepositorioLocales.getLocalByName(nombre);
+              model.put("local", local);
+      
+              return new ModelAndView(model, "locales/show.hbs");
+          }
+      }
+      
+      class LoginController{
+          static ModelAndView index(Request req, Response res){
+              String username = req.queryParams("username");
+              String password = req.queryParams("password");
+      
+              Usuario usuario = new Usuario(username, password);
+      
+              if(RepositorioUsuarios.findUser(usuario)){
+                  redirect("/");
+              }
+          }
+      }
     #+END_SRC
+    

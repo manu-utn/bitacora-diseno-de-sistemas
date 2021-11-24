@@ -1,0 +1,140 @@
+#+TITLE: Tips
+* MVC + Persistencia
+** Repositorios + Servicios
+*** Repositorio 1 - Alumnos
+    #+BEGIN_SRC java
+      public class RepositorioAlumnos implements WithGlobalEntityManager {
+          public void registrar(Alumno alumno){
+              entityManager().persist(alumno);
+          }
+      
+          public Collection<Alumno> filtrarPorNombre(String nombre){
+              return entityManager()
+                  .createQuery("from Alumno WHERE nombre = :nombre")
+                  .setParameter("nombre", nombre)
+                  .getResultList();
+          }
+      }
+    #+END_SRC
+** Modelos
+*** Modelo 1 - Alumno
+    #+BEGIN_SRC java
+      @Entity
+      @Table(name="alumnos")
+      public class Alumno extends PersistentEntity {
+          private String nombre;
+      
+          public Alumno(String nombre){ // constructor
+              this.nombre = nombre;
+          }
+      
+          public String getNombre() { // getter
+              return nombre;
+          }
+      
+          public void setNombre(String nombre) { // setter
+              this.nombre = nombre;
+          }
+      
+          public void agregarCursada(Cursada nuevaCursada){
+              cursadas.add(nuevaCursada);
+          }
+      
+          public Collection<Cursada> getCursadas() {
+              return cursadas;
+          }
+      }
+    #+END_SRC
+*** Modelo 2 - Materias
+    #+BEGIN_SRC java
+      // alternativa al PersistentEntity, si queremos id específicos
+      @Entity
+      @Table(name="materias")
+      @Inheritance(strategy=SINGLE_TABLE)
+      @DiscriminatorColumn(name="tipo_materia")
+      public class Materia{
+          @Id @GeneratedValue
+          private long id_materia;
+       
+          private String nombre;
+       
+          public boolean esPromocionable() {
+              return false;
+          }
+       
+          // accessors igual que con Alumno
+          public Long getId() {
+              return id;
+          }
+      }
+       
+      @Entity
+      @DiscriminatorValue("E")
+      public class MateriaElectiva extends Materia {
+          private int creditos;
+       
+          @Override
+          public boolean esPromocionable() {
+              return false;
+          }
+      }
+       
+      @Entity
+      @DiscriminatorValue("O")
+      public class MateriaObligatoria extends Materia {
+          private Boolean homogenea;
+       
+          public MateriaObligatoria(String nombre, Boolean homogenea) {
+              this.nombre = nombre;
+              this.homogenea = homogenea;
+          }
+       
+          @Override
+          public boolean esPromocionable() {
+              return homogenea;
+          }
+      }
+    #+END_SRC
+** Controllers
+*** Controller 1 - Proyectos
+    #+BEGIN_SRC java
+      public class ProyectosController implements WithGlobalEntityManager, TransactionalOps{
+       
+        public ModelAndView listar(Request req, Response res){
+          Map<String, List<Proyecto>> model = new HashMap<>();
+          List<Proyecto> proyectos = RepositorioProyectos.getInstance().getProyectos();
+       
+          model.put("proyectos", proyectos);
+          return new ModelAndView(model, "proyectos/index.hbs");
+        }
+       
+        public ModelAndView mostrar(Request req, Response res){
+          Map<String, Proyecto> model = new HashMap<>();
+          Long id = req.params("id"); // <--- NO confundir con queryParams, esto es parte de la ruta /proyectos/:id
+       
+          Proyecto proyecto = RepositorioProyectos.getInstance().findById(id);
+          model.put("proyecto", proyecto);
+          return new ModelAndView(model, "proyectos/show.hbs");
+        }
+       
+        public ModelAndView nuevo(Request req, Response res){
+          return new ModelAndView(null, "proyectos/new.hbs");
+        }
+       
+        public void crear(Request req, Response res){
+            // - los queryParams son opcionales, porque no forman parte de la ruta /proyectos
+            // - si a la ruta le agregamos los queryparams quedaría /proyetos?nombre=pepito&costo=500
+            String nombre = req.queryParams("nombre");
+            Double costo = req.queryParams("costo");
+            Proyecto proyectoNuevo = new Proyecto(nombre, costo);
+       
+            // - El controller maneja las transacciones
+            // - La PERSISTENCIA debe estar en los Repositorios
+            withTransaction(() ->{
+                    RepositorioProyectos.getInstance().add(proyectoNuevo);
+                });
+          //res.redirect("/proyectos");
+          return null;
+        }
+      }
+    #+END_SRC
