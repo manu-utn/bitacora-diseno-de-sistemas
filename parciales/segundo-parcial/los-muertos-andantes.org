@@ -3,15 +3,38 @@
 ** Punto 1
 *** Modelo de Objetos en Java+Hibernate
    #+BEGIN_SRC java
-     // 1. Convertimos la clase a "abstracta" para tener
-     // el tipo "predador" y la "normal"
+     @MappedSuperclass
+     class PersistObject{
+         @Id @GeneratedValue
+         private Long id;
+     }
+     
+     // Era una interfaz stateless, y lo pasamos a Enum con comportamiento
+     // en vez de una Clase Abstracta, que no tenía sentido por ser stateless
+     public Enum Estado{
+         public boolean superaLaComplejidad(Grupo grupo){
+             // ...
+         }
+     
+         public void extraPorTomarse(Sobreviviente tomador){
+             // ...
+         }
+     }
+     // - Convertimos la clase a "abstracta" para tener el tipo "predador" y la "normal"
+     // - Otra alternativa sería usar un default value en la columna del discriminador,
+     // pero por limitante del ORM sólo lo comentamos y encaramos lo dicho arriba
      @Entity
+     @Table(name="sobrevivientes")
      @Inheritance(strategy=SINGLE_TABLE)
      @DiscriminatorColumn(name="tipo_sobreviviente")
-     abstract class Sobreviviente{
+     abstract class Sobreviviente extends PersistObject{
          private int carisma;
          private int puntos;
          private int resistencia;
+     
+         // - Preferimos no persistirlo porque es stateless
+         @Transient
+         private Estado estado;
      
          public void atacar(Caminante caminante){
              // ..
@@ -23,6 +46,8 @@
      class SobrevivientePredador extends Sobreviviente{
          // - Un Predador podría atacar a varios caminantes
          // - Un caminante podría ser atacado por varios caminantes
+         // - La tabla asociativa que generará el ORM será con nombre de la
+         // superclase Sobreviviente en vez del de esta subclase
          @ManyToMany
          private Collection<Caminante> caminantes;
      
@@ -43,25 +68,22 @@
      }
      
      @Entity
-     class Grupo{
+     @Table(name="grupos")
+     class Grupo extends PersistObject{
          private String nombre;
          @OneToMany
          private Collection<Sobreviviente> integrantes;
          @OneToOne
          private Sobreviviente lider;
      
-         // - Un lugar puede ser tomado por varios grupos
-         // - Es el grupo el que tiene el método tomar(lugar), no los sobrevivientes ni predadores
-         @ManyToOne
-         Lugar lugar;
-     
          public void tomar(Lugar lugar){
              // ...
          }
      }
      
-     // -----------------------------------------------------
-     class Caminante{
+     @Entity
+     @Table(name="caminantes")
+     class Caminante extends PersistObject{
          private int sedDeSangre;
          private boolean somnoliento;
          private int dientes;
@@ -84,7 +106,7 @@
      @Entity
      @Inheritance(strategy=SINGLE_TABLE)
      @DiscriminatorColumn(name="tipo_lugar", type=String)
-     abstract class Lugar{
+     abstract class Lugar extends PersistObject{
          // Un lugar puede tener muchos caminantes
          // y cada caminante puede estar sólo en un lugar a la vez
          @OneToMany
@@ -155,16 +177,10 @@
           resistencia
       }
       
-      note top of sobrevivientes
-      Estrategia de Herencia
-      ,**SINGLE_TABLE**
-      end note
-      
       entity grupos{
           id
           --
           lider_id <<FK>>
-          lugar_id <<FK>>
           nombre
       }
       
@@ -177,7 +193,7 @@
           dientes
       }
       
-      entity sobrevivienteContraCaminante{
+      entity sobreviviente_caminante{
           caminante_id
           sobreviviente_id
       }
@@ -191,21 +207,33 @@
           cantidadDeCercas
       }
       
+      
+      '------------------------------------------------------
+      ' Relaciones
+      '------------------------------------------------------
+      
+      grupos |o-right-|{ sobrevivientes : integrante
+      grupos |o-right-|| sobrevivientes : lider
+      
+      sobrevivientes   ||-right-o{ sobreviviente_caminante : ataca
+      caminantes        ||-up-o{ sobreviviente_caminante   : es_atacado
+      
+      lugares ||-right-o{ caminantes : tiene
+      
+      '------------------------------------------------------
+      ' Notas
+      '------------------------------------------------------
+      
       note bottom of lugares
       Estrategia de Herencia
       ,**SINGLE_TABLE**
       end note
       
       
-      grupos |o-right-|{ sobrevivientes : integrante
-      grupos |o-right-|| sobrevivientes : lider
-      
-      sobrevivientes   ||-right-o{ sobrevivienteContraCaminante : ataca
-      caminantes        ||-up-o{ sobrevivienteContraCaminante   : es_atacado
-      
-      lugares ||-right-o{ caminantes : tiene
-      
-      lugares |o-up-o{ grupos    : está en
+      note top of sobrevivientes
+      Estrategia de Herencia
+      ,**SINGLE_TABLE**
+      end note
       
       @enduml
     #+END_SRC
@@ -269,7 +297,6 @@
           id
           --
           lider_id <<FK>>
-          lugar_id <<FK>>
           nombre
       }
       
@@ -282,7 +309,7 @@
           dientes
       }
       
-      entity sobrevivienteContraCaminante{
+      entity sobreviviente_caminante{
           caminante_id
           sobreviviente_id
       }
@@ -318,12 +345,10 @@
       grupos |o-right-|{ sobrevivientes : integrante
       grupos |o-right-|| sobrevivientes : lider
       
-      sobrevivientes   ||-right-o{ sobrevivienteContraCaminante : ataca
-      caminantes        ||-up-o{ sobrevivienteContraCaminante   : es_atacado
+      sobrevivientes   ||-right-o{ sobreviviente_caminante : ataca
+      caminantes        ||-up-o{ sobreviviente_caminante   : es_atacado
       
       lugares ||-right-o{ caminantes : tiene
-      
-      lugares |o-up-o{ grupos    : está en
       
       @enduml
     #+END_SRC
@@ -331,7 +356,7 @@
     #+RESULTS:
     [[file:img/parcial-muertos-andantes-2.png]]
 
-** [DOING] Punto 3
+** Punto 3
 *** Código Java
     #+BEGIN_SRC java
       class RepositorioLugares
@@ -386,7 +411,7 @@
           // haría una query que tenga la funcion de agregación SUM,
           // y filtre en la query por aquellos lugares que sean caóticos
           metodo habitantesEnCaos(tipo){
-              return em.createQuery("SELECT SUM(totalHabitantes) from "+ tipo+ "WHERE esCaotico=true");
+              return em.createQuery("SELECT SUM(totalHabitantes) from "+ tipo+ "WHERE esCaotico=1");
           }
       }
       
@@ -398,10 +423,20 @@
       class Grupo{
           atributo totalIntegrantes;
       }
-      
-      
-      
     #+END_SRC
+* Punto B - Diseño de Presentación
+** Solución
+  #+BEGIN_QUOTE
+  *Las rutas serían*
+  - ~/sobrevivientes~ ó ~/ranking~
+
+  *Las rutas + verbos HTTP*
+  1) ~GET /sobrevivientes~ para obtener los sobrevivientes
+     - ~queryParams("tipo")~ es opcional, filtra por el tipo (Ej. ~/sobrevivientes?tipo=predador~)
+     - ~queryParams("cantidad")~ es opcional, filtra por cantidad (Ej. ~/sobrevivientes?cantidad=10~)
+     - Usando ambos podríamos hacer ~/sobrevivientes?tipo=predador&cantidad=10~
+  2) ~POST /sobrevivientes/:id/newArma~ para crear un arma y agregarla al sobreviviente
+  #+END_QUOTE
 * Referencias
   1. [[https://docs.google.com/document/d/1mFHo8MmJ_9imDow1C_itWi0T54AveqI16P-Q7vlm87g/edit#][Enunciado]]
   2. [[https://drive.google.com/drive/folders/1RnlFNpUnfBYR4WbsWfLHaFsVDKZzyfZo][Solución]]

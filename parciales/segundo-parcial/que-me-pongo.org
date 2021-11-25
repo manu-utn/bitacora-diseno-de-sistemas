@@ -1,6 +1,23 @@
+#+TITLE: Parcial (QMP) Que Me Pongo
+* Referencias
+  1. [[https://docs.google.com/document/d/15ifQWQqfzbwwHIiiuoZiE4eyhd_DpmaQ5OGPvD9x2Wc/edit][Enunciado]]
 * Punto A
 ** Modelo de Objetos en Java+Hibernate
  #+BEGIN_SRC java
+   @MappedSuperclass
+   class PersistentObject{
+       @Id @GeneratedValue
+       private Long id;
+   }
+   
+   // NO lo persistimos porque es un Servicio,
+   // sólo nos interesa la funcionalidad que expone
+   class ClienteAPIClima{
+       public void obtenerClimaAhora(){
+           // ...
+       }
+   }
+   
    @Entity
    @Table(name="usuarios")
    class Usuario{
@@ -9,15 +26,19 @@
        // - Usamos el JoinColumn para que el ORM no genere la tabla asociativa,
        // si no haría como ManyToMany quedando una tabla intermedia entre Usuario y Prendas
        @OneToMany
-       @JoinColumn(name="usuario_id") // campo que se guarda en la tabla usuarios_prendas
-       List<Prenda> guardarropas = new ArrayList<Prenda>();
+       @JoinColumn(name="id_usuario") // "FUNDAMENTAL" nombre de la FK que se guarda en "prendas"
+       private List<Prenda> guardarropas = new ArrayList<Prenda>();
+   
+       public List<Sugerencia> sugerenciasPara(int temperatura){
+           // ..
+       }
    }
    
    // - Para avisar que esta clase va a ser Embebida por otra clase, no se creará una tabla Ciudad
    // - Consideramos que es un "Value Object" no tiene IDENTIDAD en este modelo
    @Embeddable
    class Ciudad{
-       String ciudad;
+       private String ciudad;
    }
    
    // Estrategias de Herencia
@@ -31,30 +52,42 @@
    @Table(name="eventos")
    @Inheritance(strategy = SINGLE_TABLE)
    @DiscriminatorColumn(name="tipo_evento", type=String)
-   abstract class Evento{
+   abstract class Evento extends PersistentObject{
        // - Al ser un atributo simple y no una lista sabemos que será @ToOne
        // luego un usuario puede asisir a muchos eventos quedando @ManyToOne
        // - En el modelo de datos tendremos un campo fk del usuario
        @ManyToOne
-       Usuario usuario;
+       private Usuario usuario;
        // - Embebemos la ciudad, porque forma parte de la identidad del evento
        // - Es un object value, no necesitamos manejar su identidad, no queremos una tabla de ciudades
        @Embedded
-       Ciudad ciudad;
+       private Ciudad ciudad;
+   
+       public boolean ocurreProximamente(LocalDate fecha){
+           // ..
+       }
+   
+       public List<Sugerencia> sugerencias(){
+           // ...
+       }
    }
    
    @Entity
    @DiscriminatorValue("unico")
    class EventoUnico extends Evento{
+       @Override
+       public boolean ocurreProximamente(LocalDate fecha){
+           // ..
+       }
    }
    
    @Entity
    @DiscriminatorValue("recurrente")
    class EventoRecurrente extends Evento{
        @Enumerated(EnumType.String)
-       Recurrencia recurrencia;
+       private Recurrencia recurrencia;
    
-       boolean ocurreProximamente(Datetime fecha){
+       public boolean ocurreProximamente(Datetime fecha){
            recurrencia.proximaOcurrencia(this);
        }
    }
@@ -63,11 +96,21 @@
    
    // - Convertimos la Interfaz a un Enum con comportamiento
    // - Las enumeraciones no requieren un annotation en su definición
+   // - Preferimos Enum porque las clases que la implementan son stateless
    enum Recurrencia{
-       Semanal, Mensual;
+       // Semanal, Mensual;
    
-       DateTime proximaOcurrencia(Evento evento){
-           // alguna lógica
+       Semanal(){
+           @Override
+               public LocalDateTime proximaOcurrencia(Evento evento){
+               // ...
+           }
+       },
+       Mensual(){
+           @Override
+               public LocalDateTime proximaOcurrencia(Evento evento){
+               // ...
+           }
        }
    }
    
@@ -75,17 +118,19 @@
    
    @Entity
    @Table(name="prendas")
-   class Prenda{
+   class Prenda extends PersistentObject{
        // - Como sólo nos interesa el valor, es una colección de "value objects"
        // - Define una relación @OneToMany donde una prenda puede tener muchos colores
        // pero Color es un Embeddable
        @ElementCollection
-       List<Color> colores = new ArrayList<Color>();
+       @CollectionTable(name="coloresDePrenda") // nombre de la tabla que se genera
+       @JoinColumn(name="id_prenda") // nombre de la FK que se gurda en prenda_color
+       private List<Color> colores = new ArrayList<Color>();
    
        @Enumerated(EnumType.STRING)
-       Categoria categoria;
+       private Categoria categoria;
    
-       String descripcion;
+       private String descripcion;
    }
    
    // - Avisamos que esta clase se va a embeber dentro de otra clase,
@@ -94,17 +139,17 @@
    // pd: aunque como en Prenda usamos @ElementCollection se creará la tabla como un @OneToMany
    @Embeddable
    class Color{
-       @Column(name="color_nombre");
-       String color;
+       @Column(name="color_descripcion");
+       private String color;
        @Column(name="color_codigo");
-       String codigoHexa;
+       private String codigoHexa;
    }
    
    // En la definición de los Enum no requieren annotations
-   enum CategoriaPrenda{
+   public enum CategoriaPrenda{
        ARRIBA, ABAJO, ENTEROS, CALZADOS, ACCESORIOS;
    
-       boolean cubreTemperatura(int temperatura){
+       public boolean cubreTemperatura(int temperatura){
            // ...
        }
    }
@@ -141,7 +186,7 @@
          descripcion
      }
      
-     entity coloresDePrendas{
+     entity coloresDePrenda{
          id
          --
          id_prenda <<FK>>
@@ -150,11 +195,15 @@
      }
      
      
-     eventos }o-right-|| usuarios : asistir a
+     '---------------------------------------
+     ' Relaciones
+     '---------------------------------------
      
-     usuarios |o-down-|{ prendas
+     eventos     }o-right-|| usuarios : asistir a
      
-     prendas ||-right-|{ coloresDePrendas : tiene
+     usuarios    |o-down-|{ prendas
+     
+     prendas     ||-right-|{ coloresDePrenda : tiene
      @enduml
    #+END_SRC
 
@@ -461,22 +510,34 @@
     #+RESULTS:
     [[file:img/parcial-qmp-3.png]]
 
-* [DOING] Punto C
-** Rutas
+* [TODO] Punto C
+** Rutas + verbos HTTP
   #+BEGIN_QUOTE
-  ~GET /guardarropas~ (/para ver todas las prendas/)
-  ~POST /guardarropas~ (/cargar una prenda/)
+  *Las rutas serían*
+  - ~/guardarropas~
+
+  *Los verbos para las rutas*
+  1) ~GET /guardarropas~ para ver todas las prendas
+  2) ~POST /guardarropas~ para cargar una prenda
+     - ~queryParams("descripcion")~
+     - ~queryParams("colorPrincipal")~
+     - ~queryParams("categoria")~
+     - De los queryParams que no pertenecen a la ruta, nos quedaría ~/guardarropas?descripcion=elastica&colorPrincipal=rojo&categoria=verano~
   #+END_QUOTE
-** Repositorios
+** [TODO] Repositorios
    #+BEGIN_SRC java
    #+END_SRC
 ** MVC
    #+BEGIN_SRC java
      // Router.java
      class Router{
+         HandlebarsTemplateEngine engineTemplate = new HandlebarsTemplateEngine();
+     
          get("/prendas", PrendasController::indexView, engineTemplate);
          get("/prendas/new", PrendasController::cargarPrendaView, engineTemplate);
          post("/prendas", PrendasController::cargarPrenda, engineTemplate);
+         post("/prendas", (request, response)->{
+         }, engineTemplate);
      }
      
      // Model/Prenda.java
@@ -560,5 +621,3 @@
      }
    #+END_SRC
 
-* Referencias
-  1. [[https://docs.google.com/document/d/15ifQWQqfzbwwHIiiuoZiE4eyhd_DpmaQ5OGPvD9x2Wc/edit][Enunciado]]
