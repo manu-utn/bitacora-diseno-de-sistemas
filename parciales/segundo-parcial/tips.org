@@ -1,4 +1,245 @@
 #+TITLE: Tips
+* Mapeo + Persistencia
+** @MappedSuperclass misma columna id para todos
+   #+BEGIN_SRC java
+     // - Todas las clases que tengan el annotation @Entity haremos que
+     // extiendan de esta clase, para que se les asigne un identificador
+     // único al persistir en el modelo físico.
+     //
+     // - Cada tabla tendrá una columna genérica llamada "id", si quisieramos
+     // que fuese más específico "id_nombre", deberíamos agregar ese atributo en cada clase
+     // con los annotations @Id @GeneratedValue
+     //
+     // Nota: No lo agregamos en las subclases que ya lo extienden de la superclase
+     @MappedSuperclass
+     abstract class PersistentEntity{
+         @Id
+         @GenerateValue
+         Long id;
+     }
+   #+END_SRC
+** Interfaz a Enum con comportamiento
+   #+BEGIN_SRC java
+     // Optamos por pasar la Interfaz a un Enum por comportamiento en vez de una Clase Abstracta porque
+     // 1. no queremos manejar su identidad, lo consideramos un "value object"
+     // 2. implíca que las consultas a 'Contenido' serían más costosas,
+     // haría innecesario JOIN sólo para traerse un atributo
+     // 3. además las clases que implementaban la Interfáz eran stateless (sin estado)
+     public enum Clasificacion{
+         Menores(){
+             @Override
+                 public void validarAcceso(Usuario usuario){
+                 // ...
+             }
+         },
+         Adolescentes(){
+             @Override
+                 public void validarAcceso(Usuario usuario){
+                 // ...
+             }
+         },
+         Adultos(){
+             @Override
+                 public void validarAcceso(Usuario usuario){
+                 // ...
+             }
+         }
+     
+         // este metodo lo tendría que tener Menores, Adolescentes, Adultos
+         // public void validarAcceso(Usuario usuario){
+         //     // ...
+         // }
+     }
+   #+END_SRC
+** @OneToMany + @JoinColumn
+   #+BEGIN_SRC java
+     @Entity
+     @Table(name="piezas")
+     class Pieza extends PersistentObject{
+         private String nombre;
+         private Double precio;
+     
+         // - indicamos que es una enumeración, y queremos guardar el texto en vez del valor numérico
+         @Enumerated(type.STRING)
+         TipoDeCoccion tipoDeCoccion;
+     
+         // - Indicamos el @JoinColumn para evitar que se genere la tabla asociativa de ManyToMany
+         // - Elegimos Collection en vez de lista, porque no es relevante el orden
+         @OneToMany
+         @JoinColumn(name="id_pieza") // fk del lado de la tabla ingredientes
+         Collection<Ingrediente> ingredientes;
+     }
+   #+END_SRC
+** @Embedded Vs Estrategias de Herencia
+   #+BEGIN_SRC java
+     class Pedido extends PersistentEntity{
+         // - No podemos embeber el tipo de pedido, porque TipoDePedido usa una estrategia de herencia
+         @OneToOne
+         @JoinColumn(name="id_tipo_pedido", referencedColumName="id") // fk del lado de la tabla Pedidos
+         private TipoDePedido tipoDePedido;
+     }
+   #+END_SRC
+** List @ElementCollection + @JoinColumn
+   #+BEGIN_SRC java
+     class Pedido extends PersistentEntity{
+         // - Como TipoDeCoccion no es un identity value, si no un "object value"
+         // usamos el @ElementCollection que genera una relación del tipo @OneToMany
+         // - Usamos JoinColumn porque si no el ORM Hibernate genera una tabla intermedia del tipo asociativa
+         // como si fuese un ManyToMany
+         @ElementCollection
+         @CollectionTable(name = "coccionesPreferidas", joinColumns = @JoinColumn(name = "id_pedido"))
+         private List<TipoDeCoccion> coccionesPreferidas;
+     
+         // - Es importante el orden en que eligieron las categorías, por eso elegimos List en vez de Collection
+         // - Al usar @OrderColumn persistimos a posición que tengan en la Lista (la columna queda en la tabla de Categorias)
+         // - Usamos @ElementCollection por la misma razón que TipoDeCoccion
+         // - La columna del @JoinColumn será la FK de la tabla de categorias
+         @ElementCollection
+         @CollectionTable(name = "categoriasPreferidas", joinColumns = @JoinColumn(name = "id_pedido"))
+         @OrderColumn(name="prioridad")
+         private List<Categoria> categoriasPreferidas;
+     }
+   #+END_SRC
+** Servicios + ValueObjects
+   #+BEGIN_SRC java
+     // - Es un Service, no nos interesa manejar su identidad ni su estado,
+     // sólo nos interesa la funcionalidad obtenerLocales() que expone
+     //
+     // (similar a lo que ocurría con los Repositorios que sólo exponen operaciones,
+     // y no tiene sentido persistirlos)
+     class Busqueda{
+         private Direccion direccion;
+         private Suscripcion suscripcion;
+         private List<Bebida> bebidas;
+     
+         public List<Bebida> obtenerLocales(){
+             // ...
+         }
+     }
+     
+     // - NO nos interesa su Identidad ni Estado, no deseamos persistir un Service,
+     // sólo nos interesa que exponga su funcionalidad/operación de obtenerGraduacion
+     class AlcoholSevice{
+         public Number obtenerGraduacion(Bebida bebida){
+             // ..
+         }
+     }
+     
+     // - Consideramos que "Direccion" es un "Value object" por lo cual
+     // no queremos manejar su identidad (no se creará la tabla en el modelo físico)
+     @Embeddable
+     class Direccion{
+         private String calle;
+         private String altura;
+         private Number longitud;
+         private Number latitud;
+     }
+     
+     // -----------------------------------------------------------------------
+     
+     // - Decidimos no manejar la identidad de Estadistica
+     // - Consideramos que es un "Value Object"
+     @Embeddable
+     class Estadistica{
+         private int likes;
+         private int dislikes;
+     }
+     
+     @Entity
+     @Table(name="contenidos")
+     @Inheritance(strategy=SINGLE_TABLE)
+     @DiscriminatorColumn(name="tipo_contenido")
+     class Contenido extends PersistentEntity{
+         private int reproducciones;
+         private String imagenDeTapa;
+     
+         // - Elegimos embeber a "Estadistica" que consideramos como "value object"
+         // preferimos no manejar su identidad
+         // - Se podría haber optado por un @OneToOne pero eso implicaría en una consulta más costosa
+         // porque haría un JOIN a una tabla Estadisticas por 2 atributos
+         @Embedded
+         private Estadistica estadistica;
+     }
+   #+END_SRC
+** @OrderColumn + List Vs Collection
+   #+BEGIN_SRC java
+     @Entity
+     @Table(name="playlists")
+     class Playlist extends PersistentEntity{
+         // - Una playlist puede tener muchos suscriptores,
+         // y un usuario puede estar suscripto a varias playlist
+         // - Como no es relevante el orden, usamos Collection
+         @ManyToMany
+         Collection<Usuario> suscriptores;
+         
+         // - Una playlist puede contener muchos contenidos,
+         // y un contenido puede estar en muchas playlists
+         // - Usamos una Lista en vez de una Colección porque esta permite ordenar
+         // los elementos
+         // - Ordenamos el contenido por el campo "posicion"
+         @ManyToMany
+         @OrderColumn(name="posicion") // esta columna se guarda en la tabla de contenidos
+         List<Contenido> contenidos;
+     }
+   #+END_SRC
+** Muchos @ManyToMany
+   #+BEGIN_SRC java
+     @Entity
+     @Table(name="locales")
+     @Inheritance(strategy=SINGLE_TABLE)
+     @DiscriminatorColumn(name="tipo_local")
+     class Local extends PersistentObject{
+         private String nombre;
+     }
+     
+     // 1. Como Local es la superclase de Pub, el ORM al mapear la relación @ManyToMany
+     // hará una tabla asociativa usando el nombre de la superclase Local y el atributo de esta clase
+     // quedando Local_tragos
+     // 2. Para evitar lo anterior usaremos @JoinTable para cambiar el nombre de la tabla asociativa
+     @Entity
+     class Pub extends Local{
+         @ManyToMany
+         @JoinTable(name="pub_trago")
+         List<Trago> tragos;
+     }
+     
+     /**
+      ,* Aclaración IMPORTANTE..
+      ,*
+      ,* 1. Cada relación @ManyToMany genera una tabla asociativa entre dos Clases,
+      ,* por tanto tendríamos 3 tablas con un sólo @ManyToMany
+      ,*
+      ,* 2. Como estamos usando SINGLE_TABLE en Local, y ésta es la Superclase de {Pub, Bar, Cerveceria}
+      ,* el @ManyToMany hará una tabla con el nombre de la Superclase + nombre_atributo
+      ,* el mapeo de esta clase generaría las tablas LocalTragos LocalCervezas LocalAnalcoholicas
+      ,*
+      ,* entonces el ORM se confundiría con el @ManyToMany de Pub que genera LocalTragos,
+      ,* y con el @ManyToMany de Cerveceria que genera LocalCervezas
+      ,*
+      ,* para evitar estos problemas usamos @JoinTable para definir el nombre de la tabla asociativa
+      ,*/
+     @Entity
+     class Bar extends Local{
+         @ManyToMany
+         @JoinTable(name="bar_trago")
+         List<Trago> tragos;
+     
+         @ManyToMany
+         @JoinTable(name="bar_cerveza")
+         List<Cerveza> cervezas;
+     
+         @ManyToMany
+         @JoinTable(name="bar_analcoholica")
+         List<Analcoholica> analcoholicas;
+     }
+     
+     @Entity
+     class Cerveceria extends Local{
+         @ManyToMany
+         @JoinTable(name="cerveceria_cerveza")
+         List<Cerveza> cervezas;
+     }
+   #+END_SRC
 * MVC + Persistencia
 ** Repositorios + Servicios
 *** Repositorio 1 - Alumnos
