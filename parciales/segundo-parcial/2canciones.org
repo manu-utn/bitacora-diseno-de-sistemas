@@ -104,12 +104,29 @@
      // haría innecesario JOIN sólo para traerse un atributo
      // 3. además las clases que implementaban la Interfáz eran stateless (sin estado)
      public enum Clasificacion{
-         Menores, Adolescentes, Adultos;
-     
-         // este metodo en realidad lo tendría que tener Menores, Adolescentes, Adultos
-         private validarAcceso(Usuario usuario){
-             // ...
+         Menores(){
+             @Override
+                 public void validarAcceso(Usuario usuario){
+                 // ...
+             }
+         },
+         Adolescentes(){
+             @Override
+                 public void validarAcceso(Usuario usuario){
+                 // ...
+             }
+         },
+         Adultos(){
+             @Override
+                 public void validarAcceso(Usuario usuario){
+                 // ...
+             }
          }
+     
+         // este metodo lo tendría que tener Menores, Adolescentes, Adultos
+         // public void validarAcceso(Usuario usuario){
+         //     // ...
+         // }
      }
      
      // - Decidimos no manejar la identidad de Estadistica
@@ -220,7 +237,7 @@
          // los elementos
          // - Ordenamos el contenido por el campo "posicion"
          @ManyToMany
-         @OrderColumn(name="posicion")
+         @OrderColumn(name="posicion") // esta columna se guarda en la tabla de contenidos
          List<Contenido> contenidos;
      }
    #+END_SRC
