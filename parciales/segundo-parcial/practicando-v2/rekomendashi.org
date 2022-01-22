@@ -1,0 +1,298 @@
+#+STARTUP: inlineimages
+* Java
+   #+BEGIN_SRC java
+     // Lo usamos para todas las clases que tengan @Entity
+     // tendran una columna id como PK
+     @MappedSuperclass
+     class PersistentObject{
+         @Id
+         @GeneratedValue
+         long id;
+     }
+
+     // estrategia de Herencia
+     // SINGLE_TABLE -> elegida
+     // 1. Consultas polimórficas
+     // - Son eficientes ya que sólo se hace la consulta a una única tabla,
+     // mientras que en JOINED haría 2 JOINs (a causa de haber dos subclases)
+     // 2. Consultas NO polimórficas
+     // - También son eficienes, ya que haría una consulta a una sola tabla,
+     // y se evitaría el JOIN que haría JOINED
+     // 3. Inserciones:
+     // - Se haría una inserción en una sola tabla, si comparamos contra JOINED
+     // que haría el doble de INSERTS. Uno en la superclase, y otro en la tabla de la subclase
+
+     // JOINED (tabla por clase)
+     // 1. Consultas polimórficas
+     // - NO sería tan eficiente comparado con SINGLE_TABLE,
+     // ya que haría 2 JOINs para traer los datos de las tablas de las 2 subclases
+     // 2. Consultas NO polimórficas
+     // - Tampoco es redituable, debido a que haría un JOIN, mientras que la SINGLE_TABLE
+     // sólo haría la consulta a la tabla de TipoDePedidos
+     // 3. Inserciones:
+     // - Es el doble de inserciones que con SINGLE_TABLE
+
+     // TABLE PER CLASS (tabla por clase concreta)
+     // - Además tenemos que contemplar, el elegir un mecanismo como generador de IDs
+     // como lo sería el uuid ó secuencias, para que las tablas de las clases concretas
+     // tengan IDs únicos y no repetibles entre ellas.
+     //
+     // 1. Consultas polimórficas
+     // - Es la peor opción, ya que haría una query con una subquery que contiene
+     // una query por subclase, en este caso 2, ambas con UNIONs. Esto resulta muy
+     // esto no sería rentable en comparación con JOINED, que sólo hace 2 JOINs
+     // 2. Consultas NO polimórficas
+     // - Sólo haría las consultas a la tablas de las clases concretas,
+     // pero perdemos la eficiencia de las consultas polimórficas
+     // 3. Inserciones:
+     // - Se haría sólo en las tablas de las clases concretas
+     @Entity
+     @Table(name="tipo_pedidos")
+     @Inheritance(strategy=SINGLE_TABLE)
+     abstract class TipoDePedido{
+         Set armarSet(List<Pieza> piezasPosibles);
+     }
+
+     @Entity
+     class Individual extends TipoDePedido{
+         Number precioMaximo;
+         int coeficienteDeVariedad;
+     }
+
+     @Entity
+     class Grupal extends TipoDePedido{
+         int cantidadDeComensales;
+     }
+
+     @Entity
+     @Table(name="pedidos")
+     class Pedido{
+         // - Como TipoDeCoccion es una enumeración, es un value object
+         // del cual no queremos manejar su identidad.
+         // - Con @ElementCollection podemos hacer una colección de value objects,
+         // así como @OneToMany para identity objects
+         // - Usamos el @JoinColumn para que no se genere una tabla intermedia
+         // como si ocurre en el ManyToMany, y le indicamos el nombre de la FK
+         // que se generará en la tabla PedidoCoccionesPreferidas
+         @ElementCollection // similar a un OneToMany
+         @CollectionTable(name="coccionesPreferidas") // para que no cree PedidoCoccionesPreferidas
+         @JoinColumn(name="pedido_id")
+         @Column(name="coccion_preferida")  // <---------------------- IMPORTANTE
+         Collection<TipoDeCoccion> coccionesPreferidas;
+
+         // - Idem que con coccionesPreferidas, respecto al tema de value object
+         // y de evitar la tabla asociativa intermedia
+         // - Agregamos el @OrderColumn para guardar el orden de los elementos en la lista,
+         // por eso usamos List en vez de collection,
+         // además se agrega una columna en la tabla de PedidoCategoriasPreferidas
+         // a la que llamamos "orden"
+         @ElementCollection  // similar a un OneToMany
+         @CollectionTable(name="categoriasPreferidas") // para que no la cree como PedidoCategoriasPreferidas
+         @JoinColumn(name="pedido_id")
+         @OrderColumn(name="orden")
+         @Column(name="categoria_preferida") // <---------------------- IMPORTANTE
+         List<Categoria> categoriasPreferidas;
+
+         // - Un pedido puede tener sólo un tipo de pedido,
+         // pero puede que ese tipo de pedido esté asociado a varios pedidos
+         @ManyToOne
+         TipoDePedido tipoDePedido;
+
+         Set recomendar(){ }
+     }
+
+     // - Las enumeraciones son value objects, de los cuales no queremos manejar la identidad.
+     // En su definición no se agrega un annotation, pero si en el momento que declaramos
+     // atributos con ellos, usando @Enumerated
+     enum Categoria{
+         PESCADO, MARISCO, QUESO, VERDURA;
+     }
+
+     // - Se repite la misma situación que con la enumeración Categoría
+     enum TipoDeCoccion{
+         CRUDO, REBOZADO;
+     }
+
+     @Entity
+     @Table(name="sets")
+     class Set{
+         // - Agregamos el @JoinColumn para evitar que se genere una tabla asociativa
+         // intermedia entre la tabla de sets y de selecciones, como si ocurre con el ManyToMany
+         @OneToMany
+         @JoinColumn(name="set_id")
+         Collection<Seleccion> selecciones;
+
+         Number precio(){ }
+         int cantidadDePiezas(){ }
+     }
+
+     @Entity
+     @Table(name="selecciones")
+     class Seleccion{
+         int cantidad;
+
+         // - Una selección tiene ua pieza, pero ésta puede estar en varias selecciones
+         @ManyToOne
+         Pieza pieza;
+     }
+
+     @Entity
+     @Table(name="piezas")
+     class Pieza{
+         String nombre;
+         Number precio;
+         Imagen imagen;
+
+         // - Como no queremos manejar la identidad de un value object,
+         // le avisamos al ORM que al mapear, éste atributo es un enum
+         @Enumerated
+         TipoDeCoccion coccion;
+
+         // - Se generará una tabla asociativa intermedia entre la tabla piezas
+         // e ingredientes
+         // - COmo no se pide un orden particular, usamos Collection en vez de List
+         @ManyToMany
+         Collection<Ingrediente> ingredientes;
+     }
+
+     @Entity
+     @Table(name="ingredientes")
+     class Ingrediente{
+         String nombre;
+
+         // - Las enumeraciones son value objects, que no queremos manejar su identidad
+         @Enumerated
+         Categoria categoria;
+     }
+
+     // - Al ser un Service, sólo nos importa su funcionalidad, no tanto su identidad o valor
+     // por tanto no queremos persistirlo
+     class CatologoDePiezas{
+         List<Pieza> buscarSegunPreferencias(){ }
+     }
+
+
+   #+END_SRC
+* Diagrama
+   #+BEGIN_SRC plantuml :file img/parcial-rekomendashi.png :exports results
+     @startuml
+     title 2º Parcial - Rekomendashi
+
+     entity pedidos{
+         id
+     }
+
+     entity coccionesPreferidas{
+         pedido_id <<FK>>
+         coccion_preferida
+     }
+
+
+     entity categoriasPreferidas{
+         pedido_id <<FK>>
+         categoria_preferida
+         orden
+     }
+
+     entity tipo_pedidos{
+         id
+         --
+         pedido_id <<FK>>
+         precioMaximo
+         coeficienteVariedad
+         cantidadComensales
+     }
+
+     entity sets{
+         id
+     }
+
+     entity selecciones{
+         id
+         --
+         set_id <<FK>>
+         cantidad
+     }
+
+     entity piezas{
+         id
+         --
+         nombre
+         precio
+         imagen
+         coccion
+     }
+
+     entity ingredientes{
+         id
+         --
+         nombre
+         categoria
+     }
+
+     entity pieza_ingrediente{
+         pieza_id <<PK/FK>>
+         ingrediente_id <<PK/FK>>
+     }
+
+     ' ==================================
+
+     pedidos     ||--{ coccionesPreferidas
+     pedidos     ||--{ categoriasPreferidas
+
+     pedidos     ||--|{ tipo_pedidos
+
+     sets        ||--{  selecciones
+     selecciones }-right-|| piezas
+
+     piezas          -up- pieza_ingrediente
+     ingredientes    -down- pieza_ingrediente
+
+     ' ==================================
+
+     note right of pedidos
+     @ElementCollection lo usamos para indicar
+     que es una colección de object values
+
+     @CollectionTable para definir el nombre de
+     la nueva tabla. Evitamos que genere una
+     tabla Pedidos_categoriasPreferidas
+     ó Pedidos_coccionesPreferidas
+
+     @Column definimos el nombre de la columna
+     de la otra tabla. Evitamos que el nombre de la
+     columna se llame categoriasPreferidas 
+     ó coccionesPreferidas
+     end note
+
+     note left of pedidos
+     class Pedido{
+         @ElementCollection
+         @CollectionTable(name="coccionesPreferidas")
+         @Column(name="coccion_preferida")
+         Collection<TipoDeCoccion> coccionesPreferidas;
+
+         @ElementCollection
+         @CollectionTable(name="categoriasPreferidas")
+         @OrderColumn(name="orden")
+         @Column(name="categoria_preferida")
+         List<Categoria> categoriasPreferidas;
+     }
+     end note
+
+     note as N1
+     En el modelo de objetos tenemos a Categoría y Cocción
+     como enumeraciones, es decir son value objects.
+
+     Usamos @ElementCollection para indicar que son
+     colecciones de value objects.
+     Sus tablas no tendrán PK, pero si una FK a pedidos
+     end note
+
+     N1 .up. coccionesPreferidas
+     N1 .up. categoriasPreferidas
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/parcial-rekomendashi.png]]

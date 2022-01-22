@@ -1,0 +1,515 @@
+#+TITLE: Ginpass
+#+STARTUP: inlineimages
+* Referencias
+  1. [[https://docs.google.com/document/d/18uB4Bb5qnfsrvH3I6sDWCF6LxlBvY7mHkFkTBrRdOG4/edit][Enunciado]]
+* Punto (A) - Persistencia Relacional
+** Modelo de Objetos (Java + ORM Hibernate)
+   #+BEGIN_SRC java
+     // - Todas las subclases con el annotation @Entity deberían extender de esta
+     // para la generación de IDs, con excepción de las subclases, porque
+     // ya lo heredan de su superclase.
+     @MappedSuperclass
+     abstract class PersistentObject{
+         @Id @GeneratedValue
+         Long id;
+     }
+
+     // - Es un Service, no nos interesa manejar su identidad ni su estado,
+     // sólo nos interesa la funcionalidad obtenerLocales() que expone
+     //
+     // (similar a lo que ocurría con los Repositorios que sólo exponen operaciones,
+     // y no tiene sentido persistirlos)
+     class Busqueda{
+         private Direccion direccion;
+         private Suscripcion suscripcion;
+         private List<Bebida> bebidas;
+
+         public List<Bebida> obtenerLocales(){
+             // ...
+         }
+     }
+
+     // - Consideramos que "Direccion" es un "Value object" por lo cual
+     // no queremos manejar su identidad (no se creará la tabla en el modelo físico)
+     @Embeddable
+     class Direccion{
+         private String calle;
+         private String altura;
+         private Number longitud;
+         private Number latitud;
+     }
+
+     // Estrategia de Herencia
+     // a) SINGLE_TABLE (elegida)
+     // a.1) Las "consultas polimórficas" no serían costosas,
+     // tendríamos una única tabla con el campo nombre, el discriminador tipo_local,
+     // y los que embebimos de Direccion
+     // a.2) Las "consultas no polimórficas" tampoco serían costosas,
+     // las subclases no tienen atributos disjuntos, sólo filtaría por el discriminador
+     // y traería la misma cantidad de columnas que una "consulta polimórfica"
+     // a.3) Los INSERTs no serían costosos, haría 1 INSERT en una única tabla
+     //
+     // b) JOINED (podría ser)
+     // b.1) Las "consultas polimórficas" serían más costosas comparado con SINGLE_TABLE,
+     // haría 3 JOINs (porque tenemos 3 subclases)
+     // b.2) Las "consultas no polimórficas" también serían más costosas si comparamos
+     // con SINGLE_TABLE, haría SELECT de la subclase y un JOIN a la superclase Local,
+     // lo que implíca agregar 1 JOIN.
+     // b.3) Los INSERTs serían el doble que con SINGLE_TABLE,
+     // haría 1 INSERT en la superclase Local + 1 INSERT en la subclase
+     //
+     // c) TABLE_PER_CLASS (NO sería una opción)
+     // c.1) Las "consultas polimórficas" sería muy ineficiente comparado con JOINED,
+     // armaría una query con una subquery en el FROM que tendría 3 queries con UNIONs
+     // tratando de asemejar la tabla de la SINGLE_TABLE
+     // (la subquery tendría 3 queries por las subclases Pub, Bar, Cerveceria)
+     // Si considerabamos que 3 JOINs eran costosos, esta query es aun peor.
+     // c.2) Las "consultas no polimórficas" no serían costosas comparado con JOINED,
+     // porque haría el SELECT directo a la tabla de la subclase. Pero como el modelo
+     // apunta a usar "consultas polimorficas", no nos conviene.
+     // c.3) Los INSERTs no serían costosos, porque se harían directo en la tabla
+     // de la subclase, pero repetimos el problema de las "consultas polimórficas"
+     //
+     // Además en TABLE_PER_CLASS deberíamos elegir algúna estrategia para la generación
+     // de IDs, como podria ser UUID, pero nos generaría una estructura adicional
+     // donde se guardase los ID, que creemos no nos ayudaría en este escenario.
+     //
+     // Por último esta estrategia no solo es ineficiente por las "consultas polimórficas",
+     // y por la estructura adicional que agregaría para la generación de IDs,
+     // si no porque cada subclase tiene una relaciones de @ManyToMany
+     // en especial la subclase Bar. Esto provocaría que el modelo de datos, quedara
+     // innecesariamente complejo con demasiadas tablas.
+     @Entity
+     @Table(name="locales")
+     @Inheritance(strategy=SINGLE_TABLE)
+     @DiscriminatorColumn(name="tipo_local")
+     class Local extends PersistentObject{
+         private String nombre;
+
+         // - Embebemos el Value Object "Direccion" para que en el
+         // modelo físico la tabla de "locales" tenga sus atributos
+         // - Nos evitamos tener que hacer un JOIN a una tabla "direcciones"
+         @Embedded
+         private Direccion direccion;
+     }
+
+     // 1. Como Local es la superclase de Pub, el ORM al mapear la relación @ManyToMany
+     // hará una tabla asociativa usando el nombre de la superclase Local y el atributo de esta clase
+     // quedando Local_tragos
+     // 2. Para evitar lo anterior usaremos @JoinTable para cambiar el nombre de la tabla asociativa
+     @Entity
+     class Pub extends Local{
+         @ManyToMany
+         @JoinTable(name="pub_trago")
+         List<Trago> tragos;
+     }
+
+     /**
+      ,* Aclaración IMPORTANTE..
+      ,*
+      ,* 1. Cada relación @ManyToMany genera una tabla asociativa entre dos Clases,
+      ,* por tanto tendríamos 3 tablas con un sólo @ManyToMany
+      ,*
+      ,* 2. Como estamos usando SINGLE_TABLE en Local, y ésta es la Superclase de {Pub, Bar, Cerveceria}
+      ,* el @ManyToMany hará una tabla con el nombre de la Superclase + nombre_atributo
+      ,* el mapeo de esta clase generaría las tablas LocalTragos LocalCervezas LocalAnalcoholicas
+      ,*
+      ,* entonces el ORM se confundiría con el @ManyToMany de Pub que genera LocalTragos,
+      ,* y con el @ManyToMany de Cerveceria que genera LocalCervezas
+      ,*
+      ,* para evitar estos problemas usamos @JoinTable para definir el nombre de la tabla asociativa
+      ,*/
+     @Entity
+     class Bar extends Local{
+         @ManyToMany
+         @JoinTable(name="bar_trago")
+         List<Trago> tragos;
+
+         @ManyToMany
+         @JoinTable(name="bar_cerveza")
+         List<Cerveza> cervezas;
+
+         @ManyToMany
+         @JoinTable(name="bar_analcoholica")
+         List<Analcoholica> analcoholicas;
+     }
+
+     @Entity
+     class Cerveceria extends Local{
+         @ManyToMany
+         @JoinTable(name="cerveceria_cerveza")
+         List<Cerveza> cervezas;
+     }
+
+     // En el modelo de objetos no aparecía,
+     // pero lo agregamos por los requerimientos del enunciado
+     public Enum TipoSuscripcion{
+         Platinum, Standar, Gold
+     }
+
+     @Entity
+     @Table(name="suscripciones")
+     class Suscripcion extends PersistentObject{
+         private Number cuotaMaxima;
+         private Number cuotaMinima;
+
+         // En el modelo de objetos no aparecía,
+         // pero lo agregamos por los requerimientos del enunciado
+         @Enumerated(Type.String)
+         private TipoSuscripcion tipo_suscripcion;
+
+         @ManyToMany
+         private List<Local> localesIncluidos;
+     }
+
+     @Entity
+     @Table(name="usuarios")
+     class Usuario extends PersistentObject{
+         // - La FK de la suscripción se guarda en la tabla de usuarios,
+         // y hace referencia a la suscripcion
+         // -> CORRECCION: Me parece que en realidad es ManyToOne
+         @OneToOne
+         private Suscripcion suscripcion;
+
+         // - Se repite la situación que ocurría al embeberla en la clase Local
+         @Embedded
+         private Direccion direccion;
+     }
+
+     public Enum Variedad{
+         RUBIA, ROJA, NEGRA;
+     }
+
+     // - NO nos interesa su Identidad ni Estado, no deseamos persistir un Service,
+     // sólo nos interesa que exponga su funcionalidad/operación de obtenerGraduacion
+     class AlcoholSevice{
+         public Number obtenerGraduacion(Bebida bebida){
+             // ..
+         }
+     }
+
+
+     // Estrategia de Herencia
+     // a) SINGLE_TABLE (elegida)
+     // a.1) Las "consultas polimórficas" no serían costosas,
+     // sólo traería una columna en NULL a lo mucho (la de variedad de cerveza)
+     // a.2) Las "consultas no polimórficas", tampoco serían costosas,
+     // traería la misma cantidad de campos, se consulta a una única tabla.
+     // a.2) Los INSERTs, tampoco serían costosos,
+     // se harían a una única tabla.
+     //
+     // b) JOINED (podría ser)
+     // b.1) Las "consultas polimórficas", serían más costosas, es el mismo escenario
+     // que con los locales. Haría una query con 3 JOINs, que es más costoso que un
+     // único SELECT sin JOINs, comparando con SINGLE_TABLE
+     // b.2) Las "consultas no polimórficas", también serían mas costosas,
+     // haría 1 JOIN
+     // b.3) Los INSERTs, serían el doble que SINGLE_TABLE, uno en la superclase
+     // y otro en la subclase.
+     //
+     // c) TABLE_PER_CLASS (NO sería opción)
+     // c.1) Las "consultas polimórficas", haría una consulta totalmente ineficiente
+     // si comparamos con la JOINED. Hace una query con subquery que contiene 3 queries
+     // que tienen UNIONs
+     // c.2) Las "consultas no polimórficas", no sería costosa, pero perderíamos el poder
+     // hacer "consultas polimórficas" por lo anteriormente dicho
+     // c.3) Los INSERTs, no sería costoso porque lo haría en la tabla de la subclase
+     //
+     // Con esta última estrategia, el modelo de datos quedaría más complejo,
+     // porque las subclases de Local tienen una relación @ManyToMany con las bebidas,
+     // en especial la subclase Bar
+     @Entity
+     @Inheritance(strategy=SINGLE_TABLE)
+     @DiscriminatorColumn(name="tipo_bebida")
+     class Bebida extends PersistentObject{
+         private String nombre;
+
+         public void calcularGraduacion(){
+             // ..
+         }
+
+         public Number obtenerPrecio(){
+             // ..
+         }
+     }
+
+     @Entity
+     class Trago extends Bebida{
+         public String obtenerTipoVaso(){
+             // ..
+         }
+     }
+
+     @Entity
+     class Analcoholica extends Bebida{
+         public void calcularNivelDeGas(){
+             // ...
+         }
+     }
+
+     @Entity
+     class Cerveza extends Bebida{
+         @Enumerated(Type.String)
+         Variedad variedad;
+
+         public void calcularIBU(){
+             // ...
+         }
+     }
+
+   #+END_SRC
+** Modelo de Datos (DER Físico)
+   #+BEGIN_SRC plantuml :file img/parcial-ginpass-der.png :exports results
+     @startuml
+     title Parcial - Ginpass
+     
+     entity locales{
+         id
+         --
+         nombre
+         tipo_local
+         calle
+         altura
+         longitud
+         latitud
+     }
+     
+     entity suscripciones{
+         id
+         --
+         cuotaMaxima
+         cuotaMinima
+     }
+     
+     entity suscripcion_local{
+         id_local
+         id_suscripcion
+     }
+     
+     entity usuarios{
+         id
+         --
+         id_suscripcion <<FK>>
+         calle
+         altura
+         longitud
+         latitud
+     }
+     
+     entity bebidas{
+         id
+         --
+         nombre
+         variedad
+         tipo_bebida
+     }
+     
+     /'
+     entity local_bebida{
+         id_local
+         id_bebida
+     }
+     '/
+     
+     entity bar_trago{
+         id_local
+         id_trago
+     }
+     
+     entity bar_cerveza{
+         id_local
+         id_cerveza
+     }
+     
+     entity bar_analcoholica{
+         id_local
+         id_analcoholica
+     }
+     
+     entity pub_trago{
+         id_local
+         id_trago
+     }
+     
+     entity cerveceria_cerveza{
+         id_local
+         id_cerveza
+     }
+     
+     
+     '---------------------------------------------------
+     ' Relaciones
+     '---------------------------------------------------
+     
+     locales         ||-right-o{ suscripcion_local
+     suscripciones   ||-left-|{ suscripcion_local
+     
+     usuarios        ||--o| suscripciones
+     
+     'locales         ||-up-o{ local_bebida
+     'bebidas         ||-right-o{ local_bebida
+     
+     locales         ||-up-o{ bar_trago
+     bebidas         ||-down-o{ bar_trago
+     
+     locales         ||-up-o{ bar_cerveza
+     bebidas         ||-down-o{ bar_cerveza
+     
+     locales         ||-up-o{ bar_analcoholica
+     bebidas         ||-down-o{ bar_analcoholica
+     
+     locales         ||-up-o{ pub_trago
+     bebidas         ||-down-o{ pub_trago
+     
+     locales         ||-up-o{ cerveceria_cerveza
+     bebidas         ||-down-o{ cerveceria_cerveza
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/parcial-ginpass-der.png]]
+* Punto (B)
+** Planteos
+   |----+--------|
+   | id | nombre |
+   |----+--------|
+   |  1 | fernet |
+   |  2 | coca   |
+   |----+--------|
+   
+   |-----------+------------+-----------+-------+----------|
+   | pedido_id | usuario_fk | bebida_fk |  hora | cantidad |
+   |-----------+------------+-----------+-------+----------|
+   |         1 |          1 |         2 | 10:05 |       50 |
+   |         2 |          1 |         1 | 10:30 |        1 |
+   |         3 |          1 |         1 | 11:30 |        1 |
+   |         4 |          1 |         1 | 12:40 |        1 |
+   |         5 |          1 |         1 | 12:45 |        1 |
+   |         6 |          1 |         1 | 12:50 |        1 |
+   |-----------+------------+-----------+-------+----------|
+
+   Ranking: gana bebida_id=1
+
+   #+BEGIN_SRC sql
+     SELECT b.nombre, COUNT(pedido_id)
+       FROM Bebida b
+     JOIN Pedido p ON p.bebida_id = b.id
+      ORDER BY 2 DESC
+   #+END_SRC
+** Solución
+*** Punto 1
+   #+BEGIN_QUOTE
+   Suponemos que el problema de que tarda en cargar la pantalla de Ranking de Bebidas
+   porque tiene que hacer un SELECT de la tabla de bebidas + JOIN a los pedidos,
+   y si son demasiados pedidos quizás se demore.
+   #+END_QUOTE
+*** Punto 2
+    #+BEGIN_QUOTE
+    Una posible solución podría ser desnormalizar esa parte del modelo,
+    agregando en la tabla Bebidas una columna calculada llamada "veces_comprada",
+    de forma que con cada INSERT en pedidos esa columna se actualice e incremente en 1
+
+    Otra posible solución sería agregar en la consulta anterior,
+    una restricción a la columna hora, para reducir la cantidad de registros.
+    #+END_QUOTE
+* [TODO] Punto (C) - Vista Web
+** Solución
+*** Rutas + Componentes HTML
+   #+BEGIN_QUOTE
+   Los *endpoints* que llevarían a las pantallas indicadas serían
+   - ~/login~
+   - ~/locales~
+   - ~/locales/:local~
+  #+END_QUOTE
+   
+   #+BEGIN_QUOTE
+   Los *componentes HTML* que podríamos necesitar
+   
+   *En la pantalla de búsqueda de locales*
+   1. Un campo de texto para ingresar los tipos de bebida
+   2. Otro campo de texto para ingresar las palabras clave
+   3. Un botón "buscar" que actúe como submit
+   4. Un listado ~<ul>~ con elementos ~<li>~ que muestre información de cada local
+   5. Un hipervinculo "ver detalle" al lado de cada item del listado de locales
+
+   *En la pantalla de ver detalles del local*
+   1. Un botón "upgrade" si la suscripción es de menor nivel al local que desea ver
+   
+   *En la pantalla de lógin*
+   1. Un campo de texto para el usuario, y otro para la clave
+   2. Un botón "ingresar" que actué como submit
+  #+END_QUOTE
+   
+   #+BEGIN_QUOTE
+   En base a los acciones HTTP que creemos que deberian tener las pantallas,
+   indicamos los verbos que tendrían los *endpoints* previamente mencionados
+   *Pantalla de Login*
+     - ~GET /login~ para ingresar a la pantalla de iniciar sesión
+     - ~POST /login~ para iniciar la sesión con los datos completados
+
+   *Pantalla de Búsqueda de locales*
+   - ~GET /locales~ para ingresar a la búsqueda de locales, podrían no aparecer resultados hasta que se ingresen parámetros
+   - ~GET /locales~ al darle al botón "Buscar", le muestra una lista de locales filtrados por los parámetros
+     - ~queryParams("bebida")~ y ~queryParams("clave")~  (Ej. ~/locales?bebidas=una,dos,tres&clave=mojito,otra~)
+   - ~GET /locales/:local~ si le dá al botón "Ver detalle" le muestra información del local
+   #+END_QUOTE
+*** [TODO] Implementación MVC (Con Spark Java)
+    #+BEGIN_QUOTE
+    No está terminado, pero como no lo toman en el parcial, lo dejamos hasta ahí.. (?
+    #+END_QUOTE
+    
+    #+BEGIN_SRC java
+      class Router{
+          get("/login", LoginController:index, engineTemplate);
+          post("/login", LoginController:login, engineTemplate);
+      
+          get("/locales", LocalesController:index, engineTemplate);
+          get("/locales/:local", LocalesController:show, engineTemplate);
+      }
+      
+      class RepositorioLocales{
+          static Collection<Local> getLocalesFilterBy(Collection<String> tiposDeBebidas, Collection<String> palabrasClaves){
+              // entityManager.createQuery("from locales WHERE bebida IN :bebida")
+              return entityManager.createQuery("from Local", Local.class)
+                  .filter(local => local.filterByTiposBebidas(tiposDeBebidas) && local.filterByPalabrasClaves(palabrasClaves))
+          }
+      }
+      
+      class LocalesController{
+          static ModelAndView index(Request req, Response res){
+              Map<String, Collection<Local>> model = new HashMap<>();
+      
+              Collection<String> tiposDeBebidas = req.queryParams("tiposDeBebidas");
+              Collection<String> palabrasClaves= req.queryParams("palabrasClaves");
+              Collection<Local> locales = RepositorioLocales.getAllLocalesFilterBy(tiposDeBebidas, palabrasClaves);
+      
+              model.put("locales", locales);
+      
+              return new ModelAndView(model, "locales/index.hbs");
+          }
+      
+          static ModelAndView show(Request req, Response res){
+              Map<String, Object> model = new HashMap<>();
+              String nombre = req.params("id");
+      
+              Local local = RepositorioLocales.getLocalByName(nombre);
+              model.put("local", local);
+      
+              return new ModelAndView(model, "locales/show.hbs");
+          }
+      }
+      
+      class LoginController{
+          static ModelAndView index(Request req, Response res){
+              String username = req.queryParams("username");
+              String password = req.queryParams("password");
+      
+              Usuario usuario = new Usuario(username, password);
+      
+              if(RepositorioUsuarios.findUser(usuario)){
+                  redirect("/");
+              }
+          }
+      }
+    #+END_SRC
+    

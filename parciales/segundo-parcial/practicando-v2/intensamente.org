@@ -1,0 +1,125 @@
+#+STARTUP: inlineimages
+* Java
+   #+BEGIN_SRC java
+     @MappedSuperclass
+     class PersistentObject{
+         @Id
+         @GeneratedValue
+         long id;
+     }
+
+     @Entity
+     @Table(name="personajes")
+     class Personaje{
+         String nombre;
+         int nivelImpulsividad;
+
+         // TODO: explicar
+         @ManyToMany
+         Collection<Emocion> emociones;
+
+         Accion reaccionarAnte(Evento evento){ }
+     }
+
+     // TODO: explicar, porque de interfaz a clase, y el tipo de estrategia de herencia
+     @Entity
+     @Table(name="emociones")
+     @Inheritance(strategy=SINGLE_TABLE)
+     abstract class Emocion{
+         Accion reaccionarAnte(Evento evento);
+     }
+
+     class Alegria extends Emocion{
+         int nivelFelicidad;
+     }
+
+     class Ira extends Emocion{
+         int nivelOdio;
+     }
+
+     class Tristeza extends Emocion{
+         int NivelPena;
+     }
+
+     class Desagrado extends Emocion{
+         int nivelAsco;
+     }
+
+     class Temor extends Emocion{
+         int nivelMiedo;
+     }
+
+     @Entity
+     @Table(name="entornos")
+     class Entorno{
+         // - No aclara si las acciones se repiten en los entornos
+         @OneToMany
+         @JoinColumn(name="entorno_id")
+         Collection<Accion> acciones;
+
+         // - Un personaje puede estar en varios entornos, y un entorno puede tener varios personajes
+         @ManyToMany
+         Collection<Personaje> personajes;
+
+         Evento siguienteEvento(){ }
+         procesarAcciones(){ }
+     }
+
+     enum TipoAccion{
+         DESTRUCTIVA, CONSTRUCTIVA, NEUTRAL;
+
+         // implementarian este mensaje cada tipo de acción
+         void ejecutarSobre(Entorno){ }
+     }
+
+     @Entity
+     @Table(name="eventos")
+     abstract class Evento{
+         Date fecha;
+
+         // TODO: chequear
+         @OneToOne
+         Entorno entorno;
+     }
+
+     @Entity
+     @Table(name="acciones")
+     class Accion{
+         String descripcion;
+
+         // TODO: explicar
+         @Enumerated
+         TipoAccion tipo;
+
+         @OneToOne
+         Personaje personaje;
+
+         void ejecutarSobre(Entorno entorno){ }
+     }
+   #+END_SRC
+* Diagrama
+   #+BEGIN_SRC plantuml :file img/parcial-intensamente.png :exports results
+     @startuml
+     title IntensaMente
+
+     entity emociones{
+         tipo
+         felicidad
+         odio
+         pena
+         asco
+         miedo
+     }
+
+     personajes  --{ emociones
+
+     entornos    --{ acciones
+
+     entornos    -left-{ entornos_personajes
+     personajes    -up-{ entornos_personajes
+
+     eventos     ||--|| entornos
+
+     acciones    ||--|| personaje
+     @enduml
+   #+END_SRC

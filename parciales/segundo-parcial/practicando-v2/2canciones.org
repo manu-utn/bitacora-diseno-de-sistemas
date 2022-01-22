@@ -1,0 +1,152 @@
+#+STARTUP: inlineimages
+* Java
+   #+BEGIN_SRC java
+     // TODO: explicar
+     @MappedSuperclass
+     class PersistentObject{
+         @Id
+         @GeneratedValue
+         long id;
+     }
+
+     // TODO: explicar, interfaz a enum con comportamiento
+     enum Clasificacion{
+         MENORES, ADOLESCENTES, ADULTOS,
+
+         // los tres deberian implementar este mensaje
+         validarAcceso(Usuario usuario){ }
+     }
+
+     // TODO: explicar
+     @Embeddable
+     class Estadistica{
+         int likes;
+         int dislikes;
+     }
+
+     // TODO: explicar
+     @Entity
+     @Table(name="contenidos")
+     @Inheritance(strategy=SINGLE_TABLE)
+     class Contenido{
+         int reproducciones;
+         String imagenDeTapa;
+
+         // TODO: explicar
+         @Enumerated
+         Clasificacion clasificacion;
+
+         // TODO: explicar
+         @Embbedded
+         Estadistica estadistica;
+
+         // TODO: explicar
+         @ManyToOne
+         Usuario duenio;
+     }
+
+     @Entity
+     class Podcast extends Contenido{
+         Date fechaInicio;
+         Date fechaFin;
+     }
+
+     @Entity
+     class Cancion extends Contenido{
+         int duracion;
+         Fecha subido;
+     }
+
+     @Entity
+     @Table(name="usuarios")
+     class Usuario{
+     }
+
+     @Entity
+     @Table(name="playlists")
+     class Playlist{
+         // TODO: explicar
+         @ManyToMany
+         @OrderColumn(name="posicion")
+         List<Contenido> contenidos;
+
+         // TODO: explicar
+         @ManyToMany
+         Collection<Usuario> suscriptores;
+
+         // TODO: explicar
+         @ManyToOne
+         Usuario duenio;
+
+         // TODO: explicar
+         @Enumerated
+         Visibilidad visibilidad;
+     }
+
+     // TODO: explicar
+     enum Visibilidad{
+         PRIVADA, PUBLICA, NO_LISTADA
+     }
+
+
+
+   #+END_SRC
+* Diagrama
+   #+BEGIN_SRC plantuml :file img/parcial-2canciones.png :exports results
+     @startuml
+     title 2canciones
+
+     entity contenidos{
+         id
+         --
+         duenio_id <<FK>>
+         posicion
+         fechaInicio
+         fechaFin
+         duracion
+         subido
+         reproducciones
+         imagenDeTapa
+         clasificacion
+         likes
+         dislikes
+     }
+
+     entity playlists{
+         id
+         --
+         duenio_id <<FK>>
+         visibilidad
+     }
+
+     entity usuarios{
+         id
+     }
+
+     entity playlist_contenido{
+         usuario_id <<PK/FK>>
+         contenido_id <<PK/FK>>
+     }
+
+     entity playlist_suscriptor{
+         usuario_id <<PK/FK>>
+         playlist_id <<PK/FK>>
+     }
+
+     ' ======================================
+
+     contenidos  }|--|| usuarios
+
+     playlists   ||-up-{ playlist_contenido
+     contenidos   ||-left-{ playlist_contenido
+
+
+     playlists   ||-up-{ playlist_suscriptor
+     usuarios   ||-right-{ playlist_suscriptor
+
+     playlists   }|--|| usuarios
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/parcial-2canciones.png]]

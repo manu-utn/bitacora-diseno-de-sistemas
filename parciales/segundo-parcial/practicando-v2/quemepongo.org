@@ -1,0 +1,274 @@
+#+STARTUP: inlineimages
+* Java
+   #+BEGIN_SRC java
+     // Todas las clases que usen @Entity extenderán de esta,
+     // en el modelo de datos tendrán la columna "id"
+     // que tiene un valor autonumérico
+     @MappedSuperclass
+     class PersistentObject{
+         @Id
+         @GeneratedValue
+         long id;
+     }
+
+     // - Se persiste una tabla "usuarios"
+     @Entity
+     @Table(name="usuarios")
+     class Usuario{
+         // - Un usuario puede tener varias prendas => ..ToMany
+         // pero las prendas no son compartidas entre usuarios => OneTo..
+         // - Usamos el @JoinColumn para que no se genere una tabla intermedia,
+         // para eitar que ocurra la tabla asociativa que se forma en un ManyToMany
+         // - Se crea una FK del lado de "prendas" con el nombre "usuario_id"
+         // para guardar la referencia del usuario
+         @OneToMany
+         @JoinColumm(name="usuario_id")
+         List<Prenda> guardarropas;
+
+         List<Sugerencia> sugerenciasPara(int temperatura){ }
+     }
+
+     // - Se persiste una tabla "prendas"
+     @Entity
+     @Table(name="prendas")
+     class Prenda{
+         String descripcion;
+
+         // - Usamos @Enumerated para que el ORM entienda que el atributo
+         // es una enumeración (un value object, del que no queremos manejar su identidad)
+         // y aparecera como un atributo más en el modelo de datos, en la tabla de esta clase
+         @Enumerated
+         CategoriaPrenda categoria;
+
+         // - Se creará una tabla intermedia entre "prendas" y "colores"
+         // que tiene como PK/FK el id de ambas tablas
+
+         // - Como "Color" es @Embeddable ya que no queremos manejar su identidad, lo consideramos un valueObject
+         // usamos @ElementCollection por ser una colección de value objects
+         // - Hubieramos aplicado el mismo método, si se tratase de una colección de objetos primitivos como String,
+         // ó de una lista de enumeraciones, ambos considerados value objects.
+         //
+         // - Se creará una tabla "prendasColores" que tiene como columnas, los atributos de Color
+         // y creará en "prendas_colores" una FK "prenda_id" para guardar la referencia de "prendas"
+         // - Usamos el @CollectionTable para indicar el nombre de la tabla que se creará
+         @ElementCollection
+         @CollectionTable(name="prendas_colores")
+         List<Color> colores;
+
+         boolean cubreTemperatura(int temperatura){ }
+     }
+
+     // - Decidimos no manejar la identidad de esta clase,
+     // por tanto no se creará una tabla en el modelo de datos de ésta
+     @Embeddable
+     class Color{
+         String descripcion;
+         String codigoHexa;
+     }
+
+     // - Al ser un enum, no necesitamos agregar un annotation en su definición,
+     // pero si cuando declaremos atributos de esta de enumeración con @Enumerated
+     enum CategoriaPrenda{
+         ARRIBA, ABAJO, ENTEROS, CALZADO, ACCESORIOS,
+
+         // cada uno deberia implementar este método
+         boolean cubreTemperatura(int temperatura){ }
+     }
+
+     // - Consideramos que es un "value object", del cual no queremos manejar su identidad
+     // - Lo embeberemos en otra clase, y en el modelo de datos figurará como columna
+     @Embeddable
+     class Ciudad{
+         String key;
+     }
+
+     // - Se persistirá una tabla "eventos"
+     // Estrategia de Herencia
+     //
+     // SINGLE_TABLE (elegida)
+     // 1. Consultas polimórficas:
+     // - Es eficiente ya que no se debe hacer JOINs de las tablas de las subclases,
+     // si comparamos con JOINED que haría en este caso 2 JOINs
+     //
+     // 2. Consultas no polimórficas:
+     // - Es eficiente, ya que habrá solo una tabla a la que consultar,
+     // y comparando con JOINED nos evitamos un JOIN
+     //
+     // 3. Inserciones:
+     // - Es eficiente, ya que haría INSERT en una única tabla,
+     // mientras que en JOINED haría el doble.. 1 INSERT en la superclase, otro en la subclase
+     //
+     //
+     // JOINED (tabla por clase) - alternativa
+     // 1. Consultas polimórficas:
+     // - NO es tan eficiente si comparamos con SINGLE_TABLE,
+     // hará 2 JOINs por haber 2 subclases, estos son costosos.
+     //
+     // 2. Consultas no polimórficas:
+     // - NO es tan eficiente comparando con SINGLE_TABLE,
+     // hará 1 JOIN, mientras que SINGLE_TABLE haría solo 1 SELECT
+     //
+     // 3. Inserciones:
+     // - Se haría el doble de inserciones que con SINGLE_TABLE,
+     // uno en la superclase "Evento" y otro en la subclase elegida
+     //
+     // TABLE PER CLASS (tabla por clase concreta)
+     // - Se debe contemplar que también se debe usar algun generador de IDs
+     // como un UUID, ó Secuencias
+     //
+     // 1. Consultas polimórficas:
+     // - Sería el menos eficiente, porque haría una query con una subquery
+     // que contiene queries de las subclases, que es menos eficiente que usar JOINs
+     // si comparamos contra JOINED
+     //
+     // 2. Consultas no polimórficas:
+     // - Haría un SELECT en la tabla concreta, pero perdemos la posibilida de las
+     // consultas polimórficas eficientes
+     //
+     // 3. Inserciones:
+     // - Se harian en las clases concretas
+     @Entity
+     @Table(name="eventos")
+     @Inheritance(name=STRATEGY)
+     class Evento{
+         // Un evento está asociado a un usuario: ..ToOne
+         // Un usuario puede estar en muchos eventos:ManyTo...
+         @ManyToOne
+         Usuario usuario;
+         DateTime inicio;
+         DateTime fin;
+
+         // - Preferimos no manejar la identidad de esa clase, la consideramos un value object
+         // - al embeber aparecerán los atributos de esa clase, en la tabla de "eventos"
+         @Embedded
+         @Column(name="ciudad")
+         Ciudad ciudad;
+
+         boolean ocurreProximamente(DateTime fecha){ }
+         List<Sugerencia> sugerencias(){ }
+     }
+
+     @Entity
+     class EventoUnico extends Evento{
+         boolean ocurreProximamente(DateTime fecha){ }
+     }
+
+     @Entity
+     class EventoRecurrente extends Evento{
+         // - Le avisamos al ORM que lo que va a mapear es una enumeración
+         // osea un value object
+         @Enumerated
+         Recurrencia recurrencia;
+
+         boolean ocurreProximamente(DateTime fecha){ }
+     }
+
+     // - Pasamos la Interfaz a enumeración con comportamiento,
+     // ya que las clases "semanal, mensual" son stateless (no tienen comportamiento)
+     // - En caso de que alguna de esas clases que la implementaban tenian estado
+     // se podría haber optado por convertir la interfaz en una clase abstracta
+     enum Recurrencia{
+         SEMANAL, MENSUAL,
+
+         // ambos deben implementar este método
+         proximaOcurrencia(Evento evento){ }
+     }
+
+     /*
+      ,* No persistimos las sugerencias, ya que el modelo de objetos
+      ,* tiene la lógica de según el clima mostrarle por pantalla las prendas,
+      ,* lo que se desea persistir son las prendas
+      ,*/
+
+     // @Entity
+     // @Table(name="sugerencias")
+      class Sugerencia{
+          // @ManyToMany
+          List<Prenda> prendas;
+      }
+
+     // No queremos manejar la identidad ni valor del servicio,
+     // porque de los servicios sólo nos interesa su funcionalidad..
+     // Similar a lo que ocurre con los repositorios
+     class ClienteAPIClima{
+     }
+   #+END_SRC
+* Diagrama
+   #+BEGIN_SRC plantuml :file img/parcial-qmp.png :exports results
+     @startuml
+     title Parcial - queMePongo
+
+     entity eventos{
+         id
+         --
+         usuario_id <<FK>>
+         tipo
+         recurrencia
+         inicio
+         fin
+         ciudad
+     }
+
+     entity prendas{
+         id
+         --
+         usuario_id <<FK>>
+         descripcion
+         categoria
+     }
+
+     entity usuarios{
+         id
+     }
+
+     entity prendas_colores{
+         prenda_id <<FK>>
+         descripcion
+         codigoHexa
+     }
+
+     ' ======================================
+
+     usuarios    ||-right-{ prendas
+
+     prendas     ||-down-{ prendas_colores
+
+     eventos     }-right-|| usuarios
+
+     'sugerencias     ||--{ sugerencias_prendas
+     'prendas         ||-left-{ sugerencias_prendas
+
+     ' ======================================
+
+     note right of prendas
+     class Prenda{
+         @ElementCollection
+         @CollectionTable(name="prendas_colores")
+         @JoinColumn(name="prenda_id")
+         List<Color> colores;
+    
+         // ...
+     }
+     end note
+
+     note right of prendas_colores
+     En el modelo de objetos hay una clase Color,
+     la cual no queremos manejar su identidad,
+     porque la consideramos un **value object**
+     por tanto es **@Embeddable**
+
+     Esta tabla se genera porque en Prendas,
+     tenemos una colección de value objects,
+     que es **List<Color> colores** por tanto
+     le agregamos **@ElementCollection**
+
+     El **@ElementCollection** es similar a **@OneToMany**
+     pero éste primero es para value objects.
+     Entonces, debemos usar un @JoinColumn para evitar que
+     se genere una tabla asociativa intermedia
+     end note
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/parcial-qmp.png]]

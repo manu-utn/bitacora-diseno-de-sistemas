@@ -1,0 +1,280 @@
+#+STARTUP: inlineimages
+* Java
+   #+BEGIN_SRC java
+     // - a todas las clases que tengan @Entity debemos extender esta clase
+     // para que el ORM al mapear, entienda que debe persistirlas
+     // - en el modelo de datos, todas las tablas que extiendan esta clase tendran el campo "id" como pk,
+     // - en aquellas que usen herencia, no es necesario agregarlas en las subclases
+     @MappedSuperclass
+     class PersistEntity{
+         @Id
+         @GeneratedValue
+         long id;
+     }
+
+     // - pasamos la interfaz a enum con comportamiento,
+     // las clases eran stateless, por eso optamos enum en vez de clase abstracta
+     // - el orm no mapea interfaces
+     // - no se va a persistir una tabla de esto, si no como atributo de otra tabla
+     enum TipoPersonaje{
+         HECHICERO, GUERRERO, COMERCIANTE;
+
+         // cada uno deberia implementar estos mensajes
+         comerciar(item, otro){ }
+         pelear(){ }
+         buscarItem(ubicacion){ }
+     }
+
+     // - Decidimos no manejar su identidad, consideramos que es un value object
+     // - No se persitirá en el modelo de datos una tabla "coordenadas"
+     // - Lo embeberemos en otra clase, los atributos aparecerán en esa otra entidad
+     // donde se embeba, en el modelo de datos
+     @Embeddable
+     class Coordenadas{
+         int x;
+         int y;
+         int nivel;
+     }
+
+     @Entity
+     @Table(name="ubicaciones")
+     class Ubicacion{
+         String nombre;
+
+         // - Embebemos los atributos, en el modelo de datos figurarán en la tabla ubicaciones
+         @Embedded
+         Coordenadas coordenadas;
+
+         // - Una ubicación puede tener muchos items, pero los items
+         // pueden estar en una única ubicación a la vez
+         // - Usamos collection en vez de List porque no necesitamos mantener
+         // el orden
+         @OneToMany
+         @JoinColumn(name="ubicacion_id")
+         Collection<Item> items;
+
+     }
+
+     @Entity
+     @Table(name="personajes")
+     class Personaje{
+         String nombre;
+         int monedas;
+
+         // - Indicamos que vamos a mapear un enum
+         @Enumerated
+         TipoPersonaje tipo;
+
+         // - Un personaje puede visitar varios lugares, y varios lugares
+         // pueden ser visitados por más de un personaje
+         @ManyToMany
+         @OrderColumn(name="orden")
+         List<Ubicacion> ubicacionesVisitadas;
+
+         // - Embebemos los atributos a la clase, aparecerán como columnas de la tabla personajes
+         @Embedded
+         Coordenadas coordenadas;
+
+         // - Un personaje puede tener muchos items,
+         // pero cada item puede pertenecer sólo un personaje
+         // - la restricción de que use sólo un item es a nivel de objetos, no de datos
+         // - usamos JoinColumn para evitar que se genere una tabla asociativa
+         // intermedia entre Personaje e Items, es decir evitamos que haga un ManyToMany
+         @OneToMany
+         @JoinColumn(name="personaje_id")
+         Collection<Item> items;
+
+         @OneToOne
+         @JoinColumn(name="personaje_arma_id")
+         Arma arma;
+
+         // - no era necesario agregar esta lógica
+         //
+         // void usarItem(Item item){
+         //     item.usar(this);
+         // }
+     }
+
+
+     // Estrategia de Herencia
+     // SINGLE_TABLE (elegida)
+     // 1. Para consultas polimórficas: Será eficiente, ya que es una única tabla
+     // no tendrá que hacer JOINs por cada subclase como si lo haría JOINED,
+     // nos ahorramos 4 JOINs
+     // 2. Para consultas no polimórficas: No requiere hacer JOINs para buscar datos
+     // de alguna subclase, como si lo hace la JOINED
+     //
+     // JOINED (tabla por clase), alternativa
+     // 1. Para consultas polimórficas: No es tan eficiente comparado con SINGLE_TABLE,
+     // ya que hará 4 JOINs para traerse los datos de las subclases, esto resulta ineficiente.
+     // además haría JOIN por tablas con 1 o 2 atributos, no tiene sentido.
+     //
+     // 2. Para consultas no polimórficas: No es tan eficiente comparado con SINGLE_TABLE,
+     // ya que hará 1 JOIN, mientras que SINGLE_TABLE sólo hará un único SELECT.
+     //
+     // TABLE_PER_CLASS (tabla por clase concreta), NO es opción
+     // 1. Para consultas polimórficas: resultaría completamente ineficiente,
+     // porque hará una subquery con varias queries una por subclase, unidas con UNIONs.
+     // Esto es aún menos eficiente que los JOINs, es decir si lo comparamos con JOINED.
+     //
+     // 2. Para consultas no polimórficas: No es tan ineficiente comparado con JOINED,
+     // ya que haría la consulta directo a la subclase. Pero preferimos poder hacer
+     // consultas polimórficas también
+     //
+     @Entity
+     @Table(name="items")
+     @Inheritance(strategy=SINGLE_TABLE)
+     @DiscriminatorColumn(name="tipo")
+     abstract class Item{
+         int costo(){ }
+         String nombre(){ }
+     }
+
+     @Entity
+     class BolsaDeMonedas extends Items{
+         int monedas;
+
+         @Override
+         int costo(){
+             return this.monedas;
+         }
+
+         @Override
+         String nombre(){
+             return "Bolsa de Monedas";
+         }
+     }
+
+     @Entity
+     class Regalo extends Items{
+         String fraseMotivacional;
+
+         @Column(name="nombre_regalo")
+         String nombre;
+
+         @Override
+         int costo(){
+             return 0;
+         }
+
+         @Override
+         String nombre(){
+             return "Regalo";
+         }
+     }
+
+     @Entity
+     class Accesorio extends Items{
+         @Column(name="nombre_accesorio")
+         String nombre;
+
+         @Column(name="costo_accesorio")
+         int costo;
+     }
+
+     @Entity
+     class Arma extends Items{
+         @Column(name="nombre_arma")
+         String nombre;
+
+         @Column(name="costo_arma")
+         int costo;
+         int defensa;
+         int ataque;
+     }
+   #+END_SRC
+* Diagrama
+   #+BEGIN_SRC plantuml :file img/parcial-shieldgo.png :exports results
+     @startuml
+     title 2º Parcial - ShieldGo
+     entity personajes{
+         id
+         --
+         tipo
+         nombre
+         monedas
+         x
+         y
+         nivel
+     }
+
+     entity ubicaciones{
+         id
+         --
+         nombre
+         x
+         y
+         nivel
+     }
+
+     entity ubicaciones_personajes{
+         id_personaje <<PK/FK>>
+         id_ubicacion <<PK/FK>>
+     }
+
+     entity items{
+         id
+         --
+         personaje_id <<FK>>
+         personaje_arma_id <<FK>>
+         monedas
+         fraseMotivacional
+         costo_accesorio
+         costo_arma
+         nombre_regalo
+         nombre_accesorio
+         nombre_arma
+         defensa
+         ataque
+     }
+
+
+     ' =======================================
+
+     ubicaciones     ||..o{ items
+
+     personajes      ||.right.|{ ubicaciones_personajes
+     ubicaciones     ||.up.o{ ubicaciones_personajes
+
+     personajes      ||--o{ items
+     personajes      ||--|| items
+
+     ' =======================================
+
+     note left of items
+     Para que al mapear las clases
+     Arma, Regalo, Accesorio se diferencie
+     de cada una el atributo "nombre"
+     usamos el annotation **@Column**
+
+     class Accesorio
+     @Column(name="nombre_accesorio")
+     String nombre
+
+     class Arma
+     @Column(name="nombre_arma")
+     String nombre
+     end note
+
+     note right of items
+     Estrategia de Herencia: SINGLE_TABLE
+     ,* Arma
+     ,* Regalo
+     ,* BolsaDeMonedas
+     ,* Accesorio
+     end note
+
+     note left of personajes
+     Relaciones con "items"
+     ,* OneToMany: puede tener muchos items
+     ,* OneToOne: tiene sólo 1 arma
+
+     La FK del OneToOne se crea en la
+     otra entidad, similar al OneToMany
+     end note
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/parcial-shieldgo.png]]

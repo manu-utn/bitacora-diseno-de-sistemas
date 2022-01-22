@@ -1,0 +1,280 @@
+#+TITLE: Parcial Juego de Tronos
+* Punto A
+** Modelo de objetos en Java+Hibernate
+   #+BEGIN_SRC java
+     @Entity
+     @Table(name="regiones")
+     class Region{
+         private String nombre;
+     
+         @ManyToMany
+         private List<Lugar> lugares;
+     
+         @ManyToOne
+         private Casa casaPrincipal;
+     
+         public Set castillos(){
+             return lugares.filter(lugar -> lugar.getCastillos());
+     
+             // delego en Lugar, que él implemente getCastillos()
+             //  List<Castillo> castillos = entityManager()
+             //     .createQuery("from castillos", class.Castillo)
+             //     .getResultList();
+         }
+     
+         public Set ciudades(){
+             return lugares.filter(lugar -> lugar.getCiudades());
+         }
+     }
+     
+     // - Elegimos JOINED porque son pocas sub_clases, por tanto cuando
+     // haga una "consulta polimórfica" no será tan costosa la operación,
+     // hará sólo 2 JOINs
+     // - La otra alternativa, podría haber sido SINGLE_TABLE porque las sub_clases
+     // no tienen tantos campos, quedarían pocos campos en NULL
+     //
+     // - NO elegimos TABLE_PER_CLASS porque se va a consultar por atributos (nombre para Casa y poblacion)
+     // de la super_clase "Lugar", y al ser esa una "consulta polimórfica" y sería costoso,
+     // esta estrategia hará UNIONs por cada clase_concreta para armar una query similar a una SINGLE_TABLE
+     @Entity
+     @Inheritance(strategy=JOINED)
+     @DiscriminatorColumn(name="tipo_lugar")
+     abstract class Lugar{
+         private String nombre;
+         private int anioFundacion;
+         private int poblacion;
+     }
+     
+     @Entity
+     class Castillo extends Lugar{
+         private int cantidadTorres;
+         private int cantidadMurallas;
+     }
+     
+     @Entity
+     class Ciudad extends Lugar{
+         private int cantidadDeComercios;
+         private int cantidadDeSantuarios;
+         private int tasaDeMortalidad;
+     }
+     
+     @Entity
+     class Casa{
+         private String nombre;
+         private int patrimonio;
+         private int anioFundacion;
+     
+         // en un lugar puede originarse arias casas
+         @ManyToOne
+         Lugar lugar;
+     
+         // - Cada casa puede tener cero ó varias fuerzas militares
+         // pero como no interesa el orden usamos Collection en vez de List
+         // - Usamos el JoinColumn porque si no ORM hibernate creará una tabla intermedia
+         // como la de ManyToMany
+         @OneToMany
+         @JoinColumn(name="casa_id")
+         Collection<FuerzaMilitar> fuerzasMilitares;
+     
+         @OneToMany
+         List<Casa> casasVasallas;
+     
+         public String nombreLugarOrigen(){
+             return lugar.getNombre();
+         }
+     }
+     
+     // - Convertimos la Interfaz en Clase abstracta,
+     // porque las interfaces no se pueden mapear por el ORM hibernate
+     // además porque es un "strategy statefull" ya que cada strategy
+     // tiene un "estado interno" o sea atributos (por tanto no es "strategy stateless")
+     //
+     // - NO elegimos Enum con comportamiento, por lo dicho anteriormente, tienen "estado interno"
+     @Entity
+     @Inheritance(strategy=SINGLE_TABLE)
+     @DiscriminatorColumn(name="tipo_fuerza")
+     abstract class FuerzaMilitar{
+         public void atacarA(Lugar lugar);
+     }
+     
+     @Entity
+     class Aerea extends FuerzaMilitar{
+         private int cantidadDragones;
+     }
+     
+     @Entity
+     class Terrestre extends FuerzaMilitar{
+         private int cantidadSoldados;
+     }
+     
+     @Entity
+     class Naval extends FuerzaMilitar{
+         private int cantidadBarcos;
+     }
+   #+END_SRC
+** Modelo de datos (DER Fisico)
+   #+BEGIN_SRC plantuml :file img/parcial-juego-de-tronos-1.png :exports results
+     @startuml
+     title Juego de Tronos - Modelo de Datos (DER Físico)
+     entity regiones{
+         id
+         --
+         nombre
+     }
+     
+     entity lugares{
+         id
+         --
+         tipo_lugar
+         anioFundacion
+         poblacion
+     }
+     
+     entity castillos{
+         id <<FK/PK>>
+         --
+         cantidadTorres
+         cantidadMurallas
+     }
+     
+     entity ciudades{
+         id <<FK/PK>>
+         --
+         cantidadDeComercios
+         cantidadDeSantuarios
+         tasaDeMortalidad
+     }
+     
+     entity regionLugar{
+         id_region
+         id_lugar
+     }
+     
+     entity casas{
+         id
+         --
+         lugar_id <<FK>>
+         casa_vasalla_id <<FK>>
+         nombre
+         nombreLugar
+         patrimonio
+         anioFundacion
+     }
+     
+     entity fuerzasMilitares{
+         id
+         --
+         id_casa <<FK>>
+         tipo_fuerza
+         cantidadDragones
+         cantidadSoldados
+         cantidadBarcos
+     }
+     
+     regiones      ||-right-o{ regionLugar : tiene
+     lugares       ||-left-o{ regionLugar  : pertenece
+     
+     casas        |o-left-o{ fuerzasMilitares : tiene
+     casas        }o-right-|| lugares : originarse
+     casas        |o--o{ casas : vasalla
+     
+     ciudades      ||-up-o| lugares : es
+     castillos    ||-up-o| lugares : es
+     
+     regiones      }|-up- casas : principal
+     
+     
+     note bottom of fuerzasMilitares
+     Estrategia de Herencia
+     ,**SINGLE_TABLE**
+     end note
+     
+     note right of lugares
+     Estrategia de Herencia
+     ,**JOINED**
+     end note
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/parcial-juego-de-tronos-1.png]]
+
+* Punto B
+** Modelo de objetos en Java
+  #+BEGIN_SRC java
+    clase RepositorioRegiones{
+        //una casa es importante si es la principal de una región
+        // muy poblada y además es rica
+        metodo casasImportantes(){
+            em.createQuery("from Region")
+                .list()
+                .filter(region => region.poblacionTotal > 5000)
+                .map(region => region.casaPrincipal)
+                .filter(casa => casa.esRica)
+        }
+    }
+    
+    clase Region{
+        metodo poblacionTotal(){
+            em.createQuery(..obtener las poblaciones de cada lugar...)
+                .list()
+                .sum()
+        }
+    }
+    
+    clase Casa{
+        metodo esRica(){
+            patrimonio > 10000
+        }
+    }
+  #+END_SRC
+** Solución 1
+  #+BEGIN_SRC java
+    clase RepositorioRegiones{
+        //una casa es importante si es la principal de una región
+        // muy poblada y además es rica
+    
+        // - Agregaría un campo "esDeRegionPoblada" en Casa, que indíque si proviene de una región poblada
+        // para evitar hacer un SELECT cada región chequeando si es poblada
+        metodo casasImportantes(){
+            em.createQuery("from Casas")
+                .list()
+                .filter(casa => casa.esRica() && casa.esDeRegionMuyPoblada())
+            // em.createQuery("from Region")
+            //     .list()
+            //     .filter(region => region.poblacionTotal > 5000)
+            //     .map(region => region.casaPrincipal)
+            //     .filter(casa => casa.esRica)
+        }
+    
+        // - Agregaría un campo precalculado "tieneCasasRicas" en Region
+        // para evitar buscar en regiones que no tienen casas ricas
+        // - También agregaría un campo pre-calculado "esMuyPoblada" que evite la comparación
+        // de cada región (poblacionTotal > 5000)
+        metodo casasImportantes(){
+            em.createQuery("from Region")
+                .list()
+                .filter(region => region.esMuyPoblada && region.tieneCasasRicas)
+                .filter(casa => casa.esRica)
+        }
+    }
+    
+    // - Usaría la función de agregación SUM() dentro de la query
+    // para hacer un único SELECT, y evitar tener que hacer un SELECT por cada lugar
+    clase Region{
+        metodo poblacionTotal(){
+            em.createQuery("SUM(poblacion) obtener todas las poblaciones de c/lugar")
+            // em.createQuery(..obtener las poblaciones de cada lugar...)
+            //     .list()
+            //     .sum()
+        }
+    }
+    
+    clase Casa{
+        metodo esRica(){
+            patrimonio > 10000
+        }
+    }
+  #+END_SRC
+* Referencias
+  1. [[https://docs.google.com/document/d/1Qjgq_KS73UUn8337LEoXi_M28wtgi-EkBuaQ7N-9Ks4/edit#][Enunciado]]

@@ -1,0 +1,266 @@
+#+STARTUP: inlineimages
+* Java
+   #+begin_src java
+     // - Esta clase será extendida por todas las que tengan el @Entity
+     // la misma hará se les genere un id autonumérico como clave primaria,
+     // el nombre de la columna será para todas las tablas igual, será "id"
+     class PersistentEntity{
+         @Id
+         @ValueGenerated
+         long id;
+     }
+
+     // - Preferimos no manejar la identidad de esta clase, consideramos que es un Value Object
+     @Embeddable
+     class Direccion{
+         String calle;
+         String altura;
+         Number longitud;
+         Number latitud;
+     }
+
+     @Entity
+     @Table(name="suscripciones")
+     class Suscripcion{
+         Number cuotaMaxima;
+         Number cuotaMinima;
+
+         // - Una suscripción puede tener muchos locales incluidos,
+         // como cada local puede tener varias suscripciones con distintas cuotas
+         @ManyToMany
+         List<Local> localesIncluidos;
+     }
+
+     @Entity
+     @Table(name="usuarios")
+     class Usuario{
+         // - Un usuario puede estar asociado a una suscripción,
+         // además podemos notar que no pueden ser varias porque el tipo de atributo
+         // no es una colección.
+         // - Una suscripcion puede tener varios usuarios asociados
+         @ManyToOne
+         Suscripcion suscripcion;
+
+         // - Como decidimos no manejar la identidad de Dirección,
+         // decidimos embeberlo en esta clase.
+         // - En el modelo de datos, figurarán todos los atributos de dirección
+         // como columnas
+         @Embedded
+         Direccion direccion;
+     }
+
+     // Estrategias de Herencia
+     // Ocurre lo mismo que con la clase Bebida, donde optamos por SINGLE_TABLE,
+     // además al tener la misma cantidad de subclases, podríamos repetir la explicación,
+     //
+     // SINGLE_TABLE (elegida)
+     // 1. Para las consultas polimórficas: Es eficiente, ya que las 3 clases están en una
+     // única tabla. Por tanto nos evitamos hacer 3 JOINs si comparamos con JOINED
+     //
+     // 2. Para las consultas no polimórficas: También es eficiente, ya que tiene que consultar
+     // en una única tabla, y se evita tener que hacer 1 JOIN como hubiera ocurrido con JOINED
+     //
+     // 3. Para las inserciones: Son eficientes porque se harían en una única tabla
+     //
+     // JOINED (tabla por clase): quizás, como alternativa, pero no es eficiente
+     // 1. Para las consultas polimórficas: NO es tan eficiente comparado con SINGLE_TABLE
+     // haría 3 JOINS al haber 3 subclases que heredan de Local
+     //
+     // 2. Para las consultas no polimórficas:  no es tan eficiente como SINGLE_TABLE,
+     // tenemos que hacer un JOIN.
+     //
+     // 3. Para las inserciones: Tendriamos el doble de INSERT, uno en la tabla de la superclase Local
+     // y otro en la subclase, si comparamos con SINGLE_TABLE que hace sólo 1 INSERT
+     //
+     // TABLE_PER_CLASS (tabla por clase concreta): la peor opción, la menos eficiente
+     //
+     // 1. Para las consultas polimórficas: NO es nada eficiente, ya que haría un SELECT
+     // con una subquery que contiene 3 queries, una por cada subclase, unidas con UNIONs..
+     // Esto es aún menos eficiente que usar JOINs.
+     //
+     // 2. Para las consultas no polimórficas: No es tan malo, ya que haría una query
+     // a la tabla de la clase concreta, pero perdemos la eficiencia de las polimorficas
+     //
+     // 3. Para las inserciones: se haría un insert en la tabla concreta,
+     // pero además se manejaria con algun generador de ID como podría ser UUID,
+     // ó con secuencias
+     @Entity
+     @Table(name="locales")
+     @Inheritance(strategy=SINGLE_TABLE)
+     class Local{
+         String nombre;
+
+         // - Como decidimos no manejar la identidad de Dirección,
+         // decidimos embeberlo en esta clase.
+         // - En el modelo de datos, figurarán todos los atributos de dirección
+         // como columnas
+         @Embedded
+         Direccion direccion;
+     }
+
+     @Entity
+     class Pub extends Local{
+         // - Un pub puede tener muchos tragos, y cada trago puede estar en varios pubs
+         // - Se crearán una tabla asociativa intermedia, le definimos el nombre con JoinTable
+         @ManyToMany
+         @JoinTable(name="tragos_pub")
+         List<Trago> tragos;
+     }
+
+     @Entity
+     class Bar extends Local{
+         // - Como Local es la superclase, y ésta usa la estragia de herencia SINGLE_TABLE,
+         // para evitar problemas con el ORM al mapear, definimos los nombres de las tablas
+         // ya que las otras subclases {Pub, Cerveceria} de Local también están relacionados
+         // con las bebidas
+         @ManyToMany
+         @JoinTable(name="tragos_bar")
+         List<Trago> tragos;
+
+         // - repetimos explicación de tragos_bar
+         @ManyToMany
+         @JoinTable(name="cervezas_bar")
+         List<Cerveza> cervezas;
+
+         // - repetimos explicación de tragos_bar
+         @ManyToMany
+         @JoinTable(name="analcoholicas_bar")
+         List<Analcholica> analcoholicas;
+     }
+
+     @Entity
+     class Cerveceria extends Local{
+         // - Se creará una tabla asociativa "cervezas_cerveceria", lo definimos el nombre
+         // para que no se confunda con la Clase Bar que también hace referencia a las cervezas
+         @ManyToMany
+         @JoinTable(name="cervezas_cerveceria")
+         List<Cerveza> cervezas;
+     }
+
+     // ---------------------------------------------
+
+     // Estrategias de Herencia
+     //
+     // SINGLE_TABLE (elegida)
+     // 1. Para las consultas polimórficas: Es eficiente, ya que las 3 clases están en una
+     // única tabla. Por tanto nos evitamos hacer 3 JOINs si comparamos con JOINED
+     //
+     // 2. Para las consultas no polimórficas: También es eficiente, ya que tiene que consultar
+     // en una única tabla, y se evita tener que hacer 1 JOIN como hubiera ocurrido con JOINED
+     //
+     // 3. Para las inserciones: Son eficientes porque se harían en una única tabla
+     //
+     // JOINED (tabla por clase): quizás, como alternativa, pero no es eficiente
+     // 1. Para las consultas polimórficas: NO es tan eficiente comparado con SINGLE_TABLE
+     // haría 3 JOINS al haber 3 subclases que heredan de Bebida
+     //
+     // 2. Para las consultas no polimórficas:  no es tan eficiente como SINGLE_TABLE,
+     // tenemos que hacer un JOIN.
+     //
+     // 3. Para las inserciones: Tendriamos el doble de INSERT, uno en la tabla de la superclase Bebida
+     // y otro en la subclase, si comparamos con SINGLE_TABLE que hace sólo 1 INSERT
+     //
+     // TABLE_PER_CLASS (tabla por clase concreta): la peor opción, la menos eficiente
+     //
+     // 1. Para las consultas polimórficas: NO es nada eficiente, ya que haría un SELECT
+     // con una subquery que contiene 3 queries, una por cada subclase, unidas con UNIONs..
+     // Esto es aún menos eficiente que usar JOINs.
+     //
+     // 2. Para las consultas no polimórficas: No es tan malo, ya que haría una query
+     // a la tabla de la clase concreta, pero perdemos la eficiencia de las polimorficas
+     //
+     // 3. Para las inserciones: se haría un insert en la tabla concreta,
+     // pero además se manejaria con algun generador de ID como podría ser UUID,
+     // ó con secuencias
+     @Entity
+     @Inheritance(strategy=SINGLE_TABLE)
+     @DiscriminatorColumn(name="tipo")
+     @Table(name="bebidas")
+     class Bebida{
+         String nombre;
+
+         // - Como es un Servicio, decidimos no manejar ni su valor, ni tampoco su identidad
+         // por eso usamos el annotation Transient
+         // - Lo importante de los Servicios, es su comportamiento/funcionalidad que aportan
+         @Transient
+         AlcoholService alcoholService;
+
+         calcularGraduacion();
+         obtenerPrecio();
+     }
+
+     @Entity
+     class Analcholica extends Bebida{
+         calcularNivelDeGas();
+     }
+
+     @Entity
+     class Trago extends Bebida{
+         String obtenerTipoVaso();
+     }
+
+     @Entity
+     class Cerveza extends Bebida{
+         // - Indicamos que el atributo es un enumerado
+         @Enumerated
+         Variedad variedad;
+
+         calcularIBU();
+     }
+
+     // - La definición de los Enum no necesita annotations,
+     // sólo cuando se usan como atributo en una clase
+     enum Variedad{
+         RUBIA, ROJA, NEGRA;
+     }
+
+     // - Similar que ocurría con Busqueda, preferimos no manejar la identidad ni el valor
+     // de esta clase.
+     class Busqueda{
+         Direccion direccion;
+         Suscripcion suscripcion;
+         List<Bebida> bebidas;
+
+         List<Local> obtenerLocales();
+     }
+
+     interface AlcoholServiceAdapter{
+         obtenerGraduacion(Bebida bebida);
+     }
+
+
+     class AlcoholServiceAdapter{
+         AlcoholService alcoholService;
+
+         obtenerGraduacion(Bebida bebida){
+             alcoholService.obtenerGraduacion(bebida);
+         }
+     }
+   #+end_src
+* Diagrama
+   #+BEGIN_SRC plantuml :file img/parcial-ginpass.png :exports results
+     @startuml
+     title Ginpass
+
+     usuarios    }-- suscripciones
+
+     suscripciones   -left-{ suscripciones_locales
+     locales         -up-{ suscripciones_locales
+
+     locales   --{ tragos_bar
+     locales   --{ cervezas_bar
+     locales   --{ cervezas_cerveceria
+     locales   --{ analcoholicas_bar
+     locales   --{ analcoholicas_pub
+
+     bebidas     -up-{ tragos_bar
+     bebidas     -up-{ cervezas_bar
+     bebidas     -up-{ cervezas_cerveceria
+     bebidas      -up-{ analcoholicas_bar
+     bebidas     -up-{ analcoholicas_pub
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/parcial-ginpass.png]]

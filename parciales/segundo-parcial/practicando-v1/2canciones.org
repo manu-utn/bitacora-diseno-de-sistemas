@@ -1,0 +1,431 @@
+#+TITLE: 2Canciones
+#+STARTUP: inlineimages
+* Referencias
+  1. [[https://docs.google.com/document/d/1DGIFDVIsxbbpffSTyDEaR2m37GF4XSbDoXrUKoctvs4/edit#][Enunciado]]
+* Punto (A) - Persistencia Relacional
+** Modelo de Datos (DER Físico)
+   #+BEGIN_SRC plantuml :file img/parcial-2canciones-der.png :exports results
+     @startuml
+     title 2Canciones
+     
+     entity contenidos{
+         id
+         --
+         id_duenio <<FK>>
+         reproducciones
+         imagenDeTapa
+         likes
+         dislikes
+         clasificacion
+         tipo_contenido
+         posicion
+         fechaInicio
+         fechaFin
+         duracion
+         subido
+     }
+     
+     entity playlists{
+         id
+         --
+         id_duenio <<FK>>
+         visibilidad
+     }
+     
+     entity usuarios{
+         id
+     }
+     
+     entity playlist_suscriptor{
+         id_usuario
+         id_playlist
+     }
+     
+     entity playlist_contenido{
+         id_playlist
+         id_contenido
+     }
+     
+     '----------------------------------------------------
+     ' RELACIONES
+     '----------------------------------------------------
+     
+     playlists   ||-left-o{ playlist_suscriptor : tiene
+     usuarios    ||-up-o{ playlist_suscriptor : se suscribe
+     
+     playlists   ||-right-o{ playlist_contenido : tiene
+     contenidos  ||-up-|{ playlist_contenido : pertenece
+     
+     usuarios    ||-up-o{ playlists : es duenio
+     usuarios    ||-right-o{ contenidos
+     
+     
+     '----------------------------------------------------
+     ' NOTAS
+     '----------------------------------------------------
+     note bottom of contenidos
+     ,* Estrategia de Herencia __SINGLE_TABLE__
+     con 'tipo_contenido' como __discriminador__
+     ,* Se embebió __Estadistica__
+     ,* Clasificacion era un Enum
+     ,* Se ordenan en playlist por __posicion__
+     end note
+     
+     note top of playlists
+     ,* Visiblidad era un Enum
+     end note
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/parcial-2canciones-der.png]]
+
+** Modelo de Objetos (Java + ORM Hibernate)
+   #+BEGIN_SRC java
+     // - Todas las clases que tengan el annotation @Entity haremos que
+     // extiendan de esta clase, para que se les asigne un identificador
+     // único al persistir en el modelo físico.
+     //
+     // - Cada tabla tendrá una columna genérica llamada "id", si quisieramos
+     // que fuese más específico "id_nombre", deberíamos agregar ese atributo en cada clase
+     // con los annotations @Id @GeneratedValue
+     //
+     // Nota: No lo agregamos en las subclases que ya lo extienden de la superclase
+     @MappedSuperclass
+     abstract class PersistentEntity{
+         @Id
+         @GenerateValue
+        Long id;
+     }
+     
+     // Optamos por pasar la Interfaz a un Enum por comportamiento en vez de una Clase Abstracta porque
+     // 1. no queremos manejar su identidad, lo consideramos un "value object"
+     // 2. implíca que las consultas a 'Contenido' serían más costosas,
+     // haría innecesario JOIN sólo para traerse un atributo
+     // 3. además las clases que implementaban la Interfáz eran stateless (sin estado)
+     public enum Clasificacion{
+         Menores(){
+             @Override
+                 public void validarAcceso(Usuario usuario){
+                 // ...
+             }
+         },
+         Adolescentes(){
+             @Override
+                 public void validarAcceso(Usuario usuario){
+                 // ...
+             }
+         },
+         Adultos(){
+             @Override
+                 public void validarAcceso(Usuario usuario){
+                 // ...
+             }
+         }
+     
+         // este metodo lo tendría que tener Menores, Adolescentes, Adultos
+         // public void validarAcceso(Usuario usuario){
+         //     // ...
+         // }
+     }
+     
+     // - Decidimos no manejar la identidad de Estadistica
+     // - Consideramos que es un "Value Object"
+     @Embeddable
+     class Estadistica{
+         private int likes;
+         private int dislikes;
+     }
+     
+     // Estrategia de Mapeo de Herencia
+     // a) SINGLE_TABLE (elegida)
+     // 1. La tabla resultante no sería tan extensa, debido a que son pocas subclases y
+     // no tienen muchos atributos disjuntos, por tanto tendríamos pocas columnas en NULL
+     // 2. Las consultas polimórficas/no polimórficas no son costosas, porque sólo harían
+     // un SELECT a una única tabla filtrando en el WHERE por el discriminador 'tipo_contenido'.
+     // Si la cantidad de registros fuese demasiado, podríamos contemplar usar algún mecanismo
+     // como los índices mejorando el tiempo de respuesta de la consulta
+     //
+     // b) JOINED (segunda alternativa)
+     // 1. Las "consultas polimórficas" a la tabla de la superclase Contenido serían un poco más costosas que SINGLE_TABLE
+     // porque haría 2 JOINs a las tablas de las subclases
+     // 2. Las "consultas no polimórficas" a alguna de las subclases serían un poco más costosas que SINGLE_TABLE
+     // porque haría 1 JOIN haciendo (SELECT Subclase + 1 Join a la superclase), y SINGLE_TABLE hace sólo un SELECT a una tabla
+     // 3. Las inserciones serían más costosas, el doble que con SINGLE_TABLE que hace 1 INSERT a una única tabla
+     //   - Un INSERT a la tabla de la Superclase "Contenido"
+     //   - Un INSERT a la subclase
+     //
+     // c) TABLE_PER_CLASS (NO sería una opción)
+     // 1. Las "consultas polimórficas" serían más costosas, porque haría una query ineficiente.
+     // haría una query + subquery en el FROM con varias queries (subclases) con UNIONs,
+     // sería menos eficiente que la estrategia JOINED sólo hace 2 JOINs
+     // 2. Las "consultas no polimórficas" no serían tan costosas, pero según el modelo de objetos
+     // quizás se necesite hacer "consultas polimórficas" que en esta estrategia serian muy costosas..
+     // 3. Las tablas de las clases concretas tendrian atributos no disjuntos (repetidos)
+     // ya que traería los atributos de la superclase, que no es tanto problema porque son pocos atributos..
+     // Pero por el punto (1) y (2) preferimos NO elegirla como alternativa
+     //
+     @Entity
+     @Table(name="contenidos")
+     @Inheritance(strategy=SINGLE_TABLE)
+     @DiscriminatorColumn(name="tipo_contenido")
+     class Contenido extends PersistentEntity{
+         private int reproducciones;
+         private String imagenDeTapa;
+     
+         @ManyToOne
+         private Usuario duenio;
+     
+         // - Elegimos embeber a "Estadistica" que consideramos como "value object"
+         // preferimos no manejar su identidad
+         // - Se podría haber optado por un @OneToOne pero eso implicaría en una consulta más costosa
+         // porque haría un JOIN a una tabla Estadisticas por 2 atributos
+         @Embedded
+         private Estadistica estadistica;
+     
+         // - Con @Enumerated avisamos que es un Enum
+         // - Le pasamos por parámetro el tipo de dato que preferimos guardar de él
+         @Enumerated(Type.String)
+         private Clasificacion clasificacion;
+     }
+     
+     @Entity
+     class Podcast extends Contenido{
+         private LocalDateTime fechaInicio;
+         private LocalDateTime fechaFin;
+     }
+     
+     @Entity
+     class Cancion extends Contenido{
+         private Double duracion;
+         private Fecha subido;
+     }
+     
+     public enum Visibilidad{
+         PRIVADA, PUBLICA, NO_LISTADA;
+     }
+     
+     @Entity
+     @Table(name="usuarios")
+     class Usuario extends PersistentEntity{
+         // ...
+     }
+     
+     @Entity
+     @Table(name="playlists")
+     class Playlist extends PersistentEntity{
+         // - Avisamos que el campo es un Enum,
+         // y queremos guardar su valor como texto en vez del valor numérico
+         @Enumerated(Type.String)
+         Visibilidad visibilidad;
+     
+         // - Una playlist puede tener muchos suscriptores,
+         // y un usuario puede estar suscripto a varias playlist
+         // - Como no es relevante el orden, usamos Collection
+         @ManyToMany
+         Collection<Usuario> suscriptores;
+     
+         // - Una playlist puede tener sólo un usuario, al menos
+         // en el como está planteado el modelo actual,
+         // y un usuario puede ser duenio de varias playlists
+         @ManyToOne
+         Usuario duenio;
+     
+         // - Una playlist puede contener muchos contenidos,
+         // y un contenido puede estar en muchas playlists
+         // - Usamos una Lista en vez de una Colección porque esta permite ordenar
+         // los elementos
+         // - Ordenamos el contenido por el campo "posicion"
+         @ManyToMany
+         @OrderColumn(name="posicion") // esta columna se guarda en la tabla de contenidos
+         List<Contenido> contenidos;
+     }
+   #+END_SRC
+* Punto (B) - Interfaz REST
+** Problema
+   #+BEGIN_QUOTE
+   1. Indicar para cada una de las pantallas presentadas la URL de acceso y su verbo HTTP correspondiente.
+   2. De cada acción marcada o de la única acción en la pantalla, indicar la ruta a llamar y su verbo HTTP.
+   3. Si hubiera una limitación técnica por la cual hayas tenido que adaptar una ruta o un verbo. Justificar adecuadamente.
+   #+END_QUOTE
+** Solución
+   #+BEGIN_QUOTE
+   *Perfil de usuario:*
+   Los endpoints para acceder a la pantalla podrían ser:
+   1) ~/perfil~
+   2) ~/usuarios/me~
+
+   Los verbos HTTP por las acciones de la pantalla, usando uno de referencia
+   1) ~POST /perfil~ para actualizar los datos del perfil (limitación técnica, por usar formularios html)
+   2) ~PUT /perfil~ (si no tuvieramos la limitación técnica de los formularios html, y usaramos alguna tecnología como javascript)
+
+   En ambas peticiones HTTP suponemos que el cliente guarda una cookie que referencia
+   una sesión del servidor que contiene el ID del usuario
+   #+END_QUOTE
+
+   #+BEGIN_QUOTE
+   *Reproductor de canciones:*
+   Los *endpoints* para acceder a la pantalla serían:
+   1) ~/reproduccion~
+   2) ~/playlist~
+
+   Para las peticiones que utilizamos un parámetro obligatorio ~:parametro~
+   suponemos que está manejado con una sesión que guarda el dato
+   
+   Los verbos HTTP por las acciones de la pantalla, usando uno de referencia
+   - Acción (1): ~GET /canciones~
+     - ~queryParams(nombre)~ para buscar una canción (Ej. ~/canciones?nombre=texto~)
+   - Acción (2): ~POST /playlist/:playlist/reproducir~ para iniciar la reproducción e incrementar el contador
+   - Acción (3): ~POST /canciones/:cancion/like~ para agregar likes
+   - Acción (3): ~POST /canciones/:cancion/like/delete~ para sacar likes (por la limitante de formularios HTML)
+      
+   Si la UI no fuese una limitante 
+   - Acción (2): ~PUT /playlist/:playlist/reproducir~ para iniciar la reproducción e incrementar el contador
+   - Acción (3): ~POST /canciones/:cancion/like~ para agregar like
+   - Acción (3): ~DELETE /canciones/:cancion/like~ para sacar like
+   - Acción (3): ~PUT /canciones/:cancion/like~ otra alternativa para aumentar/decrementar el contador de likes
+   #+END_QUOTE
+
+   #+BEGIN_QUOTE
+   *Editor de listas de reproducción:*
+
+   Para las peticiones que utilizamos un parámetro obligatorio ~:parametro~ suponemos que está manejado con una sesión que guarda el dato,
+   y le estamos pasando el id del recurso
+   
+   Los *endpoints* para acceder a esta pantalla:
+   1) ~/playlist/:playlist~
+
+   Los verbos HTTP para las acciones que muestra la pantalla:
+   - Acción (1): No es una acción en si, no genera efecto, sólo es un campo de texto que se utiliza para la Acción (3)
+   - Acción (2): ~POST /playlist/:playlist/:cancion/delete~ para borrar una canción de una playlist
+   - Acción (3): ~POST /playlist/:playlist~
+     - ~queryParams(nombre)~ para guardar los cambios, sólo guardaría el campo de nombre (Ej. ~/playlist/:playlist/?nombre=texto~)
+
+   Si la UI no fuese una limitante, podríamos
+   - Acción (2): ~DELETE /playlist/:playlist/:cancion~ para borrar una canción de una playlist
+   - Acción (3): ~PUT /playlist/:playlist~ para guardar los cambios, sólo guardaría el campo de nombre
+     - ~queryParams(nombre)~ para guardar los cambios, sólo guardaría el campo de nombre (Ej. ~/playlist/:playlist/?nombre=texto~)
+   #+END_QUOTE
+* Punto (C) - Arquitectura
+** Problema
+   #+BEGIN_QUOTE
+   Compare las siguientes arquitecturas presentadas basándose en:
+   - Tolerancia a fallos. ¿Existen SPOFs? ¿Cuales?.
+   - Escalabilidad.
+
+   Comente brevemente en la arquitectura 2 qué consideraciones hay que tener al realizar
+   nuestra aplicación.
+   #+END_QUOTE
+** Solución
+*** Arquitectura 1
+    #+BEGIN_SRC plantuml :file img/parcial-2canciones-puntoc1.png :exports results
+      @startuml
+      node Servidor {
+        database BaseDeDatos
+        component AplicacionSpark
+      }
+      
+      actor Browser
+      
+      Browser->AplicacionSpark
+      AplicacionSpark->BaseDeDatos
+      
+      note bottom of BaseDeDatos
+      ,* Es un **spof** si falla, no debería
+      andar la aplicación Spark
+      ,* NO se recomienda __escalar verticalmente__
+      es la única instancia de este recurso, 
+      produciría que la app falle
+      end note
+      
+      note bottom of Servidor
+      ,* El servidor un **spof**, es el único punto de entrada
+      a la aplicación, si fallara el usuario no podría acceder
+      ,* La componente lógico AplicacionSpark también es un **spof**
+      si éste fallara tampoco habría acceso al sistema
+      end note
+      
+      legend
+      ,**Modelo de Arquitectura planteado**
+      ,* No permite una escala vertical
+      ,* No es tolerable a fallos
+      
+      ,**Escalar el Servidor**
+      ,* No se recomienda __escalar verticalmente__  porque haría que esté
+      quede fuera de servicio (downtime)
+      ,* Se recomienda __escalar horizontalmente__ para tener réplicas
+      del componente lógico AplicacionSpark por si éste fallara
+      tendriamos otro
+      
+      ,**Problemas que trae aparejado tener una única instancia de Servidor**
+      ,* El realizar copias de seguridad como respaldo de la DB y de la App
+      haría que el sistema funcionase más lento
+      ,* Es la única instancia para acceder a la aplicación, si éste fallara
+      no se podría ingresar
+      ,* Sería el único que tuviera backups de la DB y de la aplicación,
+      y si alguno hiciera que falle el servidor, podría no ser tan inmediato
+      llevar al sistema a un estado anterior, quedando fuera de servicio
+      end legend
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:img/parcial-2canciones-puntoc1.png]]
+
+*** Arquitectura 2
+    #+BEGIN_SRC plantuml :file img/parcial-2canciones-puntoc2.png :exports results
+      @startuml
+      actor Browser
+      
+      
+      node BalanceadorDeCarga
+      
+      rectangle "Red interna" as red{
+      node Servidor1 
+      node Servidor2 
+      node Servidor3 
+      
+      database BaseDeDatos
+      
+      }
+      
+      Browser->BalanceadorDeCarga : HTTPS
+      
+      Servidor1-down->BaseDeDatos
+      Servidor2-down->BaseDeDatos
+      Servidor3-down->BaseDeDatos
+      
+      
+      BalanceadorDeCarga-down->Servidor1 : HTTP
+      BalanceadorDeCarga-down->Servidor2 : HTTP
+      BalanceadorDeCarga-down->Servidor3 : HTTP
+      
+      
+      
+      note right of BalanceadorDeCarga
+      ,* El loadbalancer es un **spof**, si se cae
+      no se puede acceder a ningún servidor
+      ,* __Si la aplicación fuese stateful por ej. guarda sesiones__
+      podríamos agregar el mecanismo de **sticky session**
+      end note
+      
+      note right of BaseDeDatos
+      ,* La DB es un **spof** porque es la única instancia
+      del recurso
+      end note
+      
+      legend
+      ,* __Los servidores no son **spof**__ porque hay varias instancias
+      del recurso. Si alguno fallara, habría otro en su reemplazo.
+      ,* La arquitectura __permite una escala vertical__ de los servidores,
+      porque mientras se mejora el hardware de uno, se puede acceder al resto.
+      ,* La arquitectura __permite una escala horizontal de los servidores__
+      teniendo mas instancias y réplicas de la aplicación
+      ,* __No se recomienda una escala vertical de la base de datos__,
+      es la única instancia del recurso y no se podría acceder mientras tanto
+      end legend
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:img/parcial-2canciones-puntoc2.png]]

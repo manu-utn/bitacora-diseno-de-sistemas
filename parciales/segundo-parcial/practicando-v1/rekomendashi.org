@@ -1,0 +1,294 @@
+#+TITLE: Parcial Rekomendashi
+#+STARTUP: inlineimages
+* Referencias
+  1. [[https://docs.google.com/document/d/1OTmrCpW-Ode-h_k1qWIE9OB4Uuzs9ZbR_A1JMJwHK-I/edit#][Enunciado]]
+* Punto A
+** Punto 1
+*** Modelo de Objetos (Java + ORM Hibernate)
+    #+BEGIN_SRC java
+      // Todas las clases que llevan @Entity extienden de esta
+      // no lo colocamos porque son varias, pero es la idea
+      @MappedSuperclass
+      abstract class PersistentEntity{
+          @Id
+          @GenerateValue
+          Long id;
+      }
+      
+      // - Convertimos la Interfaz a Clase, porque es un Strategy statefull
+      // es decir los strategies tienen "estado interno" (atributos)
+      // y porque el ORM Hibernate no persiste las interfaces
+      // - No podemos convertirlo en un Enum con comportamiento, por lo anterior
+      // porque tiene atributos y estos pueden ser dinámicos
+      @Entity
+      @Table(name="tipoDePedido")
+      @Inheritance(strategy=SINGLE_TABLE)
+      @DiscriminatorColumn(name="tipo_pedido")
+      abstract class TipoDePedido extends PersistentEntity{
+          public Set armarSet(List<Pieza> piezasPosibles){
+              // ..
+          }
+      }
+      
+      @Entity
+      class Individual extends TipoDePedido{
+          private Number precioMaximo;
+          private int coeficienteDeVariedad;
+      }
+      
+      @Entity
+      class Grupal extends TipoDePedido{
+          private int cantidadDeComensales;
+      }
+      
+      @Entity
+      @Table(name="pedidos")
+      class Pedido extends PersistentEntity{
+          // - Como TipoDeCoccion no es un identity value, si no un "object value"
+          // usamos el @ElementCollection que genera una relación del tipo @OneToMany
+          // - Usamos JoinColumn porque si no el ORM Hibernate genera una tabla intermedia del tipo asociativa
+          // como si fuese un ManyToMany
+          @ElementCollection
+          @CollectionTable(name = "coccionesPreferidas", joinColumns = @JoinColumn(name = "id_pedido"))
+          private List<TipoDeCoccion> coccionesPreferidas;
+      
+          // - Es importante el orden en que eligieron las categorías, por eso elegimos List en vez de Collection
+          // - Al usar @OrderColumn persistimos a posición que tengan en la Lista (la columna queda en la tabla de Categorias)
+          // - Usamos @ElementCollection por la misma razón que TipoDeCoccion
+          // - La columna del @JoinColumn será la FK de la tabla de categorias
+          @ElementCollection
+          @CollectionTable(name = "categoriasPreferidas", joinColumns = @JoinColumn(name = "id_pedido"))
+          @OrderColumn(name="prioridad")
+          private List<Categoria> categoriasPreferidas;
+      
+          // - No podemos embeber el tipo de pedido, porque TipoDePedido usa una estrategia de herencia
+          @OneToOne
+          @JoinColumn(name="id_tipo_pedido", referencedColumName="id") // fk del lado de la tabla Pedidos
+          private TipoDePedido tipoDePedido;
+      
+          public Set recomendar(){
+              piezasPosibles = CatalogoDePiezas
+                  .buscarSegunPreferencias(coccionesPreferidas, categoriasPreferidas);
+      
+              // la lógica viene de Tipo Individual/Grupal
+              return tipoDePedido.armarSet(piezasPosibles)
+          }
+      }
+      
+      // la definición de las enumeraciones no se persisten, y no necesitan de annotations (en su definición)
+      public enum TipoDeCoccion{
+          CRUDO, REBOZADO;
+      }
+      
+      public enum Categoria{
+          PESCADO, MARISCO, QUESO, VERDURA;
+      }
+      
+      @Entity
+      @Table(name="piezas")
+      class Pieza{
+          private String nombre;
+          private Number precio;
+          private Imagen imagen;
+      
+          // - indicamos que es una enumeración, y queremos guardar el texto en vez del valor numérico
+          @Enumerated(type.STRING)
+          private TipoDeCoccion tipoDeCoccion;
+      
+          // - Indicamos el @JoinColumn para evitar que se genere la tabla asociativa de ManyToMany
+          // - Elegimos Collection en vez de lista, porque no es relevante el orden
+          @OneToMany
+          @JoinColumn(name="id_pieza") // fk del lado de la tabla ingredientes
+          private Collection<Ingrediente> ingredientes;
+      }
+      
+      @Entity
+      @Table(name="ingredientes")
+      class Ingrediente{
+          private String nombre;
+      
+          @Enumerated(type.STRING)
+          private Categoria categoria;
+      }
+      
+      // No necesitamos persistir, los tipos Individual/Grupal
+      // tienen una lógica que devuelve el set de selecciones
+      // en base a las cocciones preferidas y categorias preferidas
+      class Set{
+          Collection<Seleccion> selecciones;
+      
+          public Number precio(){
+              // ..
+          }
+          public int cantidadDePiezas(){
+              // ...
+          }
+      }
+      
+      // No necesitamos persistir, idem Set
+      class Seleccion{
+          private int cantidad;
+      
+          Pieza pieza;
+      }
+      
+      // No persistimos porque actúa como un Repositorio para piezas
+      class CatalogoDePiezas{
+          public List<Pieza> buscarSegunPreferencias(){
+              // ...
+          }
+      }
+    #+END_SRC
+*** Modelo de Datos (DER Físico)
+    #+BEGIN_SRC plantuml :file img/parcial-reko-1.png :exports results
+      @startuml
+      '!theme vibrant
+      title Rekomendashi - Modelo de Persistencia
+      
+      entity tipoDePedidos{
+          id
+          --
+          precioMaximo
+          coeficienteDeVariedad
+          cantidadDeComensales
+      }
+      
+      note right of tipoDePedidos
+      SINGLE_TABLE
+      Individual+Grupal
+      end note
+      
+      entity pedidos{
+          id
+          --
+          id_tipo_pedido <<FK>>
+      }
+      
+      entity coccionesPreferidas{
+          id
+          --
+          id_pedido <<FK>>
+          tipo_coccion
+      }
+      
+      entity categoriasPreferidas{
+          id
+          --
+          id_pedido <<FK>>
+          prioridad
+      }
+      
+      
+      entity piezas{
+          id
+          --
+          tipo_coccion
+          nombre
+          precio
+          imagen
+      }
+      
+      entity ingredientes{
+          id
+          --
+          pieza_id <<FK>>
+          categoria
+          nombre
+      }
+      
+      
+      pedidos ||-up-o| tipoDePedidos
+      
+      
+      pedidos      ||-right-|{ categoriasPreferidas : tiene
+      
+      pedidos          ||-left-|{ coccionesPreferidas : tiene
+      
+      piezas |o-right-|{ ingredientes : tiene
+      
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:img/parcial-reko-1.png]]
+** [WAITING] Punto 2
+*** Modelo de Objetos (Java + ORM Hibernate)
+    #+BEGIN_QUOTE
+    Agregariamos una clase ~PiezaMuyPedida~ que sea 1 a 1 con pieza, para que tenga los mismos datos
+    
+    De esta manera cuando se quiera seleccionar las 10 piezas más pedidas
+    sólamente tendran que hacer una query del tipo
+    ~SELECT * TOP 10 piezasMasPedidas ORDER BY vecesPedida DESC~
+
+    aunque también podría tener una precalculada que dijese el orden
+    #+END_QUOTE
+    
+    #+BEGIN_SRC java
+      @Entity
+      @Table(name="piezas")
+      class Pieza{
+          private String nombre;
+          private Number precio;
+          private Imagen imagen;
+      
+          @Enumerated(type.STRING)
+          private TipoDeCoccion tipoDeCoccion;
+      
+          @OneToMany
+          @JoinColumn(name="id_pieza")
+          private Collection<Ingrediente> ingredientes;
+      }
+      
+      public enum DiaDeSemana{
+          LUNES, MARTES, ..., DOMINGO;
+      }
+      
+      @Entity
+      @Table(name="piezasMasPedidas")
+      class PiezaMuyPedida extends Pieza{
+          private int vecesPedida;
+          
+          @Enumerated(Type.String)
+          private DiaDeSemana diaDeSemana;
+      
+          @OneToOne
+          Pieza pieza;
+      }
+    #+END_SRC
+* Punto B
+** Rutas + Verbos HTTP
+   #+BEGIN_QUOTE
+   *Posibles Rutas*
+   - ~/recomendaciones~
+   - ~/coccionesPreferidas~
+   - ~/categoriasPreferidas~
+   - ~/tipoDePedidos~
+
+   *Las rutas + verbos HTTP de las rutas*
+   - ~GET /coccionesPreferidas~ le aparece un menu para elegir las cocciones, que se guardan en una *Cookie*, cuando le da a Siguiente va a ~/categoriasPreferidas~
+   - ~GET /categoriasPreferidas~ le aparece otro menu pero con las categorias, que se guardan e una *Cookie*, cuando le da a Siguiente va a ~/tipoDePedidos~
+   - ~GET /tipoDePedidos~ le aparece otro menu para elegir el tipo de pedido, que se guardan e una *Cookie*, cuando le da a Pedir hace un redirect ~/recomendaciones~
+   - ~GET /recomendaciones~ lista las recomendaciones con los valores guardados en las cookies
+     - ~queryParams("coccionesPreferidas")~ 
+     - ~queryParams("categoriasPreferidas")~
+     - ~queryParams("tipoDePedido")~
+     - Usando los queryParams quedaría ~/recomendaciones?coccionesPreferidas=crudo,cocido&categoriasPreferidas=una,dos,tres&tipoDePedido=Individual~
+
+   Otra alternativa sería 
+   - ~GET /recomendaciones/step1~ le aparece un menu para elegir las cocciones, cuando le da a Siguiente va a ~/recomendaciones/step2~
+     - ~queryParams("coccionesPreferidas")~ no es parte de la ruta, son parámetros opcionales para acceder al step1 pero debe llenarlos para avanzar
+   - ~GET /recomendaciones/step2~  le aparece otro menu pero con las categorias cuando le da a Siguiente va a ~/recomendaciones/step3~
+     - ~queryParams("categoriasPreferidas")~
+   - ~GET /recomendaciones/step3~  le aparece otro menu para elegir el tipo de pedido, cuando le da a Pedir haría redirect a ~/recomendaciones~
+     - ~queryParams("tipoDePedido")~
+   - ~GET /recomendaciones~ si hay *Cookies* con los datos, debería de listar las recomendaciones, caso contrario no muestra nada
+     - ~queryParams("coccionesPreferidas")~ 
+     - ~queryParams("categoriasPreferidas")~
+     - ~queryParams("tipoDePedido")~
+
+   Una manera de ir guardando los valores de las queryParams sería mediante *cookies* que se estarían guardando en el navegador,
+   consideramos que no necesitamos utilizar sesiones para eso.
+
+   Una manera alternativa sería usando la misma ruta ~/recomendaciones~ mediante alguna tecnología frontend como javascript,
+   que nos permita avanzar sin cambiar las rutas, ocultando los menúes a medida que va completando
+   #+END_QUOTE

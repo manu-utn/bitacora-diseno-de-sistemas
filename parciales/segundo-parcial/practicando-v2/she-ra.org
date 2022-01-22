@@ -1,0 +1,164 @@
+* java
+  #+BEGIN_SRC java
+    // se agregará en todas las clases que tengan @Entity
+    @MappedSuperclass
+    class PersistentObject{
+        @Id
+        @GeneratedValue
+        long id;
+    }
+
+    @Entity
+    @Table(name="usuarios")
+    class Usuario{
+        String nombre;
+        String fotos;
+
+        ticketsAsignados();
+    }
+
+    @Entity
+    @Table(name="sprints")
+    class Sprint{
+        int duracion;
+
+        // - "cada ticket es eralizado en un sprint, peroes posible que una tarea se proonlgue
+        // demasiado y deba extenderse hacia sprints posteriores" por eso el ManyTo
+        @ManyToMany
+        List<Ticket> tickets;
+
+        generarReportes();
+        getListadoTickets();
+    }
+
+    // Estrategia de Herencia
+    //
+    // SINGLE TABLE (elegida)
+    // 1. Consultas polimórficas:
+    // Serian eficientes porque sólo tendriamos una única tabla,
+    // además sólo tendriamos el tipo de ticket, y la columna del usuario reportado
+    //
+    // 2. Consultas no polimórficas:
+    // Seria eficiente porque no deberia hacer JOINs, si comparamos con JOINED
+    // que haria 1 JOIN
+    //
+    // 3. Inserciones:
+    // Sería una única inserción, porque hay una única tabla
+
+    // JOINED
+    //
+    // 1. Consultas polimórficas:
+    // NO sería tan eficiente, ya que haría 3 JOINs si comparamos con SINGLE_TABLE que no hace ninguno,
+    // además sólo hay una clase que tiene estado que es "Falla" (contiene el usuario que la reportó)
+    //
+    // 2. Consultas no polimórficas:
+    // Tampoco sería muy eficiente porque sólo necesitariamos de la subclase Falla,
+    //
+    // 3. Inserciones:
+    // Se haría el doble de INSERTs, uno en la supertabla Ticket, y otro en la subclase
+    // comparamos con SINGLE_TABLE que haría en una sola tabla
+    //
+
+    // TABLE_PER_CLASS -> NO es opción
+    // - Perderíamos la tabla de la superclase "Ticket"
+    //
+    // 1. Consultas polimórficas:
+    // Sería muy poco eficiente, ya que haría una query con una subquery que contiene
+    // 3 queries (una por subclase) con UNIONs, que es menos eficiente que usar JOINs
+    // si comparamos con JOINED
+    //
+    // 2. Consultas no polimórficas:
+    // No sería poco eficiente pero necesitaríamos las consultas polimórficas,
+    // y estas son costosas
+    //
+    // 3. Inserciones:
+    // Sólo se harían los INSERTs en las clases concretas
+    //
+    @Entity
+    @Table(name="tickets")
+    @Inheritance(strategy=SINGLE_TABLE)
+    @DiscriminatorColumn(name="tipo")
+    class Ticket{
+        String nombre;
+        String descripcion;
+        int estimacion;
+
+        // - Como una colección de Strings es un value object, usamos el ElementCollection
+        // - Para evitar que se genere una tabla intermedia, usamos JoinColumn la FK sería ticket_id
+        // y definimos el nombre de la nueva tabla con CollectionTable
+        @ElementCollection
+        @JoinColumn(name="ticket_id")
+        @CollectionTable(name="ticket_adjuntos")
+        List<String> adjuntos;
+
+        // - Avisamos que al mapear, éste es una enumeración (value object que no queremos manejar su identidad)
+        @Enumerated
+        Estado estado;
+
+        // - Un ticket puede estar asociado a una persona (no puede ser a muchos porque no es una colección), y un usuario puede tener muchos tickets (no lo aclara, pero suponemos)
+        @ManyToOne
+        Usuario asignado;
+
+        comenzarDesarrollo(){ }
+        terminar(){ }
+        reabrir(){ }
+        agregarAdjunto(){ }
+    }
+
+    @Entity
+    class Epica extends Ticket{
+        // no aclara si esas subtareas pueden estar en otras epicas
+        // - Usamos el JoinColumn para evitar la tabla intermedia que se generaría,
+        // la FK de ticket_id se agrega la otra tabla (subtareas)
+        // - Como Ticket usa single_Table, la relación en el modelo de datos
+        // será desde la tabla "tickets"
+        @OneToMany
+        @JoinColumn(name="ticket_id")
+        List<Ticket> subTareas;
+    }
+
+    @Entity
+    class Retoque extends Ticket{
+        terminar(){ }
+    }
+
+    @Entity
+    class Falla extends Ticket{
+        // - Una falla puede ser reportada por un usuario,
+        // y un usuario puede reportar muchas fallas (no lo dice pero suponemos)
+        // - Como Ticket usa single_Table, la relación en el modelo de datos
+        // será desde la tabla "tickets"
+        @ManyToOne
+        Usuario reportadaPor;
+    }
+
+    // - Pasamos la Interfaz del patrón "state" a un Enum con comportamiento,
+    // ya que las clases que la implementaban eran stateless (no tenían estado)
+    // - Esta se agregará como Enumerated en Ticket, para persistir el tipo de estado
+    enum Estado{
+        TERMINADO, ENDESARROLLO, BLOQUEADO, PORHACER,
+
+        // cada uno debe tener estos mensajes
+        comenzarDesarrollo(){ }
+        terminar(){ }
+        reabrir(){ }
+    }
+  #+END_SRC
+* Diagrama
+   #+BEGIN_SRC plantuml :file img/parcial-shieldgo.png :exports results
+     @startuml
+     title She-Ra
+
+
+     sprints     ||--{ sprints_tickets
+     tickets     ||-right-{ sprints_tickets
+
+     tickets     }-- usuarios
+     tickets     }-- usuarios
+
+     tickets     --{ ticket_adjuntos
+
+     tickets     --{ subtareas
+
+     @enduml
+   #+END_SRC
