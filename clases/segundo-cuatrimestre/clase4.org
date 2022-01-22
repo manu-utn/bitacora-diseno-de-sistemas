@@ -27,9 +27,12 @@
 *** Single Table Vs Joined Vs Table per class
     El *Joined* sería mas en los casos que
     1. Las subclases sean disjuntas, no tengan mucha relación entre si, no tiene sentido traer datos de la otra
+       - puede ocurrir que las subclases tengan muchos atributos disjuntos, y mucho no interesa, ya que lo importante de la herencia es heredar "comportamiento"
+       - la idea de la herencia, es el poder comunicarse de manera polimórfica con las subclases (mandarle los mismos mensajes, aunque estas tengan ó no una interpretación diferente)
     
     El *Single table* sería mas en los casos que
-    1. Cuando las subclases comparten campos en común
+    1. Cuando las subclases comparten campos en común (el conjunto de atributos se denomina "estado interno")
+    2. Cuando las subclases tienen pocos atributos disjuntos
     
     |--------------------------------+--------------------+------------------------------------------|
     |                                | Single Table       | Joined                                   |
@@ -52,7 +55,7 @@
     3. Hacer una *consulta polimórfica* implíca muchos JOIN, uno por cada subclase
 *** Single Table
 **** Conceptos
-     - Es la que más se suele utilizar
+     - Es la que más se suele utilizar, por tema de perfomance
      - Pemite hacer *consultas polimorficas*
      - El *ORM* al mapear genera en la DB
        1. Una tabla con todos los campos (/la superclase, y las subclases que extienden/)
@@ -136,11 +139,11 @@
        }
      #+END_SRC
 **** Ventajas
-    1. Es muy rápido (/no tiene que hacer muchos JOINs/)
-    2. Fácil para buscar, porque trae TODOS los datos Superclase+Subclases
+    1. Es muy rápido (/no tiene que hacer JOINs/)
+    2. Fácil para buscar, porque trae TODOS los datos Superclase+Subclases de una sola tabla
 **** Desventajas
     1. Podemos tener columnas con valor ~NULL~ (/pero, se puede salvar en el modelo de objetos con ValidationNotNull/)
-    2. Nos queda una tabla grande, con todos los datos en una clase y quizás no se entienden (/se puede resolver documentando/)
+    2. Nos puede quedar una tabla muy grande, con todos los datos en una clase y quizás no se entienden (/se puede resolver documentando/)
 *** Joined (tabla por clase)
 **** Conceptos
      - El *ORM* al mapear las clases, hace *una tabla por cada clase*
@@ -149,8 +152,8 @@
        2. Otro en la tabla de cada subclase correspondiente (/el id lo saca de la superclase y no es autonumérico/)
 **** Cuando NO conviene aplicar
      - NO conviene, si las subclases difieren de la superclase sólo por un atributo (/haría un JOIN sólo por un atributo/)
-     - NO conviene, si el estado interno es idéntico entre las subclases y la superclase (/haría un JOIN sólo por el ID/)
-     - Cuando la diferencia de atributos entre las subclases y superclase es mínimo, hace run JOIN por eso es costoso
+     - NO conviene, si el *estado interno* es idéntico entre las subclases y la superclase (/haría un JOIN sólo por el ID/)
+     - Cuando la diferencia de atributos entre las subclases y superclase es mínimo, hacer un JOIN por traerse pocas columnas es costoso
 **** Ventajas
     - Podemos consultar directo desde la subclase/subtipo, consulta menos datos que una *Single Table*
       (/la contra es que aunque consulta menos datos, debe hacer un JOIN y eso hace costosa la operación/)
@@ -161,7 +164,7 @@
     - Es costoso hacer los ~SELECT~ porque hace muchos ~JOINs~ para asociar cada tabla
     - Es costoso si hace *inserciones masivas*, porque hace el doble de ~INSERTs~
       1. Uno en la tabla de la superclase
-      2. Otro en la tabla de la subclase
+      2. Otro en la tabla de cada subclase
 **** Ejemplo
      #+name: tabla-materias
      |----+---------|
@@ -271,10 +274,22 @@
 **** Desventajas
      - Tener una estructura auxiliar para guardar los id únicos
      - El hacer *consultas polimorficas* hace queries no muy eficientes
-       (/porque hace UNIONs de las tablas concretas + JOINs/)
-     - Se pierde la (FK) que tenia la referencia entre la subclases con la superclase
-     - Se pierde la *regla de integridad referencial* por lo anterior,
-       pudiendo borrar registros...
+       (/porque arma una query con una subquery que tiene consultas con UNIONs de las tablas concretas,
+       una subquery con varias queries es menos eficiente que una query con varios joins/)
+     - Las clases que tengan un atributo para guardar referencia a la superclase, en el modelo de datos esa clase no tiene (FK) porque no sabe a que clase concreta referenciar
+     - Se pierde la *regla de integridad referencial* por lo anterior, pudiendo borrar registros...
+
+     #+BEGIN_QUOTE
+     Por ejemplo si tenemos en el modelo de objetos las clases Cursada, Materia, MateriaElectiva, MateriaObligatoria,
+     donde Cursada guarda una referencia a Materia (Ej. GDD_cursada2021, TADP_cursada2021, ...)
+     y usamos la estrategia TABLE_PER_CLASS.
+
+     Cuando el ORM mapee las clases, en el modelo de objetos creará sólo las tablas de las clases concretas,
+     y la columna "materia_id" de la tabla Cursadas, no será FK.. Porque no sabe a cual de las clases concretas referenciar..
+
+     Si hubieramos usado JOINED, al tener la tabla de la superclase, no tendríamos este problema...
+     porque las tablas de las subclases guardan una referencia al registro que se insertó primero en la superclase
+     #+END_QUOTE
 ** Mapear Interfaces
 *** Problema
     - Las *interfaces* no se pueden mapear para *persistir* (/NO tienen estado interno que guardar/)

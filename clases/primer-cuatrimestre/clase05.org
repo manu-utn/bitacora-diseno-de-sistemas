@@ -30,7 +30,7 @@
    + Lazy Class
    + Null Pattern
    + Long Parameter List
-** Data clump
+** [#A] Data clump
 *** Conceptos 
     Grupos de datos/atributos que se utilizan con frecuencia, y
     podrían estar agrupados en una clase y ser usados como un objeto
@@ -84,7 +84,8 @@
 ** Type test
    Usar condicionales, en vez de usar *objetos polimórficos*
 ** Temporary field
-   Cuando tenemos atributos/campos que podrían estar en un método
+   Cuando tenemos atributos/campos en la clase, y que podrían estar en un método
+   (porque se usan para esa operación y nada más)
 ** Lazy class
    Recordar el concepto de *YAGNI* (you aren't gonna need it)
 ** Null pattern
@@ -118,3 +119,4 @@
   #+END_EXAMPLE
 ** Inversión de control
    el control lo toma el framework
+   

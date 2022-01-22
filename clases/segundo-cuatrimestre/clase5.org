@@ -101,7 +101,8 @@
 ** [#A] @ElementCollection
 *** Conceptos
     - Para definir un ~@OneToMany~ de listas de Objetos simples (/Ej. Enum, String, .../) se agrega ~@ElementCollection~
-    - Genera una tabla similar al de ~@OneToMany~
+    - Genera una tabla similar al de ~@OneToMany~ pero sin PK, sólo tiene una FK a la clase donde aparece como atributo
+    - La nueva tabla NO tiene PK, sólo una FK a la tabla de la clase donde aparece como atributo
     - En el DER (modelo físico) no se nota la diferencia
 
     [[./img/ObjectRelational-ElementCollection.jpg]]
