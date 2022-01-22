@@ -4,6 +4,23 @@
   Dudas
   1. Cada *concrete command* actuaría como un pequeño adapter entre el Invoker y el receptor?
 #+END_COMMENT
+* Usando
+   1. https://github.com/torokmark/design_patterns_in_typescript
+   2. http://www.design-patterns-stories.com/patterns/Facade/
+   3. https://www.programcreek.com/2013/02/java-design-pattern-facade/
+   4. https://reactiveprogramming.io/blog/es/patrones-de-diseno/facade
+   5. https://www.programmergirl.com/java-facade-pattern/
+   6. https://softwaredevelopmenttricky.blogspot.com/2017/12/facade-pattern.html
+   7. https://java-white-box.blogspot.com/2014/10/patrones-de-diseno-patron-adapter.html?view=snapshot
+   8. https://medium.com/flutter-community/flutter-design-patterns-2-adapter-3f05c02a7c84
+   9. https://sites.google.com/a/dotnetlead.com/home/design-patterns/facade
+
+   Otros
+   1. https://www.cs.unc.edu/~stotts/GOF/hires/pat4efso.htm
+   2. http://blog.lukaszewski.it/2013/08/31/design-patterns-facade/
+   3. http://codejavu.blogspot.com/2013/08/ejemplo-patron-adapter.html
+   4. https://java-white-box.blogspot.com/?view=snapshot
+   5. http://micaminomaster.com.co/arquitectura-software/patron-adapter/
 * Diferencias entre Patrones
 ** Facade Vs. Adapter
    #+BEGIN_QUOTE
@@ -719,9 +736,6 @@
    #+RESULTS:
    [[file:diagramas-de-clases/builder-bebida-interfaz.png]]
 * Strategy
-  #+BEGIN_COMMENT
-  https://www.journaldev.com/1754/strategy-design-pattern-in-java-example-tutorial
-  #+END_COMMENT
 ** Conceptos
    + Es un patrón de *comportamiento*
    + Predomina la *composición* por sobre la *herencia*
@@ -1202,8 +1216,152 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/juego-de-cartas-template.png]]
-* Factory Method
-** Ejemplo 1 - Computadoras Factory
+* [DONE] Factory Method
+CLOSED: [2021-12-08 mié 17:21]
+** Conceptos
+   - Como su nombre lo dice, _se invoca a una operación (factory method) para crear objetos_
+   - El *factory method* devuelve distintas instancias de Clases (/Concrete Products/) según cual pidamos por parámetro, pero todas implementan la interfáz de *Product*
+   - Cada *Concrete Product* tiene su propia implementación de la interfaz *Product*
+   - La interfaz *Creator* (/ó super clase abstracta/) delega la creación de los objetos en las subclases *Concrete Creator* que la implementan (/ó que extiendan si fuese superclase abstracta/)
+   - Los *Concrete Creator* tienen la lógica para decidir que clase instanciar (/concrete product/) ó.. pueden reescribir el comportamiento por defecto, si se usara Herencia
+     (/Ej. reciben un tipo 'PizzaClasica' por parámetro, y una decide crear una instancia de PizzaVegana pero podría redefinirlo para crear una instancia de la clase PizzaNapolitana/)
+
+   #+BEGIN_QUOTE
+   Se conoce por *Creator/Factory* al que tiene la operación de crear los objetos (factory method)
+   
+   Si definimos al *Creator* como una Interfaz, entonces dejamos decidir a las clases que la implementan,
+   definir la lógica de que clase instanciar
+
+   Si definimos al *Creator* como clase abstracta, entonces ésta puede definir por defecto que instancias de clases se deben crear,
+   y las subclases *Concrete creator* pueden o no sobreescribir su comportamiento, devolviendo otras instancias de clases.
+   
+   También podríamos elegir que fuese clase abstracta, si ésta tiene un estado (Ej. nombre)
+   #+END_QUOTE
+
+   #+BEGIN_qUOTE
+   Por ejemplo si el *Creator* es una "Fábrica de Pizzas" ésta podría ser una clase abstracta,
+   y podría tener como *Concrete Creators* una "Fábrica de Pizzas Veganas" y una "Fábrica de Pizzas Tradicional".
+   
+   Entonces las subclases del Creator ante un parámetro "tipo sabrosa" ó "tipo clásica" podrían devolver una pizza diferente,
+   porque la "fábrica de pizzas veganas" tendería a crear una "pizza con palta" como sabrosa, y una "pizza de hongos" como clásica
+   mientras que "fabrica de pizzas tradicional" puede crear una "pizza napolitana" como clásica, y una "pizza con extra queso" como sabrosa
+
+   ambos *Concrete Creator* crean un objeto con la misma Interfaz del producto que es "Pizza"
+   #+END_QUOTE
+** Cualidades de Diseño
+   - *Mayor extensibilidad* para agregar características (nuevos tipos de productos) con bajo impacto
+   - *Bajo acoplamiento* entre el Cliente y la creación de objetos
+** Ejemplo 1 - Fabrica de Juguetes Marvel
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/jueguetes-marvel-factory.png :exports results
+     @startuml
+     Title Patrón Factory Method (Fábrica de Jugetes Marvel)
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     package "Factory Method #2"{
+         enum TipoEspecie{
+             CYBORG
+             HUMANO
+         }
+
+         interface ILaboratorio<<Creator>>{
+             +Especie crearEspecie(TipoEspecie tipo)
+         }
+
+         class Laboratorio<<Concrete Creator>>{
+             +Especie crearEspecie(TipoEspecie tipo)
+         }
+
+         abstract class Especie<<Product>>{
+             -Number velocidad
+             +String hablar()
+             +void correr()
+             +String getNombre()
+         }
+
+         class Humano<<Concrete Product>>{
+             +String hablar()
+             +void correr()
+             +String getNombre()
+         }
+
+         class Cyborg<<Concrete Product>>{
+             +String hablar()
+             +void correr()
+             +String getNombre()
+         }
+     }
+
+     package "Factory Method #1"{
+         interface IFabricaJuguetes<<Creator>>{
+             +Jugete crearJuguete(String tipo)
+         }
+
+         class FabricaDisney<<Concrete Creator>>{
+             +Jugete crearJuguete(String tipo)
+         }
+
+         class FabricaLego<<Concrete Creator>>{
+             +Jugete crearJuguete(String tipo)
+         }
+
+         interface Juguete<<Product>>{
+             +String hablar()
+             +void caminar()
+             +String getNombre()
+         }
+
+         class Thanos<<Concrete Product>>{
+             +String hablar()
+             +void caminar()
+             +String getNombre()
+         }
+
+         class Wolverine<<Concrete Product>>{
+             +String hablar()
+             +void caminar()
+             +String getNombre()
+         }
+
+         class NullJuguete{
+             +String hablar()
+             +void caminar()
+             +String getNombre()
+         }
+     }
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     Thanos      .up.|> Juguete
+     Wolverine   .up.|> Juguete
+     NullJuguete    .left.|> Juguete
+
+
+     IFabricaJuguetes    .right.> Juguete : crear
+
+     FabricaDisney     .up.|> IFabricaJuguetes
+     FabricaLego     .up.|> IFabricaJuguetes
+
+     Laboratorio    .up.|> ILaboratorio
+     ILaboratorio    .right.> Especie
+     Humano          -up-|> Especie
+     Cyborg          -up-|> Especie
+
+     ILaboratorio    .left.> TipoEspecie
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/jueguetes-marvel-factory.png]]
+
+** Ejemplo 2 - Computadoras Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/computadoas-factory.png :exports results
      @startuml
      Title Patrón Method Factory (Computadoras)
@@ -1273,8 +1431,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/computadoas-factory.png]]
-
-** Ejemplo 2 - Transportes Factory
+** Ejemplo 3 - Transportes Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/transportes-factory.png :exports results
      @startuml
      Title Patrón Method Factory (Transportes)
@@ -1380,7 +1537,7 @@
    #+RESULTS:
    [[file:diagramas-de-clases/transportes-factory.png]]
 
-** Ejemplo 3 - Archivos Factory
+** Ejemplo 4 - Archivos Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/archivo-factory.png :exports results
      @startuml
      Title Patrón Factory-Method
@@ -1476,7 +1633,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/archivo-factory.png]]
-** Ejemplo 4 - Videojuego Personajes Factory
+** Ejemplo 5 - Videojuego Personajes Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/personaje-factory.png :exports results
      @startuml
      Title Patrón Factory-Method (Personajes de Videojuegos)
@@ -1580,7 +1737,7 @@
    #+RESULTS:
    [[file:diagramas-de-clases/personaje-factory.png]]
 
-** Ejemplo 5 - Agencia Vehiculos Factory
+** Ejemplo 6 - Agencia Vehiculos Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/agencia-vehiculos-factory.png :exports results
      @startuml
      Title Patrón Factory-Method (Agencia de vehículos)
@@ -1640,7 +1797,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/agencia-vehiculos-factory.png]]
-** Ejemplo 6 - Servicio Mensajes Factory
+** Ejemplo 7 - Servicio Mensajes Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/servicio-mensajes-factory.png :exports results
      @startuml
      Title Patrón Factory-Method (Servicio de Mensajeria)
@@ -1702,7 +1859,7 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/servicio-mensajes-factory.png]]
-** [TODO] Ejemplo 7 - Multimedia Factory
+** [TODO] Ejemplo 8 - Multimedia Factory
    #+BEGIN_SRC plantuml :file diagramas-de-clases/multimedia-factory.png :exports results
      @startuml
      Title Patrón Factory-Method
@@ -2206,7 +2363,9 @@
    #+RESULTS:
    [[file:diagramas-de-clases/prestamos-abstract-factory.png]]
 
-* Command
+* [DOING] Command
+** Links
+   1. https://www.programmergirl.com/command-design-pattern-java/
 ** Conceptos
    - Permite *desacoplar* el objeto que invoca (Invoker) a la operación asociada (),
      mediante un objeto (command)
@@ -2933,8 +3092,148 @@
    #+RESULTS:
    [[file:diagramas-de-clases/cajero-automatico-command.png]]
 
-* Observer
-** Ejemplo 1 - Canal de Youtube
+* [WAITING] Observer
+** Conceptos
+   - El *Observable* (ó Publisher)
+     1. son los objetos que quieren ser observados
+     2. notifica a todos sus Observers/Suscribers si hay cambios en su estado (tiene una colección de los objetos que suscribieron a ellos)
+     3. al notificar a los suscriptores, delegan en ellos la implementación de actualizar su estado (/porque tienen una referencia del suscriptor/)
+   - El *Observer* (ó Suscriber)
+     1. son los objetos que están atentos a cambios del *Observable*, éste les notifica si los hay
+     2. se registran a un Observable concreto, delegan en ellos la implementación del registrar (/porque guardan una referencia del observado/)
+** Cualidades de Diseño
+   1. *Bajo acoplamiento* entre el Observado y el Observador, la comunicación es a través de sus interfaces
+** Ejemplos
+   1. La suscripción a newsletter, que notifica a los interesados (suscriptores que se registraron) sobre un tema en particular
+** [WAITING] Ejemplo 1 - Biblioteca Libros
+  #+BEGIN_COMMENT
+  1. Si hubieran más clases de biblioteca (Ej. Lugano, Medrano) cada observer que quiera suscribirse a ambas,
+  guardaría la referencia de la instancia de clases? BibliotecaMedrano bibliotecaA, BibliotecaLugano bibliotecaB
+  
+  2. El patrón de libro figura que el Observable y el Observer son interfáz, pero estaría bien que fuesen Clases Abstractas
+  porque tienen estado?
+  #+END_COMMENT
+  
+  #+BEGIN_SRC plantuml :file diagramas-de-clases/biblioteca-observer.png :exports results
+    @startuml
+    Title Patrón Observer + Null Object (Biblioteca - Libros)
+
+    ' ================
+    ' ==== CLASES ====
+    ' ================
+
+    package "Patrón Observer"{
+        abstract BibliotecaObservable <<Observable>>{
+            #Set<Observer> observadores
+            #Libro libroDisponible
+            +agregarObservador(Observer o)
+            +quitarObservador(Observer o)
+            +notificarObservadores()
+        }
+
+        class BibliotecaMedrano <<Concrete Observable>>{
+            +notificarObservadores()
+        }
+
+        abstract Observer <<Observer>>{
+            #Libro libroDisponible
+            +actualizar(Libro libro)
+        }
+
+        class EstudianteObserver <<Concrete Observer>>{
+            -Number legajo
+            -BibliotecaMedrano biblioteca
+            +actualizar(Libro libro)
+        }
+
+        class InvitadoObserver <<Concrete Observer>>{
+            -String nombre
+            -Number dni
+            -BibliotecaMedrano biblioteca
+            +actualizar(Libro libro)
+        }
+    }
+
+    package "Null Object"{
+        class LibroComun{
+        +getTitulo()
+        }
+
+        class NullLibro{
+        +getTitulo()
+        }
+
+        abstract class Libro{
+            #String titulo
+            #boolean disponible
+            +getTitulo()
+        }
+    }
+
+    ' ================
+    ' == RELACIONES ==
+    ' ================
+
+    BibliotecaMedrano       .up.|> BibliotecaObservable
+    BibliotecaObservable       -right-> Observer : notifica
+    EstudianteObserver      .up.|> Observer
+    InvitadoObserver      .up.|> Observer
+    EstudianteObserver      -left-> BibliotecaMedrano
+    InvitadoObserver      -left-> BibliotecaMedrano :observa
+
+    'EstudianteObserver          .down.> Libro
+    BibliotecaObservable   -up-> Libro
+    Observer            -up-> Libro
+
+    LibroComun  -down-|> Libro
+    NullLibro  -down-|> Libro
+
+    ' ================
+    ' ==== NOTAS =====
+    ' ================
+
+    note bottom of EstudianteObserver
+    ,* injectamos al observable como dependencia en el constructor
+
+    ,* delegamos la implementación de addObserver al Observable
+
+    --
+
+    EstudianteObserver(String nombre, BibliotecaMedrano biblio){
+        this.nombre = nombre;
+        this.biblioteca = biblio;
+
+        biblio.agregarObservador(this);
+    }
+
+    void actualizar(Libro libro){
+        this.libroDisponible = libro;
+    }
+
+    // idem para desuscribirse
+    void suscribirse(BibliotecaMedrano biblio){
+        biblioteca.agregarObservador(this);
+    }
+    end note
+
+    note bottom of BibliotecaMedrano
+    ,* delegamos la implementación de actualizar al Observer
+
+    --
+
+    void notificarObservadores(){
+        this.observadores
+            .forEach(obs -> obs.actualizar(this.libroDisponible))
+    }
+
+    end note
+
+    @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/biblioteca-observer.png]]
+** Ejemplo 2 - Canal de Youtube
   #+BEGIN_SRC plantuml :file diagramas-de-clases/canal-youtube-observer.png :exports results
     @startuml
     Title Patrón Observer (Youtube)
@@ -3021,87 +3320,6 @@
 
   #+RESULTS:
   [[file:diagramas-de-clases/canal-youtube-observer.png]]
-** Ejemplo 2 - Biblioteca Libros
-  #+BEGIN_SRC plantuml :file diagramas-de-clases/biblioteca-observer.png :exports results
-    @startuml
-    Title Patrón Observer (Biblioteca - Libros)
-
-    ' ================
-    ' ==== CLASES ====
-    ' ================
-
-    package "Patrón Observer"{
-        interface BibliotecaObservable <<Subject>>{
-            +agregarObservador(Observador o)
-            +quitarObservador(Observador o)
-            +notificarObservadores()
-        }
-
-        class BibliotecaMedrano <<Concrete Subject>>{
-            -Set<Observador> observadores
-            -Libro libro
-            +void setLibro(Libro libro)
-            +Libro getLibro()
-        }
-
-        interface Observer <<Observer>>{
-            +actualizar(Libro libro)
-        }
-
-        class EstudianteObserver <<Concrete Observer>>{
-            -BibliotecaMedrano subject
-            +actualizar(Libro libro)
-        }
-
-        class Libro{
-            -String titulo
-            -boolean disponible
-        }
-
-        note left of EstudianteObserver
-          public EstudianteObserver(String nombre, BibliotecaMedrano biblio){
-            this.nombre = nombre;
-            this.biblioteca = biblioteca;
-        
-            // necesitamos guardar la referencia del observable
-            // para que pueda agregarlo a su lista de observadores
-            // y pueda recibir notificaciones, cuando las actualice
-            ,**biblioteca.agregarObservador(this);**
-          }
-      
-          @Override
-          public void actualizar(Libro libro){
-            this.libro = libro;
-        
-            System.out.println("Hola "+ getNombre()
-                +" ya está disponible "+libro.getTitulo());
-          }
-        end note
-
-    }
-    ' ================
-    ' == RELACIONES ==
-    ' ================
-
-    BibliotecaMedrano    .left.|> BibliotecaObservable
-    BibliotecaMedrano    o-right-> Observer
-    EstudianteObserver         .up.|> Observer
-    EstudianteObserver         o-u-> BibliotecaMedrano
-
-    EstudianteObserver          .down.> Libro
-    BibliotecaMedrano   .down.> Libro
-    Observer            .down.> Libro
-
-
-    ' ================
-    ' ==== NOTAS =====
-    ' ================
-
-    @enduml
-   #+END_SRC
-
-   #+RESULTS:
-   [[file:diagramas-de-clases/biblioteca-observer.png]]
 * Null Object
 ** Ejemplo 1 - Clientes Premium
    #+BEGIN_SRC plantuml :file diagramas-de-clases/clientes-nullobject.png :exports results
@@ -3513,15 +3731,170 @@
    #+RESULTS:
    [[file:diagramas-de-clases/caja-supermercado-estado-state.png]]
 
-* Facade (Envolver servicios/subsistemas)
+* [DONE] Facade (Simplicidad ante subsistemas complejos)
+CLOSED: [2021-12-06 lun 21:04]
 ** Conceptos
-   - La *fachada* es el nexo/puente entre el *cliente* y los *servicios*
+   - La *fachada* es el nexo/puente entre el *cliente* y los *servicios* ó *subsistemas complejos*
+   - Mejora la interfaz de comunicación entre dos objetos
+   - _Oculta la complejidad de entender como tratar con un conjunto de subsistemas complejos_, expone una _interfaz sencilla que simplifica la complejidad_
    - La usamos SIEMPRE que usemos una *biblioteca de terceros* (ajena a nuestro sistema)
-     - porque quizás la biblioteca tiene demasiadas cosas que el usuario NO necesita
-     - o quizás la biblioteca tiene un nivel de complejidad que el usuario no necesita porque entender
+     - porque la biblioteca tiene demasiadas features que el cliente NO necesita
+     - porque la biblioteca agrega un nivel de complejidad que el cliente no necesita porque entender
    - Cuando un sistema que tiene varios servicios se hace complejo de usar
-     (se evita al usuario el tener que entender como funciona cada servicio)
-** Ejemplo 1 - Impresión de Documentos
+     (se evita que cliente el tenga que entender el contexto de como funciona cada servicio)
+** Cualidades de Diseño
+   - *Bajo acoplamiento* entre el cliente y los servicios ó subsistemas
+   - *Mantenimiento* a la clase que hace de fachada de los servicios ó subsistemas
+** Problemas que resuelve
+   1. Un cliente necesita acceder a una funcionalidad de un sistema complejo (/exponer una interfaz que sólo exponga esa funcionalidad/)
+   2. Una biblioteca externa dificil de entender (/exponer una interfaz con operaciones más entendibles. Ej. en jQuery $.get() y $.post() son fachadas de $.ajax()/)
+   3. Acceder a un conjunto de APIs que no tienen buen diseño (/exponer una API interna de fachada/)
+   4. Conjunto de tareas frecuentes (/agrupar las tareas en una tarea/)
+** Ejemplo Genérico - Fachada de Servicios
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/facade-generico1.png :exports results
+     @startuml
+     Title Patrón Facade
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     class Cliente{
+     }
+
+     interface IFachada{
+         +void operacionABC()
+     }
+
+     class Fachada{
+         +void operacionABC()
+     }
+
+     rectangle "Servicios externos"{
+         class ServicioA{
+             +void operacionA()
+         }
+    
+         class ServicioB{
+             +void operacionB()
+         }
+    
+         class ServicioC{
+             +void operacionC()
+         }
+     }
+
+
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     Cliente     -right-> Fachada
+
+     Fachada     .up.|> IFachada
+
+     Fachada     .down.> ServicioA : usa
+     Fachada     .down.> ServicioB : usa
+     Fachada     .down.> ServicioC : usa
+
+     ' ================
+     ' == COMENTARIOS ==
+     ' ================
+
+     note right of Fachada
+     Oculta la complejidad de los servicios
+     --
+     void operacionABC(){
+         operacionA()
+         operacionB()
+         operacionC()
+     }
+     end note
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/facade-generico1.png]]
+** Ejemplo 1 - Subsistema de Pedidos
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/facade-subsistema-de-pedidos.png :exports results
+     @startuml
+     Title Patrón Facade - Fachada de un Subsistema de Pedidos
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     class Cliente{
+     }
+
+     interface IPedidoFachada{
+         +boolean hayStockDisponible()
+         +void agregarATarjeta()
+         +void removerDeTarjeta()
+         +void realizarPedido()
+     }
+
+     class PedidoFachada<<Facade>>{
+         -Stock stock
+         -Tarjeta tarjeta
+         -Pago pago
+
+         +boolean hayStockDisponible()
+         +void agregarATarjeta()
+         +void removerDeTarjeta()
+         +void realizarPedido()
+
+     }
+
+     rectangle "Subsistema de Pedido"{
+         class Stock{
+             +boolean comprobarStock()
+         }
+
+         class Tarjeta{
+             +void agregarPedido()
+             +void removerPedido()
+             +void comprobarPedido()
+         }
+
+         class Pago{
+             +void comprobarPago()
+         }
+     }
+
+
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     Cliente     -right-> PedidoFachada
+
+     PedidoFachada     .up.|> IPedidoFachada
+
+     PedidoFachada     .down.> Stock : usa
+     PedidoFachada     .down.> Pago : usa
+     PedidoFachada     .down.> Tarjeta : usa
+
+     ' ================
+     ' == COMENTARIOS ==
+     ' ================
+
+     note right of PedidoFachada
+     ,* Implementación de la interfaz de alto nivel
+     que __oculta la complejidad del subsistema__
+             
+     ,* __Unico punto de entrada de comunicación__
+     con el subsistema de pedidos
+     end note
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/facade-subsistema-de-pedidos.png]]
+
+** Ejemplo 2 - Impresión de Documentos
    #+BEGIN_SRC plantuml :file diagramas-de-clases/servicio-impresion-facade.png :exports results
      @startuml
      Title Patrón Facade (Impresión de Documentos)
@@ -3530,38 +3903,49 @@
      ' ==== CLASES ====
      ' ================
 
-     package "Patrón Facade (BIEN, ofrece simplicidad al cliente)" as A{
+     package "Patrón Facade (Ofrece simplicidad al cliente)" as A{
          class Oficina <<Cliente>>{
          }
 
-         class ServicioImpresionFachada <<Facade>>{
+         class ServicioImpresion <<Facade>>{
              -Documento Documento
-             -ServicioImprimir servicio1
-             -ServicioValidar servicio2
-             -ServicioFirmar servicio3
 
-             +void imprimirFirmadoValidado()
+             +void imprimirFirmadoYValidado(Documento doc)
          }
 
-         class Documento2{
+         class "Documento" as Documento2{
              -int numeroDocumento
              -String titulo
          }
 
-         class ServicioImprimir2{
+         class "ServicioImprimir" as ServicioImprimir2{
              +void imprimir(Documento doc)
          }
 
-         class ServicioValidar2{
+         class "ServicioValidar" as ServicioValidar2{
              +void validar(Documento doc)
          }
 
-         class ServicioFirmaDigital2{
+         class "ServicioFirmaDigital" as ServicioFirmaDigital2{
              +void firmar(Documento doc)
-         }    
+         }
+
+    
+         note top of Oficina
+         Documento documentoLegal = new Documento(101, "Ley 1001");
+         ServicioImpresion.imprimirFirmadoYValidado(documentoLegal);
+         end note
+    
+         note top of ServicioImpresion
+         void imprimirFirmadoYValidado(Documento doc){
+             ServicioFirmar.firmar(doc)
+             ServicioValidar.validar(doc)
+             ServicioImprimir.imprimir(doc)
+         }
+         end note
      }
 
-     package "SIN Patrón Facade (MAL, complejidad para el cliente)" as B{
+     package "SIN Patrón Facade (Agrega complejidad para el cliente)" as B{
 
          note as A
          El cliente requiere saber como manejar
@@ -3579,9 +3963,6 @@
 
          class Cliente{
              -Documento Documento
-             -ServicioImprimir servicio1
-             -ServicioValidar servicio2
-             -ServicioFirmar servicio3
          }
 
          class Documento{
@@ -3607,17 +3988,17 @@
      ' == RELACIONES ==
      ' ================
 
-     Cliente -down-> ServicioValidar
-     Cliente -down-> ServicioFirmaDigital
-     Cliente -down-> ServicioImprimir
+     Cliente .down.> ServicioValidar
+     Cliente .down.> ServicioFirmaDigital
+     Cliente .down.> ServicioImprimir
      Cliente -right-> Documento
 
 
-     Oficina -right-> ServicioImpresionFachada
-     ServicioImpresionFachada -down-> ServicioValidar2
-     ServicioImpresionFachada -down-> ServicioFirmaDigital2
-     ServicioImpresionFachada -down-> ServicioImprimir2
-     ServicioImpresionFachada -right-> Documento2
+     Oficina .right.> ServicioImpresion
+     ServicioImpresion .down.> ServicioValidar2
+     ServicioImpresion .down.> ServicioFirmaDigital2
+     ServicioImpresion .down.> ServicioImprimir2
+     ServicioImpresion -right-> Documento2
 
      ' ================
      ' ==== NOTAS =====
@@ -3628,15 +4009,251 @@
 
    #+RESULTS:
    [[file:diagramas-de-clases/servicio-impresion-facade.png]]
-
-* Adapter (Envolver una API)
+* [DONE] Adapter (Adaptar la Interfaz de Servicios/Bibliotecas)
+CLOSED: [2021-12-06 lun 21:04]
 ** Conceptos
-   - Cuando nuestra aplicación hace uso de una *API* de terceros
-   - El *adaptador* es nexo/puente de la comunicación entre nuestra aplicación y una *API* de terceros (/google maps, servicio de mail, .../)
+   - Convierte una interfaz en otra, sin agregar funcionalidad
+   - Cuando dos programas tienen misma funcionalidad pero tienen interfaces incompatibles (/los mensajes que entienden son diferentes/)
+   - Permite que dos programas se comuniquen sin modificar la implementación de ninguno
+   - Cuando nuestra aplicación interactúa con servicios externos que exponen una API con operaciones incompatibles a las de nuestro dominio
+   - El *Adaptader* es nexo/puente de la comunicación entre nuestra aplicación y una *API* de terceros (/google maps, servicio de mail, .../)
+   - El *Adaptader* traduce las operacionesEspecificas del *Adaptee*, las adapta para que el *Cliente* pueda usarlas con las operaciones que conoce
+
+   #+BEGIN_COMMENT
+   Cuando no podemos usar la *Herencia* para agregar comportamiento a la implementación de una clase,
+   porque esta pertenece a una biblioteca de terceros ó a un servicio externo.
+
+   Creamos una clase *Adapter* que guarda la referencia del objeto *Adaptee* del que queremos
+   agregar lógica a nuestra aplicación, pero tiene una interfáz distinta al dominio de la aplicación.
+
+   El *Adapter* implementa la interfáz con los mensajes que la aplicación entiende,
+   y los reescribimos usando las operacionesEspecificas del objeto (Adaptee), que queríamos agregar a la aplicación
+   #+END_COMMENT
 ** Ventajas
    - Si la *API* de terceros llegase a cambiar => solo modificaríamos nuestro *adapter*
      (si no lo tuvieramos, deberíamos buscar/modificar en todo el programa que use métodos de esa API de terceros)
-** Ejemplo 1 - Dispositivos Electronicos
+** Cualidades de Diseño
+   - *Bajo acoplamiento* entre la aplicación y los servicios externos y/o bibliotecas de terceros que usa, se comunican a través del *Adapter*
+** Ejemplo Genérico 1 - Herencia Vs Composición/Inyección de Dependencia
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/adapter-herencia-y-inyeccion-dependencias.png :exports results
+     @startuml
+     Title Patrón Adapter
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     package "Patrón Adapter #1 - Herencia"{
+         class "Client" as client1{
+             -Adapter adapter
+             +doSomething()
+         }
+
+         interface "Target" as target1{
+             +operacion()
+         }
+    
+         class "Adapter" as adapter1{
+             +operacion()
+         }
+    
+         class "Adaptee" as adaptee1{
+             +operacionEspecifica()
+         }
+     }
+
+     package "Patrón Adapter #2 - Composición / Inyección de Dependencias"{
+         class "Client" as client2{
+             -Adapter adapter
+             +doSomething()
+         }
+
+         interface "Target" as target2{
+             +operacion()
+         }
+    
+         class "Adapter" as adapter2{
+             -Adaptee adaptee
+             +Adapter()
+             +operacion()
+         }
+    
+         class "Adaptee" as adaptee2{
+             +void operacionEspecifica()
+         }
+     }
+
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     adapter1    .up.|> target1
+     adapter1    -up-|> adaptee1
+     client1     -right-> adapter1
+
+     adapter2    .up.|> target2
+     adapter2    -up-> adaptee2
+     client2     -right-> adapter2
+
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+     note bottom of client2
+     doSomesthing(){
+         adapter.operacion();
+     }
+     end note
+
+     note right of adaptee2
+     ,* Una biblioteca de terceros
+
+     ,* Un servicio externo al que pedimos datos y
+     que expone una interfaz (Ej. gmaps, iweather, ..)
+     end note
+
+
+     note bottom of adapter2
+     ,* Implementa la interfaz que necesita el cliente
+
+     ,* Permite la comunicación entre los objetos que
+     tienen interfaces incompatibles
+
+     ,* __Se inyecta el objeto Adaptee como dependencia__
+     al Adapter (en este caso por constructor)
+
+     --
+
+     class Adapter implements Target{
+         Adaptee adaptee;
+    
+         Adapter(Adaptee adaptee){ // constructor
+             this.adaptee = adaptee
+         }
+    
+         @Override
+         operacion(){
+             adaptee.operacionEspecifica();
+         }
+     }
+     end note
+
+     note bottom of adapter1
+     ,* Utiliza la herencia y adapta el comportamiento
+     que es incompatible con la interfaz del dominio.
+
+     ,* NO sería aplicable, si el objeto a adaptar
+     es un servicio externo. En ese caso deberíamos
+     optar por __inyección de dependencias__
+
+     --
+
+     class Adapter extends Adaptee implements Target{
+         @Override
+         void metodo(){
+             this.metodoEspecifico();
+         }
+     }
+     end note
+     @enduml
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:diagramas-de-clases/adapter-herencia-y-inyeccion-dependencias.png]]
+** Ejemplo 1 - Contactos - Multiples Adaptees y Adapters
+   #+BEGIN_SRC plantuml :file diagramas-de-clases/adapter-contactos.png :exports results
+     @startuml
+     Title Patrón Adapter - Contactos
+
+     ' ================
+     ' ==== CLASES ====
+     ' ================
+
+     class App<<Cliente>>{
+     }
+
+     class Contacto{
+         String nombre
+     }
+
+     interface IContactosAdapter{
+         +List<Contacto> getContactos()
+     }
+
+     class WhatsappContactosAdapter<<Adapter>>{
+         -WhatsappContactosApi api
+         +List<Contacto> getContactos()
+         -List<Contacto> parseContactsXml(String xml)
+     }
+
+     class TelegramContactosAdapter<<Adapter>>{
+         -TelegramContactosApi api
+         +List<Contacto> getContactos()
+         -List<Contacto> parseContactsJson(String json)
+     }
+
+     class WhatsappContactosApi<<Adaptee>>{
+         +String getContactosXml()
+     }
+
+     class TelegramContactosApi<<Adaptee>>{
+         +String getContactosJsonl()
+     }
+
+
+     ' ================
+     ' == RELACIONES ==
+     ' ================
+
+     App                     -right-> IContactosAdapter
+     IContactosAdapter           -right-> Contacto
+
+     WhatsappContactosAdapter    .up.|> IContactosAdapter
+     TelegramContactosAdapter    .up.|> IContactosAdapter
+
+     WhatsappContactosAdapter    -down-> WhatsappContactosApi
+     TelegramContactosAdapter    -down-> TelegramContactosApi
+
+     ' ================
+     ' ==== NOTAS =====
+     ' ================
+
+     legend
+     ,**Contexto**
+     Consumimos el mismo tipo de información de varios servicios (Telegram, Whatsapp),
+     creamos un Adapter para cada uno, que implementa la interfaz con las operaciones
+     que el dominio necesita.
+     Ojo..! __El adapter sólo traduce/adapta las operaciones, no agrega nuevas funcionalidades.__
+
+     ,**Problema**
+     ,* Queremos consumir información de un Servicio (Adaptee)
+
+     ,* El servicio expone una API incompatible con la interfaz del objeto Cliente
+     que tiene el dominio de la app
+
+     ,* El servicio es externo, sólo podemos usar la interfaz, no lo podemos modificar
+
+     ,**Solución**
+     ,* Creamos un Adapter que actúa como traductor entre el Cliente y el Servicio externo
+
+     ,* El Adapter implementa la interfáz con las operaciones que el cliente necesita,
+     y adapta las operacionesEspecificas del Servicio externo para que el Cliente lo entienda.
+     end legend
+
+     note bottom of TelegramContactosAdapter
+     List<Contacto> getContactos(){
+         return this.parseContactsJson(api.getContactosJson())
+     }
+
+     end note
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:diagramas-de-clases/adapter-contactos.png]]
+
+** Ejemplo 2 - Dispositivos Electronicos
    #+BEGIN_SRC plantuml :file diagramas-de-clases/dispositivos-electronicos-adapter.png :exports results
      @startuml
      Title Patrón Adapter (Dispositivos Electrónicos)
@@ -3646,10 +4263,15 @@
      ' ================
 
      package "Patrón Adapter"{
+         class Cliente{
+         Conectable dispositivo
+         }
 
-         interface Conectable <<Target>>{
+         abstract class Conectable <<Target>>{
+             -boolean encendido
              +void encender()
              +void apagar()
+             +boolean estaEncendido()
          }
 
          class RadioDigital{
@@ -3668,11 +4290,48 @@
              +void presionarBoton()
          }
 
-         class AdaptadorTelevisorViejo <<Adapter>>{
+         class TelevisorViejoAdapter <<Adapter>>{
              -TelevisorViejo televisor
              +void encender()
              +void apagar()
+             +boolean estaEncendido()
          }
+
+     note left of TelevisorViejo
+     void presionarBoton(){
+         if(this.perillaIzquierda){
+             this.encendido = true;
+         }else if(this.perillaDerecha){
+             this.encendido = false;
+         }
+     }
+
+     void estaEncendido(){
+         return this.encendido;
+     }
+     end note
+
+     note bottom of TelevisorViejoAdapter
+     El **Adapter** sólo traduce/adapta las operaciones
+     del **Adaptee** para que el Cliente lo entienda,
+     no se agrega funcionalidad extra.
+
+     --
+
+     // injectamos el objeto como dependencia en el constructor
+     TelevisorViejoAdapter(TelevisorViejo televisor){
+         this.televisor = televisor;
+     }
+
+     void encender(){
+         televisor.girarPerillaIzquierda();
+         televisor.presionarBoton();
+     }
+
+     void estaEncendido(){
+         return televisor.estaEncendido();
+     }
+     end note
 
      }
 
@@ -3680,23 +4339,23 @@
      ' == RELACIONES ==
      ' ================
 
+     Cliente                 -right-> Conectable
      TelevisorModerno        -up-|> Conectable
      RadioDigital            -up-|> Conectable
-     AdaptadorTelevisorViejo -up-|> Conectable
+     TelevisorViejoAdapter -up-|> Conectable
 
-     AdaptadorTelevisorViejo -down-> TelevisorViejo
+     TelevisorViejoAdapter -down-> TelevisorViejo
 
      ' ================
      ' ==== NOTAS =====
      ' ================
-
 
      @enduml
    #+END_SRC
 
    #+RESULTS:
    [[file:diagramas-de-clases/dispositivos-electronicos-adapter.png]]
-** Ejemplo 2 - Reproductores de Música
+** Ejemplo 3 - Reproductores de Música
    #+BEGIN_SRC plantuml :file diagramas-de-clases/reproductor-musica-adapter.png :exports results
      @startuml
      Title Patrón Adapter (Reproductores de música)
@@ -4079,7 +4738,7 @@
       - el control del ámbito de ejecución web (/más conocido como scope, cuando se delimita el alcance/)
     - Cuando se trata solo de la _creación de dependencias_, el *(IoC)* se especializa en la *inyección de dependencias*
       - cuando un objeto/programa cede el control a alguien más (a otros objetos ó a un framework)
-    *** Patrones para implementarlo
+*** Patrones para implementarlo
         Se puede implementar con alguno de los sig. patrones de diseño
         - Observer
         - Strategy
@@ -4097,22 +4756,22 @@
 * [TODO] Publisher (Consumer)
 * [TODO] Singleton
 * [TODO] Composite
-* [TODO] MVC
 * Referencias
 ** Referencias Web
   1. https://www.fdi.ucm.es/profesor/jpavon/poo/2.14pdoo.pdf
   2. https://www.baeldung.com/java-observer-pattern
   3. https://www.arquitecturajava.com/categoria/arquitectura/design-patterns/
-  4. https://www.javatpoint.com/design-patterns-in-java
-  5. https://www.tutorialspoint.com/design_pattern/index.htm
-  6. https://sourcemaking.com/design_patterns
-  7. https://refactoring.guru/design-patterns
-  8. https://www.opencodez.com/category/java
-  9. https://www.javacodegeeks.com/2015/09/java-design-patterns.html
-  10. https://www.geeksforgeeks.org/abstract-factory-pattern/
-  11. https://informaticapc.com/patrones-de-diseno/
-  12. https://aprendeyprogramablog.wordpress.com/2016/07/10/ejemplo-abstract-factory/
-  13. https://jesusramirezguerrero.com/2014/08/26/patrones-de-diseno-en-java/
+  4. https://reactiveprogramming.io/blog/es/patrones-de-diseno/
+  5. https://www.javatpoint.com/design-patterns-in-java
+  6. https://www.tutorialspoint.com/design_pattern/index.htm
+  7. https://sourcemaking.com/design_patterns
+  8. https://refactoring.guru/design-patterns
+  9. https://www.opencodez.com/category/java
+  10. https://www.javacodegeeks.com/2015/09/java-design-patterns.html
+  11. https://www.geeksforgeeks.org/abstract-factory-pattern/
+  12. https://informaticapc.com/patrones-de-diseno/
+  13. https://aprendeyprogramablog.wordpress.com/2016/07/10/ejemplo-abstract-factory/
+  14. https://jesusramirezguerrero.com/2014/08/26/patrones-de-diseno-en-java/
 ** Referencias Repositorios
   1. https://github.com/miw-upm/apaw/tree/develop/src/main/java/es/upm/miw/pd
   2. https://github.com/eugenp/tutorials/tree/master/patterns/design-patterns-creational/src/main/java/com/baeldung
