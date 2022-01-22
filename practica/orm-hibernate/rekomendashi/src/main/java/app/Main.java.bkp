@@ -1,0 +1,66 @@
+import java.util.List;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityTransaction;
+
+import org.uqbarproject.jpa.java8.extras.PerThreadEntityManagers;
+
+import model.Alumno;
+import model.Cursada;
+import model.Materia;
+import model.MateriaElectiva;
+import model.MateriaObligatoria;
+
+/**
+ * tenía problemas con el entityManager() y withTransaction{}
+ * no me dejaba usarlos en un método static, por eso comento el WithGlobalEntityManager
+ */
+//public class Main implements WithGlobalEntityManager, TransactionalOps{
+public class Main{
+    public static void main(String[] args) {
+        final EntityManager entityManager = PerThreadEntityManagers.getEntityManager();
+        EntityTransaction transaction = entityManager.getTransaction();
+
+        /*
+        Materia gdd = new MateriaObligatoria("gdd", false);
+        Materia tadp = new MateriaElectiva("tadp");
+
+        Cursada cursada_gdd2020 = new Cursada(gdd);
+        Cursada cursada_tadp2020 = new Cursada(tadp);
+
+        transaction.begin();
+        entityManager.persist(cursada_gdd2020);
+        entityManager.persist(cursada_tadp2020);
+        transaction.commit();
+        */
+
+        /*
+        Cursada cursada = entityManager.createQuery("from Cursada", Cursada.class).setMaxResults(1).getResultList().get(0);
+        System.out.println(cursada.getClass());
+        //System.out.println(cursada.getMateria().getClass());
+
+        Materia materia = entityManager.createQuery("from Materia", Materia.class).setMaxResults(1).getResultList().get(0);
+        System.out.println(materia.getClass());
+
+        Materia otraMateria = entityManager.createQuery("from MateriaObligatoria", Materia.class).setMaxResults(1).getResultList().get(0);
+        System.out.println(otraMateria.getClass());
+        */
+
+        /*
+        Alumno pedrito = new Alumno("carlitos");
+        Alumno samuel = new Alumno("samuel");
+
+        transaction.begin();
+        entityManager.persist(pedrito);
+        entityManager.persist(samuel);
+        transaction.commit();
+
+        List<Alumno> alumnos = entityManager.createQuery("from Alumno").getResultList();
+
+        for (Alumno alumno : alumnos) {
+            System.out.println(alumno.getNombre());
+        }
+        */
+        // transaction.rollback();
+    }
+}
