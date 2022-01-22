@@ -1,0 +1,11 @@
+<html>
+    <body>
+        <h1>Hola {{usuario.nombre}}</h1>
+        <ul>
+            {{#each usuario.capturas}}
+                <li>{{ pokemon.nombre }}</li>
+                <li><img src="{{ pokemon.fotoPrincipal }}" height="100" width="100" /></li>
+            {{/each}}
+        </ul>
+    </body>
+</html>

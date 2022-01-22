@@ -1,0 +1,11 @@
+{{#partial "contenido"}}
+
+{{#with proyecto}}
+	<h1> Proyecto {{nombre}} </h1>
+	
+	<p><strong>Costo estimado:</strong> {{costoEstimado}}</p>
+	<p><strong>Está asignado:</strong> {{isTrue estaAsignado}}</p>
+{{/with}}
+{{/partial}}
+
+{{>layout.hbs}}

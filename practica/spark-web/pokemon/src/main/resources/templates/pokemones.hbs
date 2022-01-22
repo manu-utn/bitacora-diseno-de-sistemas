@@ -1,0 +1,16 @@
+<html>
+    <body>
+        <h1>Pokemones hehe</h1>
+        <form action="/pokemones" method="GET">
+            <input name="apodo" type="text" value="{{apodo}}">
+            <input type="submit" value="enviar">
+        </form>
+        {{#each capturas}}
+            <p>
+                Nombre: {{ pokemon.nombre }}<br />
+                Apodo: {{ apodo }}<br />
+                Nivel: {{ nivel }}
+            </p>
+        {{/each}}
+    </body>
+</html>

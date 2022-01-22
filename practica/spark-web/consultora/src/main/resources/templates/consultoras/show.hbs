@@ -1,0 +1,25 @@
+{{#partial "contenido"}}
+
+    {{#with consultora}}
+	      <h1> Consultora {{nombre}} </h1>
+
+	      <p><strong>Nombre:</strong> {{nombre}}</p>
+	      <p><strong>Cantidad Empleados:</strong> {{cantidadEmpleados}}</p>
+
+        <table class="table table-stripped">
+	          <tr>
+		            <th>Nombre</th>
+		            <th>Costo Estimado</th>
+	          </tr>
+
+	      {{#each proyectos}}
+		        <tr>
+			          <td>{{nombre}}</td>
+			          <td>{{costoEstimado}}</td>
+		        </tr>
+	      {{/each}}
+        </table>
+    {{/with}}
+{{/partial}}
+
+{{>layout.hbs}}

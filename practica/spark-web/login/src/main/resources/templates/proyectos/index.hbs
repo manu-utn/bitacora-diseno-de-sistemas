@@ -1,0 +1,23 @@
+{{#partial "contenido"}}
+<h1>Proyectos</h1>
+
+<table class="table table-stripped">
+	<tr>
+		<th>Nombre</th>
+		<th>Costo Estimado</th>
+		<th>Está Asignado</th>
+		<th></th>
+	</tr>
+	
+	{{#each proyectos}}
+		<tr>
+			<td>{{nombre}}</td>
+			<td>{{costoEstimado}}</td>
+			<td>{{isTrue estaAsignado}}</td>
+			<td><a href="{{url}}">Ver</a><td>
+		</tr>
+	{{/each}}
+</table>
+{{/partial}}
+
+{{>layout.hbs}}

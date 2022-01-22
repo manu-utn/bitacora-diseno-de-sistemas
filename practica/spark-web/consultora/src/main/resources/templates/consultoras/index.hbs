@@ -1,0 +1,21 @@
+{{#partial "contenido"}}
+    <h1>Consultoras</h1>
+
+    <table class="table table-stripped">
+	      <tr>
+		        <th>Nombre</th>
+		        <th>Cantidad Empleados</th>
+		        <th></th>
+	      </tr>
+
+	      {{#each consultoras}}
+		        <tr>
+			          <td>{{nombre}}</td>
+			          <td>{{cantidadEmpleados}}</td>
+			          <td><a href="{{url}}">Ver</a><td>
+		        </tr>
+	      {{/each}}
+    </table>
+{{/partial}}
+
+{{>layout.hbs}}
