@@ -1,6 +1,6 @@
 #+TITLE: Tips
 * Mapeo + Persistencia
-** @MappedSuperclass misma columna id para todos
+** @MappedSuperclass misma columna Id para todas las entidades
    #+BEGIN_SRC java
      // - Todas las clases que tengan el annotation @Entity haremos que
      // extiendan de esta clase, para que se les asigne un identificador
@@ -18,7 +18,17 @@
          Long id;
      }
    #+END_SRC
-** Interfaz a Enum con comportamiento
+** FK del @OneToOne
+   #+BEGIN_SRC java
+     class Playlist extends PersistentEntity{
+         // - podemos definir el nombre de la FK
+         // - por defecto creará la fk con el nombre columnaId Ej. duenioId
+         @OneToOne
+         @JoinColumn(name="creador_id", referencedColumName="id") // fk del lado de la tabla Pedidos
+         private Usuario duenio;
+     }
+   #+END_SRC
+** Interfaz stateless a Enum con comportamiento
    #+BEGIN_SRC java
      // Optamos por pasar la Interfaz a un Enum por comportamiento en vez de una Clase Abstracta porque
      // 1. no queremos manejar su identidad, lo consideramos un "value object"
@@ -51,6 +61,36 @@
          // }
      }
    #+END_SRC
+** Interfaz stateful a Clase Abstracta
+   #+BEGIN_SRC java
+     // - Convertimos la Interfaz en Clase abstracta,
+     // porque las interfaces no se pueden mapear por el ORM hibernate
+     // además porque es un "strategy statefull" ya que cada strategy
+     // tiene un "estado interno" o sea atributos (por tanto no es "strategy stateless")
+     //
+     // - NO elegimos Enum con comportamiento, por lo dicho anteriormente, tienen "estado interno"
+     @Entity
+     @Inheritance(strategy=SINGLE_TABLE)
+     @DiscriminatorColumn(name="tipo_fuerza")
+     abstract class FuerzaMilitar{
+         public void atacarA(Lugar lugar);
+     }
+     
+     @Entity
+     class Aerea extends FuerzaMilitar{
+         private int cantidadDragones; // motivo (1) que la interfaz FuerzaMilitar sea clase abstracta en vez de Enum con comportamiento
+     }
+     
+     @Entity
+     class Terrestre extends FuerzaMilitar{
+         private int cantidadSoldados;  // motivo (2) su valor es dinámico (no lo podemos hacer variar el valor en un Enum)
+     }
+     
+     @Entity
+     class Naval extends FuerzaMilitar{
+         private int cantidadBarcos;  // motivo (3) que la interfaz FuerzaMilitar sea clase abstracta, su valor es dinámico
+     }
+   #+END_SRC
 ** @OneToMany + @JoinColumn
    #+BEGIN_SRC java
      @Entity
@@ -66,7 +106,7 @@
          // - Indicamos el @JoinColumn para evitar que se genere la tabla asociativa de ManyToMany
          // - Elegimos Collection en vez de lista, porque no es relevante el orden
          @OneToMany
-         @JoinColumn(name="id_pieza") // fk del lado de la tabla ingredientes
+         @JoinColumn(name="id_pieza") // fk del lado de la tabla ingredientes (FK siempre del lado del Many)
          Collection<Ingrediente> ingredientes;
      }
    #+END_SRC
@@ -79,28 +119,61 @@
          private TipoDePedido tipoDePedido;
      }
    #+END_SRC
-** List @ElementCollection + @JoinColumn
+** Tablas sin PK, Colección de Values Objects (@ElementCollection)
+   #+BEGIN_QUOTE
+   Las tablas que se generan con ~@ElementCollection~ ya sea de objetos nativos (String)
+   enums, ó clases con ~@Embeddable~, las mismas se crean sin una *PK*, pero tienen una *FK*
+   a la tabla de la clase donde está como atributo.
+
+   En este ejemplo las tablas coccionesPreferidas, categoriasPreferidas, ó imagenes,
+   no tienen PK, pero si una FK hacia la tabla "pedidos"
+   #+END_QUOTE
+
    #+BEGIN_SRC java
+     // - Consideramos que es un value objec, y no queremos manejar su identidad
+     // - En "Pedido" declaramos una lista de TipoDeCoccion, por tanto será una colección de value objects,
+     // por lo cual necesitaremos usar @ElementCollection (como haríamos con una lista de String ó de Enumeraciones)
+
+     @Embeddable
+     class TipoDeCoccion{ // <-- ojo, esta clase no tiene @Entity, la usaremos para generar una colección en Pedido
+         // ...
+     }
+
+     // - La definición de las enumeraciones no requieren annotations,
+     // pero cuando declaramos atributos de un tipo de enum debemos agregar @Enumerated
+     enum Categoria{
+         PICANTE, SALADO, DULCE
+     }
+
+     @Entity
+     @Table(name="pedidos")
      class Pedido extends PersistentEntity{
+         // - Los objetos primitivos como "String" también son value objects,
+         // si queremos persistirlos debemos usar el @ElementCollection
+         // (lo mismo ocurre si queremos una colección de una enumeración)
+         @ElementCollection
+         @CollectionTable(name = "imagenes")
+         @Column(name="url_imagen")
+         private List<String> urlImagenesElegidas;
+
          // - Como TipoDeCoccion no es un identity value, si no un "object value"
          // usamos el @ElementCollection que genera una relación del tipo @OneToMany
-         // - Usamos JoinColumn porque si no el ORM Hibernate genera una tabla intermedia del tipo asociativa
-         // como si fuese un ManyToMany
          @ElementCollection
-         @CollectionTable(name = "coccionesPreferidas", joinColumns = @JoinColumn(name = "id_pedido"))
-         private List<TipoDeCoccion> coccionesPreferidas;
-     
+         @CollectionTable(name = "coccionesPreferidas")
+         @Column(name="coccion_preferida")
+         private Collection<TipoDeCoccion> coccionesPreferidas;
+
          // - Es importante el orden en que eligieron las categorías, por eso elegimos List en vez de Collection
          // - Al usar @OrderColumn persistimos a posición que tengan en la Lista (la columna queda en la tabla de Categorias)
          // - Usamos @ElementCollection por la misma razón que TipoDeCoccion
-         // - La columna del @JoinColumn será la FK de la tabla de categorias
          @ElementCollection
-         @CollectionTable(name = "categoriasPreferidas", joinColumns = @JoinColumn(name = "id_pedido"))
+         @CollectionTable(name = "categoriasPreferidas")
          @OrderColumn(name="prioridad")
+         @Column(name="categoria_preferida")
          private List<Categoria> categoriasPreferidas;
      }
    #+END_SRC
-** Servicios + ValueObjects
+** Funcionalidad/Comportamiento Vs Entidad Vs Valor (Servicios + ValueObjects)
    #+BEGIN_SRC java
      // - Es un Service, no nos interesa manejar su identidad ni su estado,
      // sólo nos interesa la funcionalidad obtenerLocales() que expone
@@ -161,7 +234,7 @@
          private Estadistica estadistica;
      }
    #+END_SRC
-** @OrderColumn + List Vs Collection
+** Persistir el Orden de los objetos en una Lista (@OrderColumn + List Vs Collection)
    #+BEGIN_SRC java
      @Entity
      @Table(name="playlists")
@@ -182,7 +255,66 @@
          List<Contenido> contenidos;
      }
    #+END_SRC
-** Muchos @ManyToMany
+** Nombrar diferentes FK, si hay varios @OneToMany a una clase que usa SINGLE_TABLE
+   #+BEGIN_QUOTE
+   Si la clase "Item" usa la estrategia "SINGLE_TABLE", es necesario cambiar los nombres de las FK
+   porque van a referenciar a la misma tabla "items". Los nombres los definimos con ~JoinColum~
+
+   En cambio si la superclase hubiese usado "JOINED" como estrategia, entonces las FK podrían tener
+   el mismo nombre, ya que se crearán en las tablas de las subclases.
+   #+END_QUOTE
+   
+   #+BEGIN_SRC java
+     @Entity
+     @Table(name="personajes")
+     class Personaje{
+         String nombre;
+
+         // - Un personaje puede tener muchos items,
+         // pero cada item puede pertenecer sólo un personaje
+         // - usamos JoinColumn para evitar que se genere una tabla asociativa
+         // intermedia entre Personaje e Items, es decir evitamos que haga un ManyToMany
+         @OneToMany
+         @JoinColumn(name="personaje_id")
+         Collection<Item> items;
+
+         // - idem que con los items
+         // - pero cambiamos el nombre de la FK que se guarda en armas
+         @OneToMany
+         @JoinColumn(name="personaje_arma_id")
+         Collection<Arma> armas;
+
+         // - idem que con los items
+         // - pero cambiamos la FK que se guarda en accesorios
+         @OneToMany
+         @JoinColumn(name="personaje_accesorio_id")
+         Collection<Accesorio> accesorios;
+     }
+
+     @Entity
+     @Table(name="items")
+     @Inheritance(strategy=SINGLE_TABLE)
+     @DiscriminatorColumn(name="tipo")
+     abstract class Item{
+         String getNombre();
+         int getCosto();
+     }
+
+     @Entity
+     class Accesorio extends Items{
+         int costo;
+         String nombre;
+     }
+
+     @Entity
+     class Arma extends Items{
+         int costo;
+         int defensa;
+         int ataque;
+         String nombre;
+     }
+   #+END_SRC
+** Herencia - Subclases con varios @ManyToMany a mismas entidades
    #+BEGIN_SRC java
      @Entity
      @Table(name="locales")
@@ -191,18 +323,20 @@
      class Local extends PersistentObject{
          private String nombre;
      }
-     
+
      // 1. Como Local es la superclase de Pub, el ORM al mapear la relación @ManyToMany
      // hará una tabla asociativa usando el nombre de la superclase Local y el atributo de esta clase
      // quedando Local_tragos
      // 2. Para evitar lo anterior usaremos @JoinTable para cambiar el nombre de la tabla asociativa
      @Entity
      class Pub extends Local{
+         // por default, si no usamos JoinTable creará la tabla "locales_tragos"
+         // el nombre de la superclase, porque usamos single_table en Local
          @ManyToMany
          @JoinTable(name="pub_trago")
          List<Trago> tragos;
      }
-     
+
      /**
       ,* Aclaración IMPORTANTE..
       ,*
@@ -223,16 +357,16 @@
          @ManyToMany
          @JoinTable(name="bar_trago")
          List<Trago> tragos;
-     
+
          @ManyToMany
          @JoinTable(name="bar_cerveza")
          List<Cerveza> cervezas;
-     
+
          @ManyToMany
          @JoinTable(name="bar_analcoholica")
          List<Analcoholica> analcoholicas;
      }
-     
+
      @Entity
      class Cerveceria extends Local{
          @ManyToMany
@@ -240,6 +374,219 @@
          List<Cerveza> cervezas;
      }
    #+END_SRC
+** [#A] Posibles justificaciones
+*** MappedSuperclass
+   #+BEGIN_SRC java
+     // - Esta clase será extendida por todas las que tengan el @Entity
+     // la misma hará se les genere un id autonumérico como clave primaria,
+     // el nombre de la columna será para todas las tablas igual, será "id"
+     // - en aquellas clases que usen herencia, no es necesario las subclases la extiendan
+     // - Como las clases que persisten extienden de esta clase, estamos modificando el modelo de objetos
+     // ya que agregamos en las clases el atributo "id"
+   #+END_SRC
+*** Estrategias para el Mapeo de Herencia
+   #+BEGIN_SRC java
+     // Estrategias para el Mapeo de Herencia
+     //
+     // SINGLE_TABLE <--- AGREGAR el @DiscriminatorColumn en la superclase, y su columna en el DER físico (y el @DiscriminatorValue en la subclases si es necesario)
+     //
+     // 1. Consultas polimórficas:
+     // - Es eficiente ya que nos evitamos los JOINs, se hace un SELECT en una única tabla,
+     // mientras que con JOINED se hará un JOIN por cada subclase, para traer los datos de sus tablas,
+     // lo que no es redituable.
+     //
+     // 2. Consultas NO polimórficas:
+     // - Es eficiente si comparamos contra JOINED, ya que nos evitamos un JOIN,
+     // también hace un SELECT a una única tabla sin JOIN
+     //
+     // 3. Inserts Masivos:
+     // - Son eficientes, porque se hacen INSERTs en una única tabla,
+     // mientras que en JOINED se hace el doble de INSERTs que con SINGLE_TABLE
+     //
+     // 4. Estructura en el Modelo de datos:
+     // - Tenemos una única tabla, los atributos de la superclase y subclases como columnas
+     // - Los datos quedan desnormalizados es decir todos agrupados,
+     // si comparamos con JOINED que normaliza los datos en distintas tablas según la estructura de la herencia
+     //
+     // ---------------------------------------------
+     // JOINED (tabla por clase)
+     //
+     // 1. Consultas polimórficas:
+     // - NO es eficiente, ya que hace una consulta con varios JOINs, tantos JOINs como subclases tenga la superclase,
+     // mientras que con SINGLE_TABLE hace una consulta directo a la tabla de la superclase.
+     //
+     // 2. Consultas NO polimórficas:
+     // - NO es muy eficiente, ya que hace un JOIN, mientras que con SINGLE_TABLE hace la consulta a una tabla
+     //
+     // 3. Inserts Masivos:
+     // - Son el doble de INSERTs si comparamos con SINGLE_TABLE,
+     // uno en la tabla de la superclase y otro en la tabla de la subclase,
+     // mientras que con SINGLE_TABLE se hace INSERT en una única tabla
+     //
+     // 4. Estructura en el Modelo de datos:
+     // - Tenemos una tabla por cada clase, implíca que hacer consultas tanto polimórficas como no polimórficas
+     // implicará hacer JOINs para relacionar los datos de las tablas
+     // - Las tablas de las subclases serán FK y PK, son FK porque guardan referencia del registro que
+     // se insertó primero en la superclase. Por tanto la PK de las tablas de las subclases no son autoincrementales
+     // porque se recicla el ID de la superclase.
+     // - Los datos quedan más normalizados, porque crea tablas por cada clase
+     //
+     // ---------------------------------------------
+     // TABLE PER CLASSS (tabla por clase concreta)
+     // - Perdemos la simplicidad de usar un simple @GeneratedValue
+     //
+     // 1. Consultas polimórficas:
+     // - Es muy costoso, completamente ineficiente si comparamos con JOINED.
+     // - Arma una query con una subquery con consultas a la subclases unidas con UNIONs,
+     // esto es más costoso que sólo usar JOINs. Esto ocurre, porque trata de armar una query con un esquema
+     // similar a la tabla de SINGLE_TABLE
+     //
+     // 2. Consultas NO polimórficas:
+     // - Hace la consulta directo a la tabla de la clase concreta, pero perdemos eficiencia en las consultas polimórficas
+     //
+     // 3. Inserts Masivos:
+     // - Hace el insert directo a la tabla de la clase concreta, pero perdemos eficiencia en las consultas polimórficas
+     //
+     // 4. Estructura en el Modelo de datos:
+     // - Tenemos sólo las tablas de las clases concretas, no habrá una tabla de la superclase
+     // - Además tenemos que contemplar, el elegir una estrategia ó mecanismo para generar de IDs que permita representar
+     // de forma únivoca a cada registro de las tablas.
+     // - Se podría utilizar uuid ó secuencias como estrategia, para que las tablas de las clases concretas
+     // tengan IDs únicos y no repetibles entre ellas, ya que las tablas de las clases concretas no están relacionadas
+     // - Si utilizamos la estrategia de secuencias, se creará una estructura auxiliar en el modelo de datos,
+     // para administrar la generación de ids
+     //
+     // Extra
+     // - Si la superclase tuviera muchos atributos, y se hubiera elegido esta estrategia..
+     // entonces las tablas de cada subclase tendrían todas esos atributos como columnas,
+     // por tanto quedarían tablas muy grandes con información repetida
+     // ya que no habria una tabla para la superclase
+
+   #+END_SRC
+*** Interfaz a Enum con comportamiento
+   #+BEGIN_SRC java
+     // - Pasamos la interfaz a un enum con comportamiento,
+     // ya que las subclases que la implementan son stateless (no tienen estado),
+     // además el ORM tiene la limitante de no poder mapear interfaces, por lo cual no se persisten
+     // - En caso de que alguna de esas clases que la implementaban tenian estado
+     // se podría haber optado por convertir la interfaz en una clase abstracta
+     // - no se va a persistir una tabla de este enum, pero si como atributo de otra tabla (en la clase que se declaró)
+   #+END_SRC
+*** Interfaz a Clase abstracta
+   #+BEGIN_SRC java
+     // - Pasamos la interfaz a una Clase abstracta,
+     // ya que las clases que la implementan son stateful (tienen estado)
+     // además el ORM tiene la limitante de no poder mapear interfaces
+   #+END_SRC
+*** Enumeraciones (Definición y Declaración)
+   #+BEGIN_SRC java
+     // -> Al definir enum
+     //
+     // La definición de las enumeraciones no necesitan annotations,
+     // pero cuando declaramos atributos del tipo de alguna enumeración debemos usar @Enumerated
+     // para que lo entienda el ORM al mapear
+
+     // ---------------------------------------------------------------------------------------
+
+     // -> Al declarar un atributo enum
+     //
+     // Las enumeraciones deben ser mapeadas como @Enumerated,
+     // para que el ORM al momento de mapear, lo entienda y lo interprete como un value object
+   #+END_SRC
+*** Clases Embebidas (Definición y Declaración)
+   #+BEGIN_SRC java
+     // -> Al definirla como @Embeddable
+     //
+     // Consideramos que es un value object, y no queremos manejar su identidad
+     // pero queremos embeber los atributos de esta clase en otra clase,
+     // por tanto en el modelo de datos figurarán esos atributos como columnas
+     // de la clase en la que se embeban
+
+     // ---------------------------------------------------------------------------------------
+
+     // -> Al declarar un atributo @Embedded
+     //
+     // Embebemos los atributos de esa clase,
+     // en el modelo de datos figurarán como columnas
+   #+END_SRC
+*** Colección de value objects
+   #+BEGIN_SRC java
+     // - Un enum es un value object, del cual no queremos manejar su identidad
+     // (lo mismo ocurre con objetos primitivos como sería un String)
+     // - Con @ElementCollection podemos hacer una colección de value objects,
+     // así como @OneToMany se usa para identity objects
+   #+END_SRC
+*** Listas con Orden
+   #+BEGIN_SRC java
+     // - Agregamos el @OrderColumn para guardar el orden de los elementos en la lista,
+     // por eso usamos List en vez de Collection,
+     // además se agrega una columna en la tabla que se genera de la relación de la clase con la lista,
+     // a la que nombramos "orden"
+   #+END_SRC
+*** Colecciones sin orden
+   #+BEGIN_SRC java
+     // - Como no se pide un orden particular, usamos Collection en vez de List
+   #+END_SRC
+*** JoinColumn en OneToMany
+   #+BEGIN_SRC java
+     // - Agregamos el @JoinColumn para evitar que se genere una tabla asociativa
+     // intermedia entre las dos tablas que se genera de esta relación, como si ocurre con el ManyToMany
+     // pero que queremos evitar
+   #+END_SRC
+*** Services
+   #+BEGIN_QUOTE
+   Esto mismo aplica para los repositorios, excepto que no usamos ~@Transient~
+   ya que estos son los que definen el dominio y a lo mucho lo usarán dentro de un método,
+   pero no guardarán una referencia a ellos
+   #+END_QUOTE
+   
+   #+BEGIN_SRC java
+     // - Al ser un Service, sólo nos importa su funcionalidad, no tanto su identidad o valor
+     // por tanto no queremos persistir el atributo como columna,
+     // por ese motivo usamos @Transient
+     // - Lo importante de los Servicios, es su comportamiento/funcionalidad que aportan
+     @Transient
+     AlcoholService alcoholService;
+   #+END_SRC
+*** ManyToMany
+   #+BEGIN_SRC java
+     // - Se generará una tabla asociativa intermedia entre las dos tablas que se generan al relacionar estas dos clases
+     // - Con @JoinTable definimos el nombre el nombre de la tabla intermedia
+   #+END_SRC
+*** ..ToOne
+   #+BEGIN_SRC java
+     // podemos notar que no pueden ser varias porque el tipo de atributo no es una colección
+   #+END_SRC
+*** ..ToMany
+   #+BEGIN_QUOTE
+   Suponiendo que hablamos de ~@OneToMany~...
+   NO olvidar que en el modelo de datos, aquellas entidades que tengan la cardinalidad "Many",
+   son las que tendran la columna de la (FK) de la entidad con la que está relacionada,
+
+   Suponiendo que hablamos de ~@ManyToMany~...
+   habrá una tabla asociativa intermedia entre las dos entidades relacionadas,
+   la tabla intermedia tendrá como PK y FK, la PK de ambas tablas,
+   
+   la cardinalidad entre cada clase y esta tabla asociativa, será de 1 a N, osea ~||--{~ y ~}--||~
+   lo único que puede cambiar será la *modalidad* de la relación
+   #+END_QUOTE
+   
+   #+BEGIN_SRC java
+     // observamos que la cardinalidad de la relación con este atributo
+     // no puede ser otra que "..ToMany" ya que es una colección
+   #+END_SRC
+* Endpoints(rutas) + Verbos Http
+** POST + BODY Request
+  #+BEGIN_QUOTE
+  POST /playlist/:id
+  body
+   = nombre
+
+  POST /pedidos un nuevo pedido, se guarda y se redirecciona a elegir el tipo de pedido
+  body
+   {categorias
+   cocciones}
+  #+END_QUOTE
 * MVC + Persistencia
 ** Repositorios + Servicios
 *** Repositorio 1 - Alumnos
