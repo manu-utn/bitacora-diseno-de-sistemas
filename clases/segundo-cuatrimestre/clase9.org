@@ -1,0 +1,6 @@
+* Referencias
+** Referencias de la Clase
+  1. https://docs.google.com/presentation/d/136i4iMYDtdDXnP0PuMABX8b74WwtbE8DMp9RNjyF9z4/edit?usp=sharing
+** Referencias Extraoficiales
+  1. https://www.ibm.com/cloud/blog/four-architecture-choices-for-application-development
+  2. https://codechanic.wordpress.com/2016/11/07/comentando-sobre-microservicios/
