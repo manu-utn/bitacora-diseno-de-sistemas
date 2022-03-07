@@ -1,0 +1,136 @@
+#+TITLE: Asincronismo con Lambdas, Service Locator, Patrón Observer
+* Lambdas/Bloques Vs. Objetos (comportamiento)
+** Conceptos
+** Lambdas/Bloques
+  - Está pensada solo para aplicarse, cuando no quiero *reificar*
+  - Son *objetos genericos*
+  - Se pueden pensar "quizás" como un *command*
+  - *NO son fácil de persistir* en una base de datos
+** Objetos
+  - Ofrecen más flexibilidad que las *lambdas*
+  - Los objetos podemos agregar más mensajes
+    (Ej. Si aplicamos el patrón Command, entonces el objeto puede entender ~deshacer()~)
+  - Las lambdas estan limitadas a entender sólo el mensaje ~apply()~ no se les puede agregar más mensajes
+  - Si usamos lambas => no podemos usar *herencia*
+
+** Ejemplos
+*** Ejemplo 1 - en java
+  #+BEGIN_SRC java
+    // - retornamos una lambda, que se puede aplicar luego
+    metodo postergarAgregado(guardarropa, prenda){
+        return {() => guardarropa.agregar(prenda) } // <-- lambda ó bloque
+
+
+    // - El consumer sólo entiende apply()
+    // - El tipo `Consumer` es como Java tipa las lambdas/bloques
+    Consumer objeto = postergarAgregado(guardarropa, prenda);
+    objeto.apply(); // en realidad en java es .accept()
+
+    Consumer<Integer> display = a -> System.out.println(a);
+    display.accept(10)
+  #+END_SRC
+*** Ejemplo 2 - en javascript
+   #+BEGIN_SRC javascript
+     // ---------------------------------------------------
+     // # Usando LAMBDAS (permite asincronismo)
+
+     // f es una función lambda
+     function convertir(millas, f){
+         f(1.6 * millas);
+     }
+
+     // - el segundo parámetro es una lambda.. (param1, param2, ..) => { body }
+     // - inversión de contol (Iot ?), le pasamos la función
+     // - lo podemos llamar N veces (mientra que con objetos esta limitado)
+     convertir(1, (kms)=>{
+         console.log(kms);
+     })
+
+     // ---------------------------------------------------
+     // # Usando OBJETOS
+     class Conversor{
+         convertir(millas){
+             return 1.6 * millas;
+         }
+     }
+
+     const conversor = new Conversor();
+     // solo lo podemos llamar 1 vez
+     console.log(conversor.convertir(1));
+   #+END_SRC
+* Patrón Observer
+** Evitar que una excepción se propage
+   #+BEGIN_SRC java
+     class Guerrero{
+         int energia;
+         List<GuerreroObserver> observers;
+
+         void notificarMoribundo() {
+             // usamos el método `clone()` para evitar que se propague la excepción
+             // de un observer a los demás observers
+             observers.clone().forEach(observer => observer.notificarMoribundo(this));
+         }
+
+         void recibirDanio() {
+             if(this.estaMoribundo()){
+                 notificarMoribundo();
+             }
+         }
+
+         boolean estaMoribundo() {
+             return energia <= 10;
+         }
+     }
+   #+END_SRC
+** Observers que provocan efecto sobre el Observable
+   #+BEGIN_SRC java
+     // Podemos registrar varios observadores distintos,
+     // uno que lo cure si observa que está lastimado,
+     // otro que lo asista de otra manera, ...
+     class Guerrero{
+         int energia;
+         List<GuerreroObserver> observers;
+
+         void recibirDanio() {
+             if(this.estaMoribundo()){
+                 notificarMoribundo();
+             }
+         }
+
+         boolean estaMoribundo() {
+             return energia <= 10;
+         }
+
+         void notificarMoribundo() {
+             // usamos el método `clone()` para evitar que se propague la excepción
+             // del observer AseguradoraDeVida a los demás observers
+             // (suponiendo que se cumple la condición para la lance)
+             observers.clone().forEach(observer => observer.notificarMoribundo(this));
+         }
+     }
+
+     // - Tenemos varios tipos de Observers/Obervadores que observan al Guerrero (Observable),
+     // - Cada Observer entiende el mensaje notificarMoribundo(guerrero),
+     // pero tiene su propósito tiene un comportamiento diferente.. Uno lo cura, y el otro tareas administrativas...
+     class Enfermero implements GuerreroObserver {
+         void notificarMoribundo(Guerrero guerrero) {
+             guerrero.sanar();
+         }
+     }
+
+     class AseguradoraDeVida implements GuerreroObserver {
+         void notificarMoribundo(Guerrero guerrero) {
+             this.empezarElPapelerio(guerrero);
+         }
+
+         void empezarElPapelerio(Guerrero guerrero) {
+             if (!guerrero.estaMoribundo()) {
+                 throw new BusinessException("no se puede empezar el papelerio si esta sano!!");
+             }
+         }
+     }
+   #+END_SRC
+* [TODO] Service Locator
+  - Es como un mapa de muchas dependencias, relacionado a interfaces externas, y singleton
+* Referencias
+  1. [[https://docs.google.com/document/d/1UwTcRLugqDgZuqfWvOxckwk27UBjDo70AF1znzX24QM/edit#][Sobre los efectos en el Observer]]
