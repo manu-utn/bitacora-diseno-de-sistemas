@@ -1,5 +1,4 @@
 #+TITLE: Clase 06
-
 * rpaso clase anterior
 ** Biblioteca
 **** Control directo
@@ -70,7 +69,7 @@
    3. 
   
    nos bloqueamos, hasta esperar su respuesta
-** Asincronico
+** [WAITING] Asincronico
 *** conceptos
    1. invoco componente
    2. me  olvido
@@ -132,7 +131,7 @@
      de Algo que podemos trabajar con polimorfismo)
    - aparece en polimorfismo
 
-
+     
 * tp qmp4
 ** componente externo
    La *AccuWeatherAPI* que nos usamos lo hizo un 3ro

@@ -119,11 +119,9 @@ DUDAS:
   - Evitar tener que tocar multiples componentes ante una,
     modificación cuando sólo deberiamos uno solo
 * Cohesión
-  - Se define en la cantidad de responsabilidades que
-    tiene un componente
+  - Se define en la cantidad de responsabilidades que tiene un componente
   - A mayor responsabilidades, menor es la cohesión
-  - En objetos hablando de los [[Métodos][métodos]],
-    podría ser cuantas tareas diferentes resuelve
+  - En objetos hablando de los [[Métodos][métodos]], podría ser cuantas tareas diferentes resuelve
 * Abstracción
   Mejor son nuestras abstracciones,
   más aumentamos dos cualidades de diseño importantes

@@ -16,15 +16,19 @@
      class DragonQueCumpleDeseos{
          // con el atributo final  hacemos que sea "no modificable"
          // y el modificador private para que solo se acceda desde la clase
-         private static final DragonQueCumpleDeseos INSTANCE = new DragonQueCumpleDeseos();
+         private static final DragonQueCumpleDeseos instance;
 
          public static instance(){
+             if(instance == null){
+                 instance = new DragonQueCumpleDeseos();
+             }
+             
              return INSTANCE;
          }
 
          // constructor
          private DragonQueCumpleDeseos(){
-             // inicializamos al dragon
+             // inicializamos al dragon ó no
          }
 
          public cumplirDeseo(List<Esfera> esferas, Deseo deseo){
@@ -36,6 +40,8 @@
          void pedirDeseo(){
              List<Esfera> esferas = recolectarEsferas();
              Deseo deseo = pensarDeseo();
+
+             // punto de entrada
              DragoQueCumpleDeseos.instance().cumplirDeseo(esferas, deseo);
          }
      }

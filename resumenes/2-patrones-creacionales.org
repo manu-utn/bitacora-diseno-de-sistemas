@@ -102,7 +102,6 @@
    #+RESULTS:
    [[file:factoryMethod.png]]
 ** Ejemplo General 2
-
    #+BEGIN_SRC plantuml :file factoryMethod2.png
      @startuml
      interface Creador{

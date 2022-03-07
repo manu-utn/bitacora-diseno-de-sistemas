@@ -42,7 +42,6 @@ Persistencia, Dominio, Presentación
 - Dominio:
 - Persistencia:
 
- 
 * Cosificar
   - Es darle un nombre a una abstracción entidad/clase/operación/metodo
   - Dale nombre a algo que estaba de manera explícita
@@ -97,7 +96,6 @@ Persistencia, Dominio, Presentación
 
 
 
-
 ** [DONE] Robustez
    CLOSED: [2021-04-15 jue 10:26]
    - Se enfoca más en el manejo de errores
@@ -145,9 +143,6 @@ Persistencia, Dominio, Presentación
 
 
 
-
-
-
 * Manejo de errores
 ** [TODO] Propagarlo 
 ** Tratarlo
@@ -176,8 +171,7 @@ Persistencia, Dominio, Presentación
    decidimos confiar en lo interno,
    y desconfiar de lo externo y validar lo que viene de afuera
 * Ejercicio macowins
-  Estado, no es herencia porque no hay un comportamiento
-  que tengan en comun.
+  Estado, no es herencia porque no hay un comportamiento que tengan en comun.
 * method lookup
   busca en la case actual,
   si no lo encuentra bucsa en la superclase,
