@@ -1,0 +1,683 @@
+#+TITLE: Tips de parciales resueltos
+#+STARTUP: inlineimages
+* Code Smell
+** Parcial CorrectorParciales
+*** Data Object
+**** Conceptos
+   - Cuando un objeto sólo tiene estado, pero _no tiene comportamiento_
+   - Cuando el objeto sólo actúa como una _estructura para almacenar datos_
+   - El objetivo paradigma de objetos es que estos tengan COMPORTAMIENTO
+**** Ejemplo - Java
+   #+BEGIN_SRC java
+     clase Respuesta{
+         atributo pregunta;
+         atributo valorRespuesta;
+         atributo peso;
+
+         metodo esCorrecta(){
+             pregunta.valorPregunta == valorRespuesta;
+         }
+     }
+
+     // esta clase actúa como un "data object",
+     // no tiene comportamiento (MAL indicio en el paradigma de objetos...)
+     clase Pregunta{
+         atributo valorPregunta
+     }
+   #+END_SRC
+*** Long parameter list
+* Patrones de Diseño
+** Parcial CorrectorParciales
+*** Adapter
+   #+BEGIN_SRC java
+     clase Respuesta{
+         atributo pregunta;
+         atributo valorRespuesta;
+         atributo peso;
+
+         metodo esCorrecta(){
+             pregunta.esCorrecta(valorRespuesta);
+         }
+     }
+
+     // - "Pregunta" está actuando sólo como un adapter de "valorPregunta"
+     // - El único comportamiento que tiene que es el de comparación, NO ES POLIMORFICO con otros objetos...
+     // - Si sacaramos la entrada Respuesta.esCorrecta() de Respuesta, entonces esta clase sería un "Data Object"
+     // (es decir un objeto sin comportamiento, un mal síntoma en el paradigma de objetos...)
+     clase Pregunta{
+         atributo valorPregunta;
+
+         metodo esCorrecta(valorRespuesta){
+             valorPregunta == valorRespuesta;
+         }
+     }
+   #+END_SRC
+*** Template Method (Herencia Simple)
+*** Strategy (Composición)
+**** Ejemplo 1 - Corrección de un Examen
+   #+BEGIN_QUOTE
+   Si tenemos como problema que un examen se puede corregir de distintas formas: 
+   1. Regla de 3
+   2. Restar N
+   3. Tablas de conversión
+   4. Promedios y maximos de otros criterios
+      
+   Podríamos usar composición para
+   - tener varios objetos que representen cada uno de los criterios
+   - el algoritmo general del cálculo de la nota será uno solo y concreto (pero una parte le será delegada a otro objeto)
+   #+END_QUOTE
+*** Flyweight
+   #+BEGIN_COMMENT
+   Al parecer el estado del objeto tiene pocos atributos
+   #+END_COMMENT
+** Parcial Hitbug
+*** Patrón Command
+**** Ejemplo 1 - Sistema de versionado
+   - Apunta a usar el patrón Command con historial para deshacer los cambios, y con una interfáz en vez de clase abstracta
+   - El *Invoker* sería el Hit, quien invoca a los comandos
+   - Los *concrete command*
+     1) Son tres {CambiarNombre, AgregarContenido, QuitarContenido}
+     2) No guardan la referencia, sólo reciben el objeto a modificar por parámetro
+
+   #+BEGIN_QUOTE
+   Guardar un historial con las modificaciones a realizar,
+   permitimos que estas se apliquen cuando queramos,
+   osea no generan efecto en el momento que se crearon
+   #+END_QUOTE
+**** Ejemplo 1 - Diagrama 1
+   #+BEGIN_SRC plantuml :file img/hitbug-patron-command.png :exports results
+     @startuml
+     interface Modificacion{
+        realizarSobre(unBag)
+        deshacerSobre(unBag) 
+     }
+
+     class CambiarNombre <<Concrete Command>> implements Modificacion{
+       viejoNombre:String
+       nuevoNombre:String
+       realizarSobre(unBag)
+
+     }
+
+     class AgregarContenido <<Concrete Command>> implements Modificacion{
+       contenido:Contenido
+       realizarSobre(unBag)
+
+     }
+
+
+     class QuitarContenido <<Concrete Command>> implements Modificacion{
+       contenido:Contenido
+       realizarSobre(unBag)
+
+     }
+
+     class Hit <<Invoker>>{
+        realizarSobre(unBag) : void
+        deshacerSobre(unBag) : void
+     }
+
+
+     Hit -right->"*" Modificacion
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/hitbug-patron-command.png]]
+**** Ejemplo 1 - Diagrama 2
+   #+BEGIN_SRC plantuml :file img/hitbug-patron-command2.png :exports results
+     @startuml
+     class Hit {
+        realizarSobre(unBag)
+        deshacerSobre(unBag)
+     }
+
+     interface Modificacion {
+        realizarSobre(unBag)
+        deshacerSobre(unBag)
+
+     }
+
+     class CambiarNombre implements Modificacion  {
+       viejoNombre:String
+       nuevoNombre:String
+       realizarSobre(unBag)
+
+     }
+
+     class AgregarContenido implements Modificacion {
+       contenido:Contenido
+       realizarSobre(unBag)
+       deshacerSobre(unBag)
+     }
+
+
+
+     Hit -->"*" Modificacion
+
+     class Bag {
+       realizarHitRequest(unHit)
+   
+       aceptarHitRequest(unHit)
+       rechazarHitRequest(unHit)
+     }
+
+
+     Bag --> "historial *" Hit
+     Bag --> "hitRequests *" Hit
+
+
+     class Bag implements Contenido {
+        agregarContenido(Contenido)
+        quitarContenido(Contenido)
+     } 
+
+     abstract class ContenidoMultimedia implements Contenido{ }
+     class Imagen extends ContenidoMultimedia { } 
+     class Video extends ContenidoMultimedia { } 
+
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/hitbug-patron-command2.png]]
+*** Patrón Composite
+**** Conceptos
+   - Existía polimorfismo entre Bag y ContenidoMultimedia, ambos debían entender ~contenidosMultimedia()~
+   - Los bags debian mostrar el contenido multimedia de los bags a los que contenían
+     (Ej. ~bags.flatMap(bag => bag.contenidoMultimedia())~ )
+   - Los contenidos multimedia mostrar una lista de videos ó imagenes
+     (Ej. ~contenido.contenidoMultimedia()~)
+
+   #+BEGIN_QUOTE
+   class Bag 
+     method contenidosMultimedia()
+         return self.contenidos().flatMap {  it => it.contenidosMultimedia() }
+
+   class ContenidoMultimedia
+     method contenidosMultimedia()
+         return [ self ]
+   #+END_QUOTE
+**** Diagramas
+***** Diagrama 1 - Contenido Multimedia
+   #+BEGIN_SRC plantuml :file img/hitbug-patron-composite.png :exports results
+     @startuml
+     interface Contenido {
+       nombre()
+       renombrar(String)
+       contenidosMultimedia() : List<ContenidoMultimedia>
+     }
+
+     class Bag implements Contenido {
+        agregarContenido(Contenido)
+        quitarContenido(Contenido)
+     } 
+
+     Bag-->"*"Contenido
+
+     class Video extends ContenidoMultimedia {
+   
+     }
+
+     class Imagen extends ContenidoMultimedia {
+   
+     }
+
+     abstract class ContenidoMultimedia implements Contenido {
+        contenidosMultimedia()
+     }
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/hitbug-patron-composite.png]]
+***** Diagrama 2 - Corrección de Parciales - Criterios
+   #+BEGIN_SRC plantuml :file img/corrector-parciales-composite.png :exports results
+     @startuml
+     interface Criterio
+
+     CriterioMaximo .up.|> Criterio
+     CriterioMaximo ->"*" Criterio
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/corrector-parciales-composite.png]]
+* Asincronismo + Cosificar (comportamiento)
+** Parcial Copiame
+   #+BEGIN_QUOTE
+   El servicio era una Interfaz que tenía un método ~detectarCopias()~ que ejecutaba un algoritmo y devolvía una lista de objetos
+   
+   Se decidió *cosificar ese comportamiento* (darle nombre a una idea/abstracción entidad/clase/operación/método)
+   pasando la *Interfaz* a una *Clase Abstracta* y dandole una Entidad al Servicio,
+   e implementar el método ~ejecutar():void~ que también ejecuta el algoritmo,
+   pero no devuelve una lista de objetos, éste sólo se ejecuta y cuando termine se guardará en el objeto por eso es ~void~
+   (esto último permite el asincronismo) 
+   #+END_QUOTE
+
+   #+BEGIN_SRC plantuml :file img/copiame-asincronismo.png :exports results
+     @startuml
+     abstract class Servicio {    
+       ejecutar() : void
+       paresDeDocumentosARevisar() : [(Documento, Documento)]
+     }
+     class BusquedaDePlagios extends Servicio
+     class BusquedaDeCopias extends Servicio
+
+
+     Servicio -> CalidadDeServicio
+
+     interface CalidadDeServicio {
+       validarMaualmente(Servicio)
+     }
+
+     class Bronce implements CalidadDeServicio
+
+     class Plata implements CalidadDeServicio {
+         double porcentajeRevisionSimple
+     }
+
+     class Oro implements CalidadDeServicio {
+       double porcentajeRevisionCruzada
+     }
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/copiame-asincronismo.png]]
+* Crontab - Automatizar Ejecución de tareas
+** Parcial Copiame
+*** Conceptos
+   - Se puede tener un *objeto global* (Ej. Planificador) para que sea el *punto de entrada* del *crontab*
+     (Ej. ~Planificador.encolarServicio(servicioA)~, ~Planificador.procesarServicios()~)
+   - Si se quiere *ejecutar tareas en un orden*
+     1) se pueden tener algun mensaje ~encolarTarea(Tarea tarea)~ en alguna ~List<Tarea>~
+     2) se puede tener otro mensaje ~procesarTareas()~ que ejecute las tareas encoladas
+*** Diagrama
+   #+BEGIN_SRC plantuml :file img/copiame-crontab.png :exports results
+     @startuml
+     class Planificador {
+        encolarServicio(Servicio)
+        procesarServicios()
+     }
+
+     Planificador -> "*" Servicio
+
+     abstract class Servicio
+     @enduml
+   #+END_SRC
+
+   #+RESULTS:
+   [[file:img/copiame-crontab.png]]
+*** Ejemplo en Java
+   #+BEGIN_SRC java
+     class Planificador{
+         method encolarServicios(Servicio servicio){
+             servicios.add(servicio);
+         }
+
+         method procesarServicios(){
+             servicios.forEach(servicio -> servicio.ejecutar());
+         }
+     }
+   #+END_SRC
+* Cualidades de Diseño
+** Parcial CorrectorParciales
+*** Cohesión
+   - Menor cohesión implíca más responsabilidades (más comportamiento/mensajes)
+   - Un objeto con *poca Cohesión* tiene responsabilidades que se podría delegar en otros objetos
+   - Un objeto con *buena Cohesión* a nivel de datos
+     1) tiene los *atributos necesarios* que resuelve el problema que soluciona
+     2) tiene los *atributos que le corresponden* a esa abstracción
+*** Extensibilidad
+   - Agregar *nuevas características con bajo impacto*
+   - Es parte de la cualidad *Flexibilidad* (que tiene Extensibilidad+Mantenimiento)
+
+   #+BEGIN_COMMENT
+   Si tenemos una interfaz ~Criterio~ que es implementada por ~CriterioPromedio, CriterioReglaDe3, CriterioOtro~
+   y.. a un método ~criterio()~ de la interfaz le cambiamos la cant. de parámetros (*extensibilidad*)
+   entonces tendremos que agregar esos cambios en las clases que implementan esa interfaz (*mantenibilidad*)
+
+   Entonces si tenemos una interfaz que implementan varias clases y cambiamos el número de parámetros algún mensaje,
+   la estamos haciendo *extensible* (nuevas features) pero eso implíca hacer *mantenimiento* de las clases que la implementan...
+   
+   Como van de la mano *extensibilidad* y *mantenimiento* (ambas cualidades derivan de *Flexibilidad*)
+   #+END_COMMENT
+*** Simplicidad
+*** Consistencia
+* Errores comunes
+** Delegar
+*** Ejemplo 1
+#+BEGIN_SRC java
+  Class RepositorioOrdenes{
+      Collection<Orden> ordenes;
+
+      Collection<Orden> ordenesPendientes(){
+          // Problema: Se puede delegar a Orden que nos diga si su estado es pendiente o no
+          //
+          //return ordenes.filter(orden -> orden.estadoOrden.equals(EstadoOrden.PENDIENTE));
+
+          // Solución:
+          return ordenes.filter(orden -> orden.estaPendiente());
+      }
+  }
+#+END_SRC
+*** Ejemplo 2
+#+BEGIN_SRC java
+  class Fabrica{
+      List<Orden> ordenesEnPeriodo(fechaInicio,fechaFin){
+          // Problema: Se podría delegar el comportamiento en orden
+          //
+          // return ordenesAsignadas
+          //     .filter(orden ->orden.getFechaEmision().between(fechaInicio,fechaFin));
+
+          // Solución:
+          return ordenesAsignadas.filter(orden ->orden.tieneFechaEntre(fechaInicio,fechaFin));
+      }
+
+  }
+#+END_SRC
+** Responsabilidad
+*** Ejemplo 1
+#+BEGIN_SRC java
+  class Cliente{
+      List<MedioNotificacion> medios;
+
+      // Problema: este comportamiento debería estar del lado que tiene la información, osea es responsabilidad de la clase Orden
+
+      // void saberEstadoDe(Orden unaOrden){
+      //     if(this.obtenerEstado(unaOrden) == EstadoOrden.RECHAZADA){
+      //         medios.forEach(medio => medio.notificar(this.email, "Orden rechazada", "Se rechazo tu orden"));
+      //     }
+      // }
+  }
+
+  // Solución
+  class Orden{
+      EstadoOrden estado;
+
+      boolean estaRechazada(){
+          return estado.equals(EstadoOrden.RECHAZADA);
+      }
+  }
+#+END_SRC
+** Repositorios
+*** Ejemplo 1
+#+BEGIN_SRC java
+  Class RepositorioClientes{
+      Collection<Cliente> clientes;
+
+      // Problema: Si hubiese más atributos para el cliente, tendríamos que modificar este también..
+
+      // void registrarCliente(String nombre, String apellido, String direccion){
+      //     clientes.add(new Cliente(nombre, apellido, direccion));
+      // }
+
+      // Solución
+      // - Más fácil de mantener, suponemos que ya nos llega la instancia del cliente
+      void registrarCliente(Cliente nuevoCliente){
+          cliente.add(nuevoCliente);
+      }
+  }
+#+END_SRC
+** Nombre de Interfaces
+*** Ejemplo 1
+#+BEGIN_SRC java
+  // Problema: Nombrar la interfáz casi igual que la clase que la implementa
+  //
+  // interface INotificador{ /** ... */}
+  // class Notificador{ /** ... */}
+
+
+  // Solución: La interfaz representa algo general, la clase que lo implementa
+  // tiene su propia identidad "notificar por mail"
+  //
+  interface Notificador {
+      void notificar(Usuario usuario, String mensaje);
+  }
+
+  class NotificadorMail{
+      Mailsender mailSender; // servicio interno
+
+      void notificar(Usuario usuario, String mensaje){
+          mailSender.send(usuario.getMail(),"...",mensaje);
+      }
+  }
+#+END_SRC
+** Code smell
+*** Type test
+#+BEGIN_SRC java
+  class Orden{
+      Int duracionTotal(){
+          // Problema: Se repite lógica en las 4 lineas, podría estar todo en la caja, y pedirle que de la duración
+          //
+          // Int duracion = this.cajas.sum(caja => caja.duracionTiempoEntrega());
+          // duracion += this.cajas.sum(caja => caja.duracionTiempoFabricacion(this.fabrica));
+          //
+          // Int cantCajasPersonalizadas = this.cajas.filter(caja => caja.esPersonalizada()).size();
+          // duracion += this.cajas.sum(caja => caja.duracionTiempoValidacion(cantCajasPersonalizadas));
+
+          // Solución
+          Int duracion = this.cajas.sum(caja => caja.duracionTotal());
+          return duracion;
+      }
+  }
+#+END_SRC
+*** Middle Man, Missplaced Method
+   #+BEGIN_QUOTE
+   Puntos de entrada:
+   1) opción 1
+   orden = cliente.getOrdenes()
+   orden.obtenerUnaAlAzar().getEstado()
+
+   2) opción 2, más sencilla
+   orden.getEstado()
+   #+END_QUOTE
+   
+   #+BEGIN_SRC java
+     enum Estado{
+         PENDIENTE,
+         ASIGNADA;
+     }
+
+     class Orden{
+         Estado estado;
+
+         // getter
+     }
+
+     // - El `obtenerEstado` en cliente está de más,
+     // no estamos estamos delegando responsabilidades en Cliente
+     // sólo actúa de pasamanos, como middle man
+     /*
+     class Cliente{
+         Estado obtenerEstado(Orden orden){ // <-- WRONG! >:( el cliente actúa de pasamanos
+             return orden.getEstado();
+         }
+     }
+     ,*/
+   #+END_SRC
+** Confundir objetos del Sistema con actores/roles/tareas manuales (UI)
+*** Ejemplo 1
+  #+BEGIN_QUOTE
+  Si por ejemplo sólo nos piden que un administrador puede agregar fábricas al sistema,
+  estaría MAL que considerar como objeto al administrador y que éste las agregara..
+
+  Es suficiente con un RepositorioFabricas con singleton
+  #+END_QUOTE
+  
+  #+BEGIN_SRC java
+    /*
+    class Administrador{ // <-- WRONG..!
+        void registrarFabrica(Fabrica fabrica){
+            RepoFabricas.getInstance().agregarFAbrica(fabrica);
+        }
+    }
+    ,*/
+  #+END_SRC
+*** Ejemplo 2
+  #+BEGIN_QUOTE
+  Si dicen que una OrdenPersonalizada es válida cuando un miembro del personal la valida,
+  entonces *es una tarea manual* no tiene sentido pensar algún algoritmo para definir el valor booleano
+  de si la orden es válida ó no (además podríamos lanzar una excepción si aún no fue validada)
+  #+END_QUOTE
+
+  #+BEGIN_SRC java
+    abstract class Orden{
+        // ...
+        boolean esValida();
+    }
+
+    class OrdenPersonalizada extends Orden{
+        boolean valida;
+
+        boolean esValida(){
+            return this.valida; // se podría lanzar una excepción si aún no se validó
+        }
+
+        // una persona de manera manual, lo confirma
+        void marcarComoValida(){
+            this.valida = true;
+        }
+
+        /*
+        boolean esValida(){
+            if(condicion){  // <-- WRONG..!
+                return true;
+            }else{
+                return false;
+            }
+        }
+        ,*/
+    }
+
+    class OrdenDeCatalogo extends Orden{
+        boolean esValida(){
+            return true;
+        }
+    }
+  #+END_SRC
+** Bibliotecas y Servicios
+   #+BEGIN_SRC java
+     /**
+      ,* Si te dan una Biblioteca externa ó un Servicio de terceros,
+      ,* lo mejor sería crear un Adapter de ellos para reutilizarlos
+      ,*
+      ,* Ej. Si tenemos el servicio Git, y una aplicación XMailer
+      ,*/
+
+     // interfaz con los mensajes que tendrá el adapter
+     interface IXMailerAdapter{
+         void notificar(String email, String asunto, String cuerpo);
+         void notificarGrupo(Collection<String> emails, String asunto, String cuerpo);
+     }
+
+     // la implementación del adapter
+     class XMailerAdapter implements IXMailerAdapter{
+         XMailer mailer;
+
+         XMailerAdapter(XMailer mailer){
+             this.mailer = mailer;
+         }
+
+         void notificar(String email, String asunto, String cuerpo){
+             this.mailer.send(email, asunto, cuerpo);
+         }
+
+         void notificarGrupo(Collection<String> emails, String asunto, String cuerpo){
+             emails.forEach(email -> this.notificar(email, asunto, cuerpo));
+         }
+     }
+
+     // inyectamos la biblioteca ó servicio en el constructor de la clase
+     class NotificadorIntegrantes{
+         IXMailerAdapter notificador;  // <--- le pasamos la interfaz, por si luego hay otro notificador
+         List<String> integrantes;
+
+         NotificadorIntegrantes(IXMailerAdapter notificador, List<String> integrantes){
+             this.notificador = notificador;
+             this.integrantes = integrantes;
+         }
+
+         void notificarIntegrantes(){
+             integrantes.forEach(integrante -> this.notificador.notificar(this.integrantes));
+         }
+     }
+
+     // -----------------------------------------------------------------------------------
+
+     interface IGitAdapter{
+         void crearRepositorio(String nombre, List<String> usuarios);
+         void darAcceso(String repositorio, String usuario);
+         void quitarAcceso(String repositorio, String usuario);
+     }
+
+     class GitAdapter implements IGitAdapter{
+         Git git;
+
+         GitAdapter(Git git){ // constructor
+             this.git = git;
+         }
+
+         void crearRepositorio(String nombre, List<String> usuarios){
+             git.crearRepositorio(nombre, usuarios);
+         }
+
+         void darAcceso(String repositorio, String usuario){
+             git.darAcceso(repositorio, usuario);
+         }
+
+         void quitarAcceso(String repositorio, String usuario){
+             git.quitarAcceso(repositorio, usuario);
+         }
+     }
+   #+END_SRC
+** Herencia - super() - Agregar comportamiento extra al método heredado
+   #+BEGIN_SRC java
+     class Solicitud{
+         EstadoSolicitud estado;
+
+         void aprobarSolicitud(){
+             this.estado = EstadoSolicitud.APROBADA;
+         }
+     }
+
+     class SolicitudAltaAlumno extends Solicitud{
+         @Override
+         void aprobarSolicitud(){
+             this.grupo.addIntegrante(Estudiante estudiante); // agregamos comportamiento extra
+             
+             super.aprobarSolicitud(); // usa el de la superclase
+         }
+     }
+   #+END_SRC
+** Asincronismo + Crontab
+*** Ejemplo 1
+   #+BEGIN_QUOTE
+   Si nos piden que una orden personalizada se le sube un audio y que éste puede durar varios minutos,
+   NO sería correcto hacerlo desde el constructor del objeto, porque sería una tarea sincrónica.
+   
+   Debería hacerlo 
+   #+END_QUOTE
+   
+   #+BEGIN_SRC java
+     class OrdenPersonalizada{
+         /*
+         OrdenPersonalizada(..., conversor, byte[] audio){
+             // this.midi = conversor.convertir(audio); // <-- WRONG, esto es bloqueante/sincrónico, NO es asincrónico
+         }
+         ,*/
+
+         OrdenPersonalizada(..., byte[] audio){
+             this.audio = audio; // ok
+         }
+
+         // otro proceso externo, invocaría desde main este método cada X tiempo (Ej. un crontab)
+         void convertir(MIDIConveter conversor){
+             this.midi = conversor.convertir(this.audio);
+             this.estado = PENDIENTE_VALIDACION;
+             this.notificarFinDeConversion();
+         }
+     }
+   #+END_SRC
+
