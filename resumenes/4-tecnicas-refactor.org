@@ -1,0 +1,302 @@
+#+TITLE: Técnicas para Refactor
+* Extraer Método
+** Objetivo
+   - Extraer lógica en un nuevo método que autodescriba cual es su objetivo
+   - Invocar el nuevo método creado
+** Ventajas
+   - Reutilizar los métodos creados y evitar lógica repétida
+** Ejemplo
+   #+BEGIN_SRC java
+     void printOwing() {
+         printBanner();
+
+         // Problema: Se pierde expresividad, no se aprovecha las abstracciones
+         //
+         //System.out.println("name: " + name); <-- code smell detected (1)
+         //System.out.println("amount: " + getOutstanding());  <-- code smell detected (2)
+
+         // Solución: movemos la lógica anterior a un nuevo método, que clarifique el objetivo
+         printDetails(getOutstanding());
+     }
+
+     void printDetails(double outstanding) {
+         System.out.println("name: " + name);
+         System.out.println("amount: " + outstanding);
+     }
+   #+END_SRC
+* Extraer Clase
+** Objetivo
+  - Detectar clases que tienen más de una responsabilidad (recordar el Principio de Responsabilidad Única)
+  - Repartir la responsabilidad en nuevas clases
+** Ejemplo
+#+BEGIN_SRC java
+  class Soldier {
+      public int health;
+
+      // Problemas:
+      // 1. La clase está teniendo más de una responsabilidad
+      // 2. Dificil de mantener. Nuevos cambios, podrían impactar en muchos lugares
+      //
+      // public int damage; // <-- pide refactor :'(
+      // public int weaponStatus; // <-- pide refactor :'(
+      // public int getDamage() {  // <-- pide refactor :'(
+      //     // ...
+      // }
+
+      // Solución: Extraemos la lógica a una nueva clase
+      //
+      public Weapon weapon; // <-- solved :)
+
+      public void attack() {
+          // ...
+      }
+  }
+
+  // Parte de la solución :)
+  // - Cada clase tiene una única responsabilidad (Principio de Responsabilidad Única)
+  // - Más tolerable a cambios, fácil mantener
+  class Weapon {
+      public int damage;
+      public int weaponStatus;
+      public int getDamage() {
+          // ...
+      }
+  }
+#+END_SRC
+* Reemplazar Variables locales por Métodos
+** Conceptos
+   - En ingles se conoce por "Replace Temp with Query"
+   - Detectar variables locales/temporales que guardan el resultado de una expresión
+   - Extraer la expresión de la variable en un nuevo método (/que devuelva el mismo resultado/)
+   - Reemplazar todas las referencias a las variables locales, por la invocación del nuevo método
+** Ventajas
+   - Reutilizar los métodos creados y evitar lógica repétida
+** Ejemplo
+#+BEGIN_SRC java
+  /*
+  // Problema: La variable local/temporal `basePrice`
+  //
+  double calculateTotal() {
+      double basePrice = quantity * itemPrice; // <-- code smell
+      if (basePrice > 1000) {
+          return basePrice * 0.95;
+      }
+      else {
+          return basePrice * 0.98;
+      }
+      }
+  ,*/
+
+  // Solución:
+  // - Extraemos la expresión de la variable en un nuevo método
+  double calculateTotal() {
+      if (basePrice() > 1000) { // <-- reemplazamos las referencias a la variable, por invocaciones al nuevo método
+          return basePrice() * 0.95;
+      }
+      else {
+          return basePrice() * 0.98;
+      }
+  }
+  double basePrice() { // <-- nuevo método :)
+      return quantity * itemPrice;
+  }
+#+END_SRC
+* Reemplazar Métodos por Métodos Object
+** Objetivo
+   - Detectar métodos con muchas variables locales, que no se puede aplicar *Extract Method*
+** Ejemplo
+#+BEGIN_SRC java
+  class Pedido {
+      // ...
+      public double precio() {
+          // Problema: El cálculo del precio podría estar separado en otro método,
+          // con esta operación acá estamos haciendo un método más extenso..
+          //
+          // double precioBase;
+          // double IVA;
+          // double impuestos;
+          //
+          // alguna operación compleja para calcular..
+
+          // Solución: Aislamos el método en una nueva Clase, y movemos las variables locales
+          // simplificando el método precio() de Pedido y creando la abstracción del cálculo
+          //
+          return new CalculadoraDePrecio(this).calcular(); // <- solved
+      }
+  }
+
+  class CalculadoraDePrecio {
+      double precioBase;
+      double IVA;
+      double impuestos;
+
+      public CalculadoraDePrecio(Pedido pedido) {
+          // agregamos información relevante del objeto
+      }
+
+      public double calcular() {
+          // alguna operación compleja
+      }
+  }
+#+END_SRC
+* Simplificar llamadas a Métodos
+** Objetos por parámetro
+*** Conceptos
+   - Detectar métodos que repiten un conjunto de parámetros
+   - Reemplazar un conjunto de parámetros por un Objeto
+*** Ventajas
+   - Evitamos tener que pasar tantos parámetros
+   - Podemos pasar cosas más complejas por parámetro
+*** Desventajas
+   - Si creamos un objeto sin comportamiento, rompemos el paradigma de objetos...
+*** Ejemplos
+**** Ejemplo 1
+#+BEGIN_SRC java
+  class RepositorioCliente{
+      List<Cliente> clientes;
+
+      // Problema: Si al cliente se le agrega nuevos atributos ó se modifican,
+      // tendríamos que mantener este método
+      //
+      // void registrarCliente(String nombre, String direccion, Int edad, ...){ // <-- pide refactor
+      //     Cliente nuevoCliente = new Cliente(nombre, direccion, edad, ...);
+      //     clientes.add(nuevoCliente);
+      // }
+
+      // Solución: Pasamos por parámetro el objeto
+      //
+      void registrarCliente(Cliente nuevoCliente){ // <-- solucionado
+          clientes.add(nuevoCliente);
+      }
+  }
+#+END_SRC
+**** Ejemplo 2
+#+BEGIN_SRC java
+  class Weather{
+      // Problema: Le pasamos varios valores en vez del objeto,
+      // si se repitiera la lógica en varios lugares => deberiamos modificar cada lugar
+      //
+      // int low = daysTempRange.getLow();
+      // int high = daysTempRange.getHigh();
+      // boolean withinPlan = plan.withinRange(low, high); // <-- need refactor
+
+      // Solución: Le pasamos el objeto en vez de cada valor
+      //
+      boolean withinPlan = plan.withinRange(daysTempRange); // solved :)
+  }
+#+END_SRC
+* Simplificar Condicionales
+** Objetivo
+   - Detectar condicionales que tengan varias expresiones, reducir a una expresión más clara
+   - Detectar bloques con multiples condiciones y reemplazar aplicando Polimorfismo
+
+   #+BEGIN_QUOTE
+   Usar el principio *Tell Don't Ask*
+   - NO le preguntes al objeto sobre su estado (/Ej. al enviar un mensaje al objeto, evitar realizar la acción luego de evaluar multiples condicionales/)
+   - Decile al objeto que querés y punto (/Ej. al enviarle un mensaje al objeto, que realice la acción/)
+   #+END_QUOTE
+** Ejemplos
+*** Ejemplo 1
+#+BEGIN_SRC java
+  class Pedido{
+      // ...
+
+      // Problemas:
+      // 1. el condicional tiene expresiones que se podría reducir en una sola y más entendible,
+      // 2. las operaciones podrían representar una abstracción que aclare aún más el código
+      /*
+      double descuento(){
+          if (date.before(VERANO) || date.after(VERANO)) { // <-- pide refactor
+            return cantidad * precioPorInvierno;  // <-- pide refactor
+          }
+          else {
+            return cantidad * precioPorVerano;  // <-- pide refactor
+          }
+      }
+      ,*/
+
+      // Solución: aplicamos "Extract method", y separamos la lógica
+      double descuento(){
+          if (isVerano(date.now())) { // <-- menos expresiones en el condicional, queda más claro
+              return descuentoPorVerano(cantidad); // <- delegamos, se entiende mejor
+          }
+          else {
+              return descuentoPorInvierno(cantidad);  // <- delegamos la operación
+          }
+      }
+  }
+#+END_SRC
+*** Ejemplo 2
+#+BEGIN_SRC java
+  // Problemas:
+  // 1. Que tengamos un switch ya es un mal indicio
+  // 2. No se aprovecha polimorfismo, tendremos un método grande
+  /*
+  class Bird {
+      // ...
+      double getSpeed() {
+          switch (type) { // <- pide a GRITOS refactor..! <- usar el principio de "Tell Don't ASK"
+          case EUROPEAN:
+              return getBaseSpeed();
+          case AFRICAN:
+              return getBaseSpeed() - getLoadFactor() * numberOfCoconuts;
+          case NORWEGIAN_BLUE:
+              return (isNailed) ? 0 : getBaseSpeed(voltage);
+          }
+          throw new RuntimeException("Should be unreachable");
+      }
+  }
+  ,*/
+
+  // Solución:
+  // - Usamos herencia, para tener polimorfismo (varios objetos entienden mismo mensaje)
+  abstract class Bird {
+      // - comportamiento en común entre las subclases (método compartido)
+      // - mensaje que entienden varios objetos (aunque cada uno puede o no tener una intepretación diferente)
+      abstract double getSpeed();
+  }
+
+  class European extends Bird {
+      double getSpeed() {
+          return getBaseSpeed();
+      }
+  }
+  class African extends Bird {
+      double getSpeed() {
+          return getBaseSpeed() - getLoadFactor() * numberOfCoconuts;
+      }
+  }
+  class NorwegianBlue extends Bird {
+      double getSpeed() {
+          return (isNailed) ? 0 : getBaseSpeed(voltage);
+      }
+  }
+
+  // Somewhere in client code
+  speed = bird.getSpeed();
+#+END_SRC
+* Encapsulamiento
+** Objetivo
+   - Evitar exponer atributos (estado) de los objetos como públicos
+   - Crear getter + setter (el setter, sólo si es necesario) para acceder/modificar los atributos del objeto
+** Ejemplo
+#+BEGIN_SRC java
+  class Person {
+      // Problema: Exponemos el atributo a modificación para cualquier objeto
+      //
+      // public String name; // <-- pide refactor
+
+
+      // Solución: Encapsulamos el campo, y exponemos el getter + setter
+      // se accede al getter para obtener el dato,
+      // y al setter para modificarlo
+      private String name;
+
+      public String getName() {
+          return name;
+      }
+      public void setName(String arg) {
+          name = arg;
+      }
+  }
+#+END_SRC
