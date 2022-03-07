@@ -4,16 +4,13 @@ services:
     image: mariadb:10.5.5
     restart: always
     environment:
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
+      MYSQL_USER: sa
+      MYSQL_PASSWORD: sa
       MYSQL_DATABASE: db
-      MYSQL_ROOT_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: root
     ports:
       - "3306:3306"
-
   sqlpad:
-    # To use Dockerfile at root of this project, use build instead of image
-    # build: ../../
     image: sqlpad/sqlpad:5.6.0
     hostname: 'sqlpad'
     depends_on:
@@ -36,8 +33,8 @@ services:
       SQLPAD_CONNECTIONS__mariad__host: mariadb
       SQLPAD_CONNECTIONS__mariad__port: 3306
       SQLPAD_CONNECTIONS__mariad__database: db
-      SQLPAD_CONNECTIONS__mariad__username: root
-      SQLPAD_CONNECTIONS__mariad__password: password
+      SQLPAD_CONNECTIONS__mariad__username: sa
+      SQLPAD_CONNECTIONS__mariad__password: root
       # SQLPAD_CONNECTIONS__mariad__multiStatementTransactionEnabled: 'true'
       # SQLPAD_CONNECTIONS__mariad__idleTimeoutSeconds: 86400
     volumes:
